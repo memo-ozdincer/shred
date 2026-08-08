@@ -5,15 +5,20 @@
     "path": "/scratch/memoozd/rl/lean-prefix/artifacts/c0_native_units.jsonl.gz",
     "sha256": "c53e4240355373d1b16c80634305f1b3611f6970607267479a3825ac8e3d4331"
   },
-  "command": [
-    "lake",
-    "env",
-    "lean",
-    "--run",
-    "/scratch/memoozd/rl/lean-prefix/lean/LeanPrefix/Extract.lean"
-  ],
+  "configuration": {
+    "command": [
+      "lake",
+      "env",
+      "lean",
+      "--run",
+      "/scratch/memoozd/rl/lean-prefix/lean/LeanPrefix/Extract.lean"
+    ],
+    "limit": null,
+    "memory_limit_bytes": null,
+    "parser_processes": 1,
+    "timeout_seconds": null
+  },
   "correct": 168029,
-  "elapsed_seconds": 114.18552994169295,
   "eligibility_share": 0.9857133609528742,
   "eligible_proposals": 304546,
   "extractor": "/scratch/memoozd/rl/lean-prefix/lean/LeanPrefix/Extract.lean",
@@ -25,6 +30,11 @@
     "unknown_tactic": 1485
   },
   "fallback_proposals": 4414,
+  "hardware": {
+    "hostname": "l2.nibi.sharcnet",
+    "logical_cpus_visible": 32,
+    "platform": "Linux-5.14.0-570.44.1.el9_6.x86_64-x86_64-Intel-R-_Xeon-R-_Platinum_8480+-with-glibc2.37"
+  },
   "independent_tactic_units_eligible": 888421,
   "lean_workspace": "/scratch/memoozd/rl/DeepSeek-Prover-V1.5/mathlib4",
   "per_theorem_oracle_ratio": {
@@ -34,7 +44,30 @@
     "p99": 2.324324324324324
   },
   "proposals": 308960,
+  "resources": {
+    "lean_peak_rss_kib": 7748672,
+    "lean_system_cpu_seconds": 5.522799,
+    "lean_user_cpu_seconds": 44.067494,
+    "python_peak_rss_kib": 210068,
+    "python_system_cpu_seconds": 1.408852,
+    "python_user_cpu_seconds": 23.317111,
+    "wall_seconds": 111.43566369544715
+  },
   "reusable_tactic_unit_occurrences": 199228,
+  "revisions": {
+    "extractor_sha256": "71814b16ea9e6d0b5dd6dab128bb28e8e964d4bca818c7c0933eb80b94e54f69",
+    "lean_toolchain": "leanprover/lean4:v4.9.0-rc1",
+    "lean_version": "Lean (version 4.9.0-rc1, x86_64-unknown-linux-gnu, commit be6c4894e0a6, Release)",
+    "lean_workspace_git": {
+      "commit": "2f65ba7f1a9144b20c8e7358513548e317d26de1",
+      "dirty": true
+    },
+    "manifest_sha256": "ef03c1ae0305a2be9db010c17c664aae4e812e9dfd4da4ef54306e229681badc",
+    "project_git": {
+      "commit": "8876574e83aad43891bc9f4ef43f3082a319bf00",
+      "dirty": false
+    }
+  },
   "sequence_length": {
     "max": 78.0,
     "median": 2.0,
