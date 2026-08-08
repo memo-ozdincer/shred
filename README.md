@@ -52,6 +52,8 @@ See:
 - [`docs/DESIGN.md`](docs/DESIGN.md) — intended execution model
 - [`docs/VERIFICATION.md`](docs/VERIFICATION.md) — tests and evidence required
 - [`docs/DATA.md`](docs/DATA.md) — immutable C0 source and data handling
+- [`docs/STATUS.md`](docs/STATUS.md) — completed and next milestones
+- [`docs/COMPUTE.md`](docs/COMPUTE.md) — Phase 2 CPU runbook
 - [`docs/FUTURE.md`](docs/FUTURE.md) — deliberately deferred extensions
 - [`AGENTS.md`](AGENTS.md) — operating contract
 

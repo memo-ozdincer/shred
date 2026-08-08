@@ -84,3 +84,45 @@ proofs can fail before later parsed units execute.
 
 Consequence: if the gate fails, publish the characterization and stop the
 version-one engine rather than broadening equality after seeing the result.
+
+## D-006 — Replay reached root tactics from pinned REPL snapshots
+
+Date: 2026-08-08
+
+Status: accepted
+
+Decision: Phase 2 first checks each original complete proof through the same C0
+imports and options. Independently, it creates one immutable theorem-root proof
+state with a temporary `sorry`, branches every proposal from that root, and
+executes its exact native units sequentially until completion or the first
+failure. Each reached unit records process CPU, wall time, peak RSS, result, and
+Lean heartbeats. Both the complete-proof verdict and sequential replay verdict
+must agree before costs are used.
+
+Reason: syntactically present tails after a failed tactic consume no verifier
+work. Root-state replay observes actual reachability, handles structural syntax
+such as bullets without relying on filtered info-tree ranges, and directly
+exercises the state-branching primitive required by the proposed executor.
+
+Consequence: units after the first failed or timed-out unit are labeled
+`unreachable_after_failure`. A complete-proof/sequential disagreement, missing
+root snapshot, timeout, or missing replay blocks the gate.
+
+## D-007 — Keep the upstream REPL unchanged
+
+Date: 2026-08-08
+
+Status: accepted
+
+Decision: communicate with the pinned REPL commit
+`c6199a81de2a7e16cb27d6f85f56cff7043cd27f` through a private pseudo-terminal.
+Disable echo and canonical input, retain the upstream JSON protocol, and apply
+timeouts and a 24 GiB address-space limit from the parent process.
+
+Reason: the upstream process buffers ordinary-pipe responses and canonical
+terminals truncate sufficiently long one-line JSON. PTY transport with those
+flags fixes both transport properties without forking Lean or the verifier.
+
+Consequence: Linux PTY and `/proc` process CPU/RSS telemetry are explicit Phase
+2 platform requirements. Heartbeats remain available as Lean-native effort
+telemetry when OS CPU clock granularity is too coarse for cheap tactics.

@@ -37,7 +37,7 @@ def _artifact_records(path: Path) -> Iterator[dict[str, Any]]:
             yield json.loads(line)
 
 
-def _joined_records(
+def iter_joined_records(
     manifest_path: Path, artifact_path: Path, source_root: Path | None
 ) -> Iterator[tuple[Proposal, dict[str, Any]]]:
     corpus = iter_proposals(manifest_path, source_root)
@@ -192,7 +192,7 @@ def select_review_sample(
             _offer(selected, category, (theorem_ratio, depth), item)
 
     previous_theorem: str | None = None
-    for proposal, record in _joined_records(manifest_path, artifact_path, source_root):
+    for proposal, record in iter_joined_records(manifest_path, artifact_path, source_root):
         proposals += 1
         if previous_theorem is not None and proposal.theorem_name != previous_theorem:
             process_group(group)

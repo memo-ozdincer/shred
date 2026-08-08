@@ -17,3 +17,7 @@ The executable consumes JSON Lines on standard input and emits one JSON object
 per input. It parses with Lean's registered `tacticSeq` parser after importing
 the pinned Mathlib environment. It does not elaborate or execute tactics.
 
+Phase 2 execution uses the separately pinned `xinhjBrant/repl` dependency in
+the C0 Mathlib workspace. The repository's Python client connects through a
+pseudo-terminal so the unmodified upstream process flushes each response and
+does not truncate long JSON request lines.

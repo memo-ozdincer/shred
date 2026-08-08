@@ -1,4 +1,4 @@
-.PHONY: install test audit exact native review check
+.PHONY: install test audit exact native review replay-integration check
 
 install:
 	python -m pip install -e .
@@ -25,5 +25,13 @@ review:
 	python -m lean_prefix select-review --manifest data/c0.manifest.json \
 		--artifact artifacts/c0_native_units.jsonl.gz \
 		--output reports/c0_review_sample.json
+
+replay-integration:
+	test -n "$(LEAN_WORKSPACE)"
+	python -m lean_prefix profile-replay --manifest data/c0.manifest.json \
+		--native-artifact artifacts/c0_native_units.jsonl.gz \
+		--lean-workspace "$(LEAN_WORKSPACE)" \
+		--artifact artifacts/replay_integration.jsonl.gz \
+		--output reports/private/replay_integration.json --limit 2
 
 check: test audit

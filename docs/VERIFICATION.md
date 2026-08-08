@@ -22,6 +22,16 @@
 - Repeated execution of cacheable prefixes yields equivalent states.
 - Effectful or nondeterministic operations are detected or fall back.
 
+Before the executor exists, the replay profiler must additionally prove:
+
+- complete-proof verdicts agree with frozen C0 labels;
+- every eligible proposal begins from the same immutable theorem-root state;
+- rejected-proof suffixes after the first failed unit are labeled unreachable,
+  not zero-cost;
+- sequential exact-unit completion agrees with complete-proof verification;
+- tactic failures and 300-second timeouts remain attributable to proposals;
+- shard consolidation rejects duplicate or missing proposal IDs.
+
 ## Layer 4 — Verdict equivalence
 
 - Independently check every comparison input with the frozen reference runner.
@@ -54,4 +64,3 @@ contents from these strata:
 - theorems near median and tail reuse.
 
 Save identifiers, selection seed, reviewer notes, and any classification change.
-
