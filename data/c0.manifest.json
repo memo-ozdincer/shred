@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "name": "c0-base-20260804-seed42-complete",
-  "source_root_default": "/scratch/memoozd/rl/restriction",
+  "source_root_default": "..",
   "source_repository_commit": "41aab85",
   "samples_per_theorem": 32,
   "selection_rule": "retain the first registered proposal group per theorem",
@@ -17,25 +17,32 @@
   },
   "partitions": [
     {
-      "path": "runs/c0-base-20260720-seed42-local-verifier/artifacts/proofs/global_step_150.jsonl",
-      "sha256": "165af10b369d61369dfea4cc5d42ce488b5cae9a88a0eb6b6c9a323025ddd846",
+      "path": "data/c0/proofs/part-0001.jsonl.gz",
+      "source_path": "runs/c0-base-20260720-seed42-local-verifier/artifacts/proofs/global_step_150.jsonl",
+      "sha256": "fd22de8b5428322705de5d86250af0347a7f120abe03b308801af9d1621699b8",
+      "content_sha256": "165af10b369d61369dfea4cc5d42ce488b5cae9a88a0eb6b6c9a323025ddd846",
       "raw_proposals": 76800
     },
     {
-      "path": "runs/c0-base-20260721-seed42-continuation-from150/artifacts/proofs/global_step_360.jsonl",
-      "sha256": "7ba6a8323de53d54887913c5f189605d9035625b7e4a6589a297aba02441b00b",
+      "path": "data/c0/proofs/part-0002.jsonl.gz",
+      "source_path": "runs/c0-base-20260721-seed42-continuation-from150/artifacts/proofs/global_step_360.jsonl",
+      "sha256": "2532a3953f564f86fad87bae5a58ddb5dcd5a8a4b24a661e45e6e7a5c9b065e5",
+      "content_sha256": "7ba6a8323de53d54887913c5f189605d9035625b7e4a6589a297aba02441b00b",
       "raw_proposals": 184320
     },
     {
-      "path": "runs/c0-base-20260804-seed42-final1495/artifacts/proofs/global_step_60.jsonl",
-      "sha256": "20819da19bbff541b9cecbcfe2350c7397ae3a6dcf90ae6d4d6e1dcdf040114a",
+      "path": "data/c0/proofs/part-0003.jsonl.gz",
+      "source_path": "runs/c0-base-20260804-seed42-final1495/artifacts/proofs/global_step_60.jsonl",
+      "sha256": "2d10f204d27b8043bc8c91337001ca2855d1f270e36cd14fe70ff8a3b1ecc6c0",
+      "content_sha256": "20819da19bbff541b9cecbcfe2350c7397ae3a6dcf90ae6d4d6e1dcdf040114a",
       "raw_proposals": 30720
     },
     {
-      "path": "runs/c0-base-20260804-seed42-telemetry-final535/artifacts/proofs/global_step_34.jsonl",
-      "sha256": "cb35eefdd88825ba951ca220339eb8283b2eb0ee7c7e46908382c40818162a43",
+      "path": "data/c0/proofs/part-0004.jsonl.gz",
+      "source_path": "runs/c0-base-20260804-seed42-telemetry-final535/artifacts/proofs/global_step_34.jsonl",
+      "sha256": "97ad4487c729c8fc8bb3674cea22481ad05314a79d017fc8be76c518df294ece",
+      "content_sha256": "cb35eefdd88825ba951ca220339eb8283b2eb0ee7c7e46908382c40818162a43",
       "raw_proposals": 17152
     }
   ]
 }
-

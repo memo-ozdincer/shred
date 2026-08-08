@@ -8,11 +8,12 @@ dist/
 build/
 *.egg-info/
 
-# Raw or derived rollout data never enters Git.
+# Unmanaged raw or derived rollout data never enters Git. The four reviewed,
+# deterministic C0 gzip shards under data/c0/proofs are the sole exception.
 artifacts/
 cache/
 external-data/
 reports/private/
 *.jsonl
 *.parquet
-
+!data/c0/proofs/*.jsonl.gz

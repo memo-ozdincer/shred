@@ -72,6 +72,6 @@ python -m unittest discover -s tests -v
 lean-prefix audit --manifest data/c0.manifest.json
 ```
 
-The default C0 source path is cluster-local and configurable with
-`--source-root`. Raw proof data is never copied into this repository.
-
+The complete C0 corpus is included as four deterministic gzip shards under
+`data/c0/proofs/`. The auditor streams them without extraction and verifies
+both their repository hashes and the original uncompressed source hashes.

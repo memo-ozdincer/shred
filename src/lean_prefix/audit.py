@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import asdict, dataclass
+import gzip
 import hashlib
 import json
 from pathlib import Path
@@ -22,7 +23,9 @@ class AuditError(RuntimeError):
 class PartitionAudit:
     path: str
     sha256: str
+    content_sha256: str
     raw_proposals: int
+    source_path: str | None = None
 
 
 @dataclass(frozen=True)
@@ -51,6 +54,21 @@ def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
     return digest.hexdigest()
 
 
+def _open_binary_content(path: Path):
+    if path.suffix == ".gz":
+        return gzip.open(path, "rb")
+    return path.open("rb")
+
+
+def sha256_content(path: Path, chunk_size: int = 1024 * 1024) -> str:
+    """Hash logical content, transparently decompressing reviewed gzip shards."""
+    digest = hashlib.sha256()
+    with _open_binary_content(path) as stream:
+        while chunk := stream.read(chunk_size):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def load_manifest(path: Path) -> dict[str, Any]:
     with path.open(encoding="utf-8") as stream:
         manifest = json.load(stream)
@@ -60,7 +78,8 @@ def load_manifest(path: Path) -> dict[str, Any]:
 
 
 def _records(path: Path) -> Iterable[dict[str, Any]]:
-    with path.open(encoding="utf-8") as stream:
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, mode="rt", encoding="utf-8") as stream:
         for line_number, line in enumerate(stream, start=1):
             try:
                 record = json.loads(line)
@@ -74,7 +93,15 @@ def _records(path: Path) -> Iterable[dict[str, Any]]:
 def audit_manifest(manifest_path: Path, source_root: Path | None = None) -> AuditReport:
     manifest_path = manifest_path.resolve()
     manifest = load_manifest(manifest_path)
-    root = (source_root or Path(manifest["source_root_default"])).resolve()
+    if source_root is not None:
+        root = source_root.resolve()
+    else:
+        declared_root = Path(manifest["source_root_default"])
+        root = (
+            declared_root
+            if declared_root.is_absolute()
+            else manifest_path.parent / declared_root
+        ).resolve()
     samples = int(manifest["samples_per_theorem"])
 
     observed_by_theorem: dict[str, int] = defaultdict(int)
@@ -91,6 +118,13 @@ def audit_manifest(manifest_path: Path, source_root: Path | None = None) -> Audi
         if observed_sha != declared["sha256"]:
             raise AuditError(
                 f"checksum mismatch for {path}: {observed_sha} != {declared['sha256']}"
+            )
+        observed_content_sha = sha256_content(path)
+        expected_content_sha = declared.get("content_sha256", declared["sha256"])
+        if observed_content_sha != expected_content_sha:
+            raise AuditError(
+                f"content checksum mismatch for {path}: "
+                f"{observed_content_sha} != {expected_content_sha}"
             )
 
         partition_rows = 0
@@ -111,7 +145,15 @@ def audit_manifest(manifest_path: Path, source_root: Path | None = None) -> Audi
                 f"row-count mismatch for {path}: {partition_rows} != "
                 f"{declared['raw_proposals']}"
             )
-        partitions.append(PartitionAudit(relative_path, observed_sha, partition_rows))
+        partitions.append(
+            PartitionAudit(
+                path=relative_path,
+                sha256=observed_sha,
+                content_sha256=observed_content_sha,
+                raw_proposals=partition_rows,
+                source_path=declared.get("source_path"),
+            )
+        )
 
     expected = manifest["expected"]
     observed = {
@@ -144,4 +186,3 @@ def audit_manifest(manifest_path: Path, source_root: Path | None = None) -> Audi
         padding_by_theorem=dict(sorted(padding_by_theorem.items())),
         status="valid",
     )
-

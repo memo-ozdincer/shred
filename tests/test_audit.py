@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import gzip
+import hashlib
 from pathlib import Path
 import tempfile
 import unittest
 
-from lean_prefix.audit import AuditError, audit_manifest, sha256_file
+from lean_prefix.audit import AuditError, audit_manifest, sha256_content, sha256_file
 
 
 class AuditTests(unittest.TestCase):
@@ -59,7 +61,20 @@ class AuditTests(unittest.TestCase):
             with self.assertRaisesRegex(AuditError, "checksum mismatch"):
                 audit_manifest(manifest)
 
+    def test_gzip_hashes_compressed_and_logical_content(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            raw = b'{"theorem_name":"a","correct":true}\n'
+            compressed = directory / "proofs.jsonl.gz"
+            with compressed.open("wb") as target:
+                with gzip.GzipFile(filename="", mode="wb", fileobj=target, mtime=0) as stream:
+                    stream.write(raw)
+            self.assertNotEqual(sha256_file(compressed), sha256_content(compressed))
+            self.assertEqual(
+                sha256_content(compressed),
+                hashlib.sha256(raw).hexdigest(),
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
-
