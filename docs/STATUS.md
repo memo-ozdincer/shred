@@ -30,8 +30,16 @@ Last updated: 2026-08-08
 
 ## Next evidence
 
-The first 32-attempt theorem and a separate correct bullet-structured proof
-both reproduce their full-proof verdicts under sequential replay. Run a larger
-stratified integration set, then the complete Phase 2 replay on a high-memory
-192-core CPU node. Do not begin the shared executor until the consolidated
-report passes the pre-registered gate.
+The first 32-attempt theorem reproduces all 32 frozen C0 verdicts; all 31
+eligible proposals reproduce the complete-proof verdict under sequential
+replay, with all 86 native units reached and replayed. A separate correct
+`Lean.cdot` bullet proof also replays exactly. The largest observed persistent
+REPL RSS in these checks is 3.71 GiB. These are integration checks, not a
+performance sample.
+
+Run the complete Phase 2 replay on the allocated 192-core standard-memory CPU
+node, consolidate all 308,960 proposal records, and hand-read the registered
+cost strata. Do not begin the shared executor unless the consolidated report
+is complete, has zero verdict/sequential disagreements, and passes the frozen
+15% cost-opportunity gate. See `SESSION_HANDOFF.md` for the current allocation
+and `COMPUTE.md` for commands and recovery.

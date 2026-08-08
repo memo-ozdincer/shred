@@ -35,8 +35,9 @@ proposals from a frozen DeepSeek-Prover C0 rollout. Checked-in analyses measure:
 - an unweighted 1.289x oracle ratio, or 199,228 repeated tactic occurrences.
 
 These are **measured syntax-level opportunity counts**, not a speedup claim.
-Cheap, expensive, and never-reached tactics are weighted equally. The next gate
-is independent Lean replay with per-tactic timing and reachability.
+Cheap, expensive, and never-reached tactics are weighted equally. The cost
+profiler needed to resolve that uncertainty is implemented and integration
+tested; the complete C0 replay is the next evidence-producing run.
 
 ## Scientific boundary
 
@@ -54,16 +55,17 @@ See:
 - [`docs/DATA.md`](docs/DATA.md) — immutable C0 source and data handling
 - [`docs/STATUS.md`](docs/STATUS.md) — completed and next milestones
 - [`docs/COMPUTE.md`](docs/COMPUTE.md) — Phase 2 CPU runbook
+- [`docs/SESSION_HANDOFF.md`](docs/SESSION_HANDOFF.md) — exact current state and recovery
 - [`docs/FUTURE.md`](docs/FUTURE.md) — deliberately deferred extensions
 - [`AGENTS.md`](AGENTS.md) — operating contract
 
 ## Repository status
 
-Phase 1 characterization is complete. The repository audits the immutable
-corpus, assigns stable proposal identities, parses proof attempts using the
-pinned Lean environment, computes exact whole-proof and rooted-prefix reuse,
-and selects deterministic human-review cases. No execution-engine speedup is
-claimed yet.
+Phase 1 characterization and the Phase 2 replay-profiler implementation are
+complete. The profiler verifies every complete proof independently, replays
+every eligible proof from an immutable theorem-root state, and records reached
+tactic cost and agreement. The full-corpus Phase 2 measurement has not yet
+run, and no execution-engine speedup is claimed.
 
 ## Quick start
 

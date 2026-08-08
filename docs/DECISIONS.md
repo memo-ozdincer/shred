@@ -126,3 +126,24 @@ flags fixes both transport properties without forking Lean or the verifier.
 Consequence: Linux PTY and `/proc` process CPU/RSS telemetry are explicit Phase
 2 platform requirements. Heartbeats remain available as Lean-native effort
 telemetry when OS CPU clock granularity is too coarse for cheap tactics.
+
+## D-008 — Use measured occupancy on standard-memory CPU nodes
+
+Date: 2026-08-08
+
+Status: accepted for the Phase 2 run
+
+Decision: run 128 deterministic shards with at most 112 concurrent workers on
+a 192-core Nibi node with `766000M` allocated memory. Retain the 24 GiB
+per-process address-space limit and restart each REPL after 128 proposals.
+
+Reason: the hard address-space limit is a safety ceiling rather than reserved
+physical memory. Integration profiling observed at most 3.71 GiB RSS per REPL;
+112 workers therefore leave substantial node headroom at the observed peak.
+Waiting for one of ten 6 TiB nodes would add scheduling delay without evidence
+that the workload needs that capacity.
+
+Consequence: inspect aggregate memory after 30 and 60 minutes and reduce
+concurrency if available memory falls below 100 GiB or the scheduler reports
+memory pressure. This operational decision changes parallelism only, not the
+proof workload, verifier, timeouts, or scientific gate.

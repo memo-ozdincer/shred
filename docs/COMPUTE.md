@@ -8,14 +8,17 @@ for faster startup, but it is never the sole output location.
 
 ## Recommended allocation
 
-Prefer one 192-core, 6 TiB CPU node. Start with 128 workers, one logical core
-per worker, a 24 GiB hard address-space limit per Lean process, a 300-second
-request timeout, and restart each process after 128 proposals. This is below
-3 TiB even at every hard limit and leaves substantial memory for filesystem
-cache and transient peaks.
+A standard Nibi CPU node provides 192 logical CPUs and 748 GiB allocatable RAM
+(`766000M`). Use 112 workers initially, one persistent REPL per worker, a 24
+GiB hard address-space limit per REPL, a 300-second request timeout, and restart
+each process after 128 proposals.
 
-On a 748 GiB node, use 24 workers with the same per-process limit. Do not launch
-128 workers there merely because the cores exist.
+The 24 GiB value is a limit, not reserved memory. The largest RSS observed in
+the integration checks was 3.71 GiB, so 112 workers project to about 416 GiB at
+that observed peak and leave over 300 GiB for heavier cases, Python processes,
+the OS, and filesystem cache. Check aggregate memory after 30 and 60 minutes.
+Reduce concurrency if available RAM falls below 100 GiB or if the kernel/Slurm
+reports memory pressure. A 6 TiB node is convenient but not required.
 
 ## Run
 
@@ -27,13 +30,28 @@ export LEAN_WORKSPACE=/path/to/pinned/mathlib4
 export LEAN_PREFIX_SHARD_COUNT=128
 export LEAN_PREFIX_CLI=.venv/bin/lean-prefix
 
-seq 0 127 | xargs -P 128 -I '{}' env LEAN_PREFIX_SHARD_INDEX='{}' \
+seq 0 127 | xargs -P 112 -I '{}' env LEAN_PREFIX_SHARD_INDEX='{}' \
   scripts/profile_replay_shard.sh
 ```
 
 Every shard scans the small compressed manifests but executes only theorems
-whose stable corpus ordinal belongs to that shard. A failed shard can be rerun
-without touching completed shards.
+whose stable corpus ordinal belongs to that shard. Each shard writes directly
+to scratch. Its gzip artifact is durable once the corresponding JSON report is
+written; a gzip interrupted before that point is incomplete and should be
+overwritten by rerunning that shard.
+
+To resume without overwriting completed shards:
+
+```bash
+for index in $(seq 0 127); do
+  report="reports/private/replay/shard-${index}-of-128.json"
+  test -s "$report" || echo "$index"
+done | xargs -P 112 -I '{}' env LEAN_PREFIX_SHARD_INDEX='{}' \
+  scripts/profile_replay_shard.sh
+```
+
+Run the worker command in a persistent terminal such as `tmux`. The allocation
+ending kills active workers, but completed artifacts remain on `/scratch`.
 
 ## Consolidate and gate
 
@@ -59,7 +77,26 @@ report, hashes, and backup have been verified.
 ## Expected scale
 
 The login-node integration run is not a throughput benchmark. A planning range
-for 128 workers is roughly 8–20 wall-clock hours, dominated by authentic tactic
-cost and 300-second tails. Use observed progress from the first 30 minutes to
-revise the ETA; do not extrapolate from syntax extraction, which is orders of
-magnitude cheaper.
+for 112 workers is roughly 9–23 wall-clock hours, dominated by authentic tactic
+cost and 300-second tails. Use completed-shard progress and aggregate CPU after
+the first 30 and 60 minutes to revise the ETA; do not extrapolate from syntax
+extraction, which is orders of magnitude cheaper.
+
+## Operational checks
+
+From the login node, verify that the allocation still belongs to this run:
+
+```bash
+squeue -j "$SLURM_JOB_ID" -o '%.18i %.24j %.2t %.10M %.10l %.4C %.10m %R'
+```
+
+On the compute node, monitor worker and node memory without changing the run:
+
+```bash
+free -h
+pgrep -af '/REPL/.lake/build/bin/repl' | wc -l
+ps -C repl -o rss= | awk '{sum += $1; if ($1 > max) max = $1} END {printf "rss_total_gib=%.1f rss_max_gib=%.1f\n", sum/1048576, max/1048576}'
+```
+
+Do not interpret a single theorem, startup interval, or partially completed
+set of fast shards as the gate result.

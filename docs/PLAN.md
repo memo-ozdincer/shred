@@ -31,7 +31,8 @@ of whitespace removal or heuristic line grouping.
 
 ## Phase 2 — Cost-weighted oracle
 
-Status: next.
+Status: implementation and small integration checks complete; full-corpus
+measurement next.
 
 - Add per-tactic queue, execution, state-size, outcome, and timeout telemetry to
   an independent replay harness.
@@ -43,6 +44,11 @@ Status: next.
 Gate: proceed to the engine only if exact prefix reuse has a material,
 cost-weighted opportunity on authentic data. Record the threshold before seeing
 the final weighted result; do not tune it post hoc.
+
+The threshold was frozen at 15% of independent full-verification CPU time in
+Decision D-005. The 32-proposal first-theorem check measured 8.36%, but it is a
+single theorem selected for integration and is neither representative nor the
+registered gate result.
 
 ## Phase 3 — Reference baseline
 
