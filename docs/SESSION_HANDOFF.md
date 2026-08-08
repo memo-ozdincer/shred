@@ -110,14 +110,17 @@ the two residual raw-protocol causes: an invalid theorem root may expose both an
 error and a snapshot, and heartbeat instrumentation changes `<;>` elaboration.
 The exact residual regression now passes 3/3 full and sequential verdicts,
 with one invalid root and two explicitly heartbeat-uninstrumented `<;>` units;
-the breadth rerun remains required.
+the final breadth rerun also passes with 14,496/14,496 full verdict agreement,
+14,152/14,152 replay-eligible sequential agreement, no failures, and no missing
+CPU telemetry. The six-shard 11.74% opportunity fraction is diagnostic only,
+not the registered full-corpus gate result.
 
 ## Exact next action
 
-First rerun shard indices 7, 46, 53, 62, 78, and 93 with the patched executable
-and require zero full and sequential disagreements. Then ensure this repository
-is clean at the final handoff commit and that the native artifact hash matches.
-Run all 128 deterministic shards fresh with concurrency 112 using the commands
+Shard indices 7, 46, 53, 62, 78, and 93 are complete under the final corrected
+code and passed the breadth gate. Ensure this repository is clean at the final
+handoff commit and that the native artifact hash matches, then run the remaining
+122 deterministic shards with concurrency up to 112 using the resume command
 in `COMPUTE.md`. All outputs must remain under this repository on `/scratch`.
 
 At 30 and 60 minutes record:

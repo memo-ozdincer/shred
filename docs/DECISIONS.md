@@ -234,4 +234,5 @@ Consequence: error precedence is fail-closed and assigns zero reached work to
 these invalid roots under D-009. The two `<;>` cases retain the primary OS cost
 telemetry but have `heartbeats: null`; aggregate reports count
 `heartbeat_uninstrumented_units`. The six-shard breadth gate must pass again
-before a full-corpus launch.
+before a full-corpus launch. It subsequently passed with zero full or sequential
+disagreements across 14,496 proposals and no missing CPU telemetry.

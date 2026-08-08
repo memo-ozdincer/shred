@@ -56,5 +56,9 @@ rerun preserved 14,496/14,496 full verdicts and reduced sequential disagreements
 from 724 to 98. D-011 records the two residual raw-protocol causes and their
 narrow correction. Its exact three-proposal regression has 3/3 full and
 sequential agreement, one explicit invalid root, and two explicitly counted
-heartbeat-uninstrumented `<;>` units. The same six shards must pass once more
-before a fresh full-corpus launch.
+heartbeat-uninstrumented `<;>` units. The final six-shard breadth gate then
+passed: 14,496/14,496 full verdicts and 14,152/14,152 replay-eligible
+sequential verdicts agree, with no failures, missing CPU telemetry, or duplicate
+proposal IDs. Its 11.74% opportunity estimate is diagnostic, not the registered
+gate result, because these six shards were selected through earlier completion.
+The remaining 122 shards are now the next evidence-producing run.
