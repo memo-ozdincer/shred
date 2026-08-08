@@ -25,6 +25,7 @@ open BigOperators Real Nat Topology Rat
 """
 
 UNSUPPORTED_STANDALONE_SYNTAX = frozenset({"Lean.cdot", "Lean.calcTactic"})
+HEARTBEAT_UNSAFE_SYNTAX = frozenset({"Lean.Parser.Tactic.«tactic_<;>_»"})
 AUXILIARY_DECLARATION_ERROR = (
     "auxiliary declaration cannot be created when declaration name is not available"
 )
@@ -77,6 +78,10 @@ def unsupported_standalone_syntax(units: Sequence[dict[str, Any]]) -> list[str]:
     })
 
 
+def heartbeat_instrumentation_supported(syntax_kind: str) -> bool:
+    return syntax_kind not in HEARTBEAT_UNSAFE_SYNTAX
+
+
 def theorem_root_code(statement: str) -> str:
     separator = "" if statement.endswith("\n") else "\n"
     return statement + separator + "  sorry"
@@ -89,9 +94,6 @@ def theorem_root_outcome(
 
     Anything else is an infrastructure/protocol failure and remains fatal.
     """
-    sorries = response.get("sorries", [])
-    if len(sorries) == 1 and isinstance(sorries[0].get("proofState"), int):
-        return int(sorries[0]["proofState"]), None
     errors = [
         message for message in response.get("messages", [])
         if message.get("severity") == "error"
@@ -101,6 +103,9 @@ def theorem_root_outcome(
             "reason": "lean_rejected_theorem_root",
             "errors": errors,
         }
+    sorries = response.get("sorries", [])
+    if len(sorries) == 1 and isinstance(sorries[0].get("proofState"), int):
+        return int(sorries[0]["proofState"]), None
     raise ReplayProfileError(
         f"expected one root proof state for {theorem}, received {sorries!r}"
     )
@@ -197,7 +202,7 @@ def profile_replay_shard(
     sequential_matches = sequential_disagreements = root_timeouts = root_errors = 0
     root_unavailable = 0
     replayed_units = replay_timeouts = replay_errors = 0
-    heartbeat_total = 0
+    heartbeat_total = heartbeat_uninstrumented_units = 0
     replay_wall = replay_cpu = full_wall = full_cpu = root_wall = root_cpu = 0.0
     previous_theorem: str | None = None
     theorem_index = -1
@@ -431,6 +436,9 @@ def profile_replay_shard(
                             replay = active.proof_step(
                                 current_state,
                                 str(unit["text"]),
+                                count_heartbeats=heartbeat_instrumentation_supported(
+                                    str(unit["syntaxKind"])
+                                ),
                                 decl_name=proposal.theorem_name,
                             )
                             replayed_units += 1
@@ -438,6 +446,10 @@ def profile_replay_shard(
                             if replay.cpu_seconds is not None:
                                 replay_cpu += replay.cpu_seconds
                             heartbeats = heartbeat_count(replay.response)
+                            if not heartbeat_instrumentation_supported(
+                                str(unit["syntaxKind"])
+                            ):
+                                heartbeat_uninstrumented_units += 1
                             if heartbeats is not None:
                                 heartbeat_total += heartbeats
                             goals = replay.response.get("goals")
@@ -571,6 +583,7 @@ def profile_replay_shard(
             "replay_timeouts": replay_timeouts,
             "replay_errors": replay_errors,
             "successful_replay_heartbeats": heartbeat_total,
+            "heartbeat_uninstrumented_units": heartbeat_uninstrumented_units,
         },
         "timing": {
             "wall_seconds": elapsed,

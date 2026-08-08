@@ -51,5 +51,10 @@ rejects before tactic mode. Six subsequently completed diagnostic shards
 disagreements. Decision D-010 records the raw-protocol diagnosis and minimal
 pinned REPL patch. Its six-case regression has 6/6 complete-verdict agreement,
 4/4 sequential agreement for replay-eligible proposals, two explicit
-structural fallbacks, and no errors or timeouts. The six diagnostic shards must
-now pass the corrected breadth rerun before a fresh full-corpus launch.
+structural fallbacks, and no errors or timeouts. The first corrected breadth
+rerun preserved 14,496/14,496 full verdicts and reduced sequential disagreements
+from 724 to 98. D-011 records the two residual raw-protocol causes and their
+narrow correction. Its exact three-proposal regression has 3/3 full and
+sequential agreement, one explicit invalid root, and two explicitly counted
+heartbeat-uninstrumented `<;>` units. The same six shards must pass once more
+before a fresh full-corpus launch.

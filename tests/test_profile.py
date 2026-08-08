@@ -2,6 +2,7 @@ import unittest
 
 from lean_prefix.profile import (
     ReplayProfileError,
+    heartbeat_instrumentation_supported,
     lean_complete,
     proof_step_succeeded,
     requires_runtime_fallback,
@@ -30,6 +31,17 @@ class ReplayProfileTests(unittest.TestCase):
     def test_root_outcome_records_explicit_lean_rejection(self):
         error = {"severity": "error", "data": "undeclared identifier"}
         state, failure = theorem_root_outcome("t", {"messages": [error], "sorries": []})
+        self.assertIsNone(state)
+        self.assertEqual(failure, {
+            "reason": "lean_rejected_theorem_root",
+            "errors": [error],
+        })
+
+    def test_root_error_takes_precedence_over_a_sorry_snapshot(self):
+        error = {"severity": "error", "data": "ambiguous declaration"}
+        state, failure = theorem_root_outcome(
+            "t", {"messages": [error], "sorries": [{"proofState": 7}]}
+        )
         self.assertIsNone(state)
         self.assertEqual(failure, {
             "reason": "lean_rejected_theorem_root",
@@ -71,6 +83,14 @@ class ReplayProfileTests(unittest.TestCase):
         self.assertEqual(
             unsupported_standalone_syntax(units),
             ["Lean.calcTactic", "Lean.cdot"],
+        )
+
+    def test_semicolon_sequence_skips_heartbeat_wrapper(self):
+        self.assertFalse(
+            heartbeat_instrumentation_supported("Lean.Parser.Tactic.«tactic_<;>_»")
+        )
+        self.assertTrue(
+            heartbeat_instrumentation_supported("Lean.Parser.Tactic.exact")
         )
 
 if __name__ == "__main__":

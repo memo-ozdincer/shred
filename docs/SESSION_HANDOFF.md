@@ -104,7 +104,13 @@ The reproducibly patched executable has SHA-256
 An exact six-proposal regression on `c126` now has 6/6 full verdict agreement,
 4/4 sequential agreement among replay-eligible proposals, two structural
 fallbacks, and no errors or timeouts. The earlier six shard reports are
-diagnostic only and must be overwritten by the corrected breadth rerun.
+diagnostic only. A corrected breadth rerun preserved 14,496/14,496 full C0
+verdicts and reduced the sequential disagreements from 724 to 98. D-011 records
+the two residual raw-protocol causes: an invalid theorem root may expose both an
+error and a snapshot, and heartbeat instrumentation changes `<;>` elaboration.
+The exact residual regression now passes 3/3 full and sequential verdicts,
+with one invalid root and two explicitly heartbeat-uninstrumented `<;>` units;
+the breadth rerun remains required.
 
 ## Exact next action
 

@@ -208,3 +208,30 @@ regression set now has 6/6 complete-verdict agreement, 4/4 sequential agreement
 for replay-eligible proposals, and two explicit structural fallbacks. The six
 previously completed shards must be rerun before the full measurement resumes;
 their earlier telemetry is diagnostic only.
+
+## D-011 — Root errors dominate snapshots; unsafe telemetry is omitted
+
+Date: 2026-08-08
+
+Status: accepted after the corrected six-shard breadth rerun
+
+Decision: if theorem-root elaboration returns any error-severity message, the
+root is invalid even if the REPL also exposes a `sorry` snapshot. Separately,
+execute `Lean.Parser.Tactic.«tactic_<;>_»` units verbatim without the optional
+`count_heartbeats` wrapper; retain their process CPU, wall, RSS, and verdict
+telemetry, and count their missing heartbeat measurements explicitly.
+
+Reason: the corrected breadth rerun reduced 724 sequential disagreements to
+98 while preserving 14,496/14,496 full C0 verdicts. Raw reproduction showed
+that 96 arose from malformed declarations returning both an error and a
+snapshot; selecting the snapshot manufactured a valid-looking goal containing
+`sorryAx`. The remaining two valid `<;>` proofs succeed verbatim, while the
+heartbeat wrapper alone triggers Lean's `invalid 'let_mvar%', metavariable ...
+has already been used` error. Heartbeats are supplemental telemetry and may not
+change tactic execution.
+
+Consequence: error precedence is fail-closed and assigns zero reached work to
+these invalid roots under D-009. The two `<;>` cases retain the primary OS cost
+telemetry but have `heartbeats: null`; aggregate reports count
+`heartbeat_uninstrumented_units`. The six-shard breadth gate must pass again
+before a full-corpus launch.
