@@ -89,7 +89,14 @@ scontrol show job 19352896
 ssh c126 'hostname; nproc; free -h'
 ```
 
-No Phase 2 full-corpus profiler was running when this handoff was written.
+The first Phase 2 launch was stopped before any shard completed after authentic
+malformed theorem declarations exposed a missing explicit invalid-root path.
+Decision D-009 and the associated tests define the correction. Empty or partial
+gzip files from that stopped launch are not results and may be overwritten. A
+targeted replay of proposal
+`53699aeac823df1902a21420b7b6a2637343566bb4fd7a6081329c40b44ed42f`
+then reproduced the full rejection and consolidated as complete with one
+explicit invalid root and zero reached tactic units.
 
 ## Exact next action
 

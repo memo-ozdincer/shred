@@ -147,3 +147,28 @@ Consequence: inspect aggregate memory after 30 and 60 minutes and reduce
 concurrency if available memory falls below 100 GiB or the scheduler reports
 memory pressure. This operational decision changes parallelism only, not the
 proof workload, verifier, timeouts, or scientific gate.
+
+## D-009 — Invalid theorem roots have zero reached tactic work
+
+Date: 2026-08-08
+
+Status: accepted after the first full-corpus launch exposed malformed C0
+theorem declarations
+
+Decision: when root elaboration returns explicit Lean errors before producing a
+proof state, record the proposal as `unreachable_invalid_root`, require its
+sequential rejection to agree with the complete-proof verdict, retain its full
+verification CPU time in the gate denominator, and assign zero reached tactic
+work. An absent or malformed root snapshot without explicit Lean errors remains
+a fatal profiler error.
+
+Reason: C0 contains theorem strings that Lean cannot elaborate independently
+of any proposed proof, including declarations with undeclared variables or
+malformed binders. No tactic in those proposals can execute. Treating this as
+missing telemetry aborts an authentic workload; treating the parsed tactics as
+reached invents computation that Lean never performed.
+
+Consequence: invalid-root proposals and their syntactic units remain explicitly
+counted, conservatively reduce the measured opportunity fraction through the
+full-verification denominator, and cannot create cache savings. The rule does
+not make an invalid proof pass and does not exclude any proposal.

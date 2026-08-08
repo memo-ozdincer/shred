@@ -25,9 +25,12 @@
 Before the executor exists, the replay profiler must additionally prove:
 
 - complete-proof verdicts agree with frozen C0 labels;
-- every eligible proposal begins from the same immutable theorem-root state;
+- every eligible proposal either begins from the same immutable theorem-root
+  state or has an explicit Lean theorem-declaration error before tactic mode;
 - rejected-proof suffixes after the first failed unit are labeled unreachable,
   not zero-cost;
+- invalid-root tactic units are labeled `unreachable_invalid_root`, contribute
+  zero reached-prefix work, and retain full verification cost in the denominator;
 - sequential exact-unit completion agrees with complete-proof verification;
 - tactic failures and 300-second timeouts remain attributable to proposals;
 - shard consolidation rejects duplicate or missing proposal IDs.

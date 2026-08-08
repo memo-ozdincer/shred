@@ -43,3 +43,11 @@ cost strata. Do not begin the shared executor unless the consolidated report
 is complete, has zero verdict/sequential disagreements, and passes the frozen
 15% cost-opportunity gate. See `SESSION_HANDOFF.md` for the current allocation
 and `COMPUTE.md` for commands and recovery.
+
+The first full-corpus launch on `c126` exposed C0 declarations that Lean rejects
+before tactic mode (for example, malformed binders and undeclared variables).
+The run was stopped before any shard completed. Decision D-009 records the
+fail-closed treatment: these proposals remain fully accounted, have zero
+reached tactic work, and must reproduce the independent rejection verdict. An
+exact formerly failing proposal has passed targeted replay and consolidation
+under this rule.

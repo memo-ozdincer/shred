@@ -77,7 +77,8 @@ def summarize_replay_profiles(
     prefix_heartbeats: dict[str, list[float]] = defaultdict(list)
     prefix_theorem: dict[str, str] = {}
     verdict_disagreements = full_failures = sequential_disagreements = sequential_failures = 0
-    syntactic_units = reached_units = unreachable_units = replayed = 0
+    syntactic_units = reached_units = unreachable_units = invalid_root_units = replayed = 0
+    root_unavailable = 0
     missing_full_cpu = missing_step_cpu = 0
 
     for record in _records(artifact_paths):
@@ -104,6 +105,8 @@ def summarize_replay_profiles(
                 sequential_failures += 1
             elif sequential.get("verdict_match") is False:
                 sequential_disagreements += 1
+            if isinstance(sequential, dict) and sequential.get("root_available") is False:
+                root_unavailable += 1
 
         syntactic_units += int(record.get("native_unit_count", len(record.get("steps", []))))
         for step in record.get("steps", []):
@@ -111,6 +114,13 @@ def summarize_replay_profiles(
             if reachability == "unreachable_after_failure":
                 unreachable_units += 1
                 continue
+            if reachability == "unreachable_invalid_root":
+                invalid_root_units += 1
+                continue
+            if reachability != "reached":
+                raise ProfileSummaryError(
+                    f"unknown reachability {reachability!r} for proposal {proposal_id}"
+                )
             reached_units += 1
             if "wall_seconds" not in step:
                 continue
@@ -194,7 +204,9 @@ def summarize_replay_profiles(
             "native_syntactic_units": syntactic_units,
             "native_reached_units": reached_units,
             "unreachable_after_failure": unreachable_units,
+            "unreachable_invalid_root": invalid_root_units,
             "replayed_units": replayed,
+            "root_unavailable": root_unavailable,
             "missing_full_cpu": missing_full_cpu,
             "missing_step_cpu": missing_step_cpu,
             "unique_profiled_prefixes": len(prefix_wall),

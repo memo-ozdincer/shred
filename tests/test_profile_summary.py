@@ -67,6 +67,60 @@ class ProfileSummaryTests(unittest.TestCase):
             with self.assertRaises(ProfileSummaryError):
                 summarize_replay_profiles([path])
 
+    def test_invalid_theorem_root_is_explicit_zero_reached_work(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "profile.jsonl"
+            row = {
+                "proposal_id": "invalid-root",
+                "theorem_name": "bad",
+                "native_unit_count": 2,
+                "native_eligible": True,
+                "full": {
+                    "complete": False,
+                    "verdict_match": True,
+                    "cpu_seconds": 2.0,
+                    "wall_seconds": 2.0,
+                },
+                "sequential": {
+                    "complete": False,
+                    "verdict_match": True,
+                    "root_available": False,
+                },
+                "steps": [
+                    {
+                        "prefix_sha256": f"p{index}",
+                        "reachability": "unreachable_invalid_root",
+                    }
+                    for index in range(2)
+                ],
+            }
+            path.write_text(json.dumps(row) + "\n")
+            report = summarize_replay_profiles([path], expected_proposals=1)
+            self.assertEqual(report["status"], "complete")
+            self.assertEqual(report["counts"]["root_unavailable"], 1)
+            self.assertEqual(report["counts"]["native_reached_units"], 0)
+            self.assertEqual(report["counts"]["unreachable_invalid_root"], 2)
+            self.assertEqual(
+                report["cpu_seconds"]["full_independent_verification"], 2.0
+            )
+            self.assertEqual(
+                report["cpu_seconds"]["reusable_prefix_opportunity"], 0.0
+            )
+
+    def test_unknown_reachability_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "profile.jsonl"
+            row = {
+                "proposal_id": "unknown",
+                "theorem_name": "t",
+                "native_eligible": False,
+                "full": {"complete": False, "verdict_match": True},
+                "steps": [{"reachability": "mystery"}],
+            }
+            path.write_text(json.dumps(row) + "\n")
+            with self.assertRaises(ProfileSummaryError):
+                summarize_replay_profiles([path])
+
 
 if __name__ == "__main__":
     unittest.main()
