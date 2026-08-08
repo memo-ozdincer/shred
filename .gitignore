@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+coverage.xml
+dist/
+build/
+*.egg-info/
+
+# Raw or derived rollout data never enters Git.
+artifacts/
+cache/
+external-data/
+reports/private/
+*.jsonl
+*.parquet
+

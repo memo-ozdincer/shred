@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "name": "c0-base-20260804-seed42-complete",
+  "source_root_default": "/scratch/memoozd/rl/restriction",
+  "source_repository_commit": "41aab85",
+  "samples_per_theorem": 32,
+  "selection_rule": "retain the first registered proposal group per theorem",
+  "expected": {
+    "raw_proposals": 308992,
+    "registered_proposals": 308960,
+    "registered_correct": 168029,
+    "theorems": 9655,
+    "padding_proposals": 32,
+    "padding_by_theorem": {
+      "lean_workbook_plus_35381": 32
+    }
+  },
+  "partitions": [
+    {
+      "path": "runs/c0-base-20260720-seed42-local-verifier/artifacts/proofs/global_step_150.jsonl",
+      "sha256": "165af10b369d61369dfea4cc5d42ce488b5cae9a88a0eb6b6c9a323025ddd846",
+      "raw_proposals": 76800
+    },
+    {
+      "path": "runs/c0-base-20260721-seed42-continuation-from150/artifacts/proofs/global_step_360.jsonl",
+      "sha256": "7ba6a8323de53d54887913c5f189605d9035625b7e4a6589a297aba02441b00b",
+      "raw_proposals": 184320
+    },
+    {
+      "path": "runs/c0-base-20260804-seed42-final1495/artifacts/proofs/global_step_60.jsonl",
+      "sha256": "20819da19bbff541b9cecbcfe2350c7397ae3a6dcf90ae6d4d6e1dcdf040114a",
+      "raw_proposals": 30720
+    },
+    {
+      "path": "runs/c0-base-20260804-seed42-telemetry-final535/artifacts/proofs/global_step_34.jsonl",
+      "sha256": "cb35eefdd88825ba951ca220339eb8283b2eb0ee7c7e46908382c40818162a43",
+      "raw_proposals": 17152
+    }
+  ]
+}
+
