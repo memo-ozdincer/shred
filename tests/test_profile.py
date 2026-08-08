@@ -3,8 +3,11 @@ import unittest
 from lean_prefix.profile import (
     ReplayProfileError,
     lean_complete,
+    proof_step_succeeded,
+    requires_runtime_fallback,
     theorem_root_code,
     theorem_root_outcome,
+    unsupported_standalone_syntax,
 )
 
 
@@ -36,6 +39,39 @@ class ReplayProfileTests(unittest.TestCase):
     def test_root_outcome_rejects_unexplained_missing_snapshot(self):
         with self.assertRaises(ReplayProfileError):
             theorem_root_outcome("t", {"sorries": []})
+
+    def test_step_with_error_message_never_succeeds(self):
+        response = {
+            "proofState": 1,
+            "goals": [],
+            "messages": [{"severity": "error", "data": "bad tactic"}],
+        }
+        self.assertFalse(proof_step_succeeded(response))
+        self.assertTrue(proof_step_succeeded({"proofState": 1, "goals": []}))
+
+    def test_auxiliary_declaration_limitation_requires_fallback(self):
+        response = {
+            "messages": [{
+                "severity": "error",
+                "data": (
+                    "auxiliary declaration cannot be created when declaration "
+                    "name is not available"
+                ),
+            }],
+        }
+        self.assertTrue(requires_runtime_fallback(response))
+        self.assertFalse(requires_runtime_fallback({"messages": []}))
+
+    def test_structural_sequences_are_not_standalone_tactics(self):
+        units = [
+            {"syntaxKind": "Lean.Parser.Tactic.simp"},
+            {"syntaxKind": "Lean.cdot"},
+            {"syntaxKind": "Lean.calcTactic"},
+        ]
+        self.assertEqual(
+            unsupported_standalone_syntax(units),
+            ["Lean.calcTactic", "Lean.cdot"],
+        )
 
 if __name__ == "__main__":
     unittest.main()

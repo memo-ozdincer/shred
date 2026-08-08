@@ -44,10 +44,12 @@ is complete, has zero verdict/sequential disagreements, and passes the frozen
 15% cost-opportunity gate. See `SESSION_HANDOFF.md` for the current allocation
 and `COMPUTE.md` for commands and recovery.
 
-The first full-corpus launch on `c126` exposed C0 declarations that Lean rejects
-before tactic mode (for example, malformed binders and undeclared variables).
-The run was stopped before any shard completed. Decision D-009 records the
-fail-closed treatment: these proposals remain fully accounted, have zero
-reached tactic work, and must reproduce the independent rejection verdict. An
-exact formerly failing proposal has passed targeted replay and consolidation
-under this rule.
+The first full-corpus launch on `c126` exposed two independent replay-adapter
+gaps. Decision D-009 records fail-closed handling for theorem declarations Lean
+rejects before tactic mode. Six subsequently completed diagnostic shards
+(14,496 proposals) reproduced every full C0 verdict but had 724 sequential
+disagreements. Decision D-010 records the raw-protocol diagnosis and minimal
+pinned REPL patch. Its six-case regression has 6/6 complete-verdict agreement,
+4/4 sequential agreement for replay-eligible proposals, two explicit
+structural fallbacks, and no errors or timeouts. The six diagnostic shards must
+now pass the corrected breadth rerun before a fresh full-corpus launch.

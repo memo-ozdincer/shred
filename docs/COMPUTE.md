@@ -29,6 +29,7 @@ checksum in `reports/c0_native_prefix.json`:
 export LEAN_WORKSPACE=/path/to/pinned/mathlib4
 export LEAN_PREFIX_SHARD_COUNT=128
 export LEAN_PREFIX_CLI=.venv/bin/lean-prefix
+export LEAN_PREFIX_REPL_EXECUTABLE=/scratch/memoozd/rl/lean-prefix/artifacts/repl-patched-c6199a8-v2/.lake/build/bin/repl
 export PATH=/scratch/memoozd/.elan/bin:$PATH
 
 seq 0 127 | xargs -P 112 -I '{}' env LEAN_PREFIX_SHARD_INDEX='{}' \

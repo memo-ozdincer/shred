@@ -24,6 +24,11 @@ set_option maxHeartbeats 0
 open BigOperators Real Nat Topology Rat
 """
 
+UNSUPPORTED_STANDALONE_SYNTAX = frozenset({"Lean.cdot", "Lean.calcTactic"})
+AUXILIARY_DECLARATION_ERROR = (
+    "auxiliary declaration cannot be created when declaration name is not available"
+)
+
 
 class ReplayProfileError(RuntimeError):
     """Raised when a replay shard cannot preserve its declared invariants."""
@@ -42,6 +47,34 @@ def lean_complete(response: dict[str, Any]) -> bool:
         if "declaration uses 'sorry'" in data or "failed" in data:
             return False
     return True
+
+
+def proof_step_succeeded(response: dict[str, Any]) -> bool:
+    return (
+        "message" not in response
+        and not response.get("sorries")
+        and isinstance(response.get("proofState"), int)
+        and not any(
+            message.get("severity") == "error"
+            for message in response.get("messages", [])
+        )
+    )
+
+
+def requires_runtime_fallback(response: dict[str, Any]) -> bool:
+    return any(
+        message.get("severity") == "error"
+        and AUXILIARY_DECLARATION_ERROR in str(message.get("data", ""))
+        for message in response.get("messages", [])
+    )
+
+
+def unsupported_standalone_syntax(units: Sequence[dict[str, Any]]) -> list[str]:
+    return sorted({
+        str(unit.get("syntaxKind"))
+        for unit in units
+        if unit.get("syntaxKind") in UNSUPPORTED_STANDALONE_SYNTAX
+    })
 
 
 def theorem_root_code(statement: str) -> str:
@@ -132,9 +165,12 @@ def profile_replay_shard(
     restart_every: int = 128,
     timeout_seconds: float = 300.0,
     memory_limit_bytes: int | None = 24 * 1024**3,
+    repl_executable: Path | None = None,
     progress_every: int = 100,
     proposal_ids: set[str] | None = None,
 ) -> dict[str, Any]:
+    if repl_executable is not None:
+        repl_executable = repl_executable.resolve()
     if shard_count < 1 or not 0 <= shard_index < shard_count:
         raise ReplayProfileError("shard index must be in [0, shard_count)")
     if limit is not None and limit < 0:
@@ -156,7 +192,8 @@ def profile_replay_shard(
     root_failure: dict[str, Any] | None = None
     since_restart = 0
     selected = full_completed = verdict_matches = full_timeouts = full_errors = 0
-    eligible = units_total = reached_units = unreachable_units = invalid_root_units = 0
+    eligible = replay_eligible = replay_fallback = replay_fallback_units = 0
+    units_total = reached_units = unreachable_units = invalid_root_units = 0
     sequential_matches = sequential_disagreements = root_timeouts = root_errors = 0
     root_unavailable = 0
     replayed_units = replay_timeouts = replay_errors = 0
@@ -180,11 +217,13 @@ def profile_replay_shard(
     def ensure_client() -> tuple[LeanRepl, int]:
         nonlocal client, base_env
         if client is None:
-            client = LeanRepl(
-                lean_workspace,
-                timeout_seconds=timeout_seconds,
-                memory_limit_bytes=memory_limit_bytes,
-            )
+            client_options: dict[str, Any] = {
+                "timeout_seconds": timeout_seconds,
+                "memory_limit_bytes": memory_limit_bytes,
+            }
+            if repl_executable is not None:
+                client_options["executable"] = repl_executable
+            client = LeanRepl(lean_workspace, **client_options)
             client.start()
             initialization = client.initialize(C0_BASE_CONTEXT)
             errors = [
@@ -241,6 +280,8 @@ def profile_replay_shard(
                     "native_eligible": bool(native.get("eligible")),
                     "native_error": native.get("error"),
                     "native_unit_count": len(native.get("units", [])),
+                    "replay_eligible": False,
+                    "replay_fallback_reason": None,
                     "full": None,
                     "sequential": None,
                     "steps": [],
@@ -281,6 +322,23 @@ def profile_replay_shard(
                 if edges is not None:
                     eligible += 1
                     units_total += len(units)
+                    unsupported = unsupported_standalone_syntax(units)
+                    if unsupported:
+                        replay_fallback += 1
+                        replay_fallback_units += len(units)
+                        record["replay_fallback_reason"] = (
+                            "unsupported standalone syntax: " + ", ".join(unsupported)
+                        )
+                        record["sequential"] = {
+                            "supported": False,
+                            "not_attempted_reason": record["replay_fallback_reason"],
+                        }
+                        output.write(
+                            json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n"
+                        )
+                        continue
+                    record["replay_eligible"] = True
+                    replay_eligible += 1
                     try:
                         current_state, unavailable = ensure_root(
                             active,
@@ -347,6 +405,8 @@ def profile_replay_shard(
                         continue
 
                     replay_available = True
+                    replay_supported = True
+                    replay_fallback_reason: str | None = None
                     last_goals: list[Any] | None = None
                     for depth, (edge, unit) in enumerate(
                         zip(edges, units, strict=True), start=1
@@ -368,7 +428,11 @@ def profile_replay_shard(
                             record["steps"].append(step)
                             continue
                         try:
-                            replay = active.proof_step(current_state, str(unit["text"]))
+                            replay = active.proof_step(
+                                current_state,
+                                str(unit["text"]),
+                                decl_name=proposal.theorem_name,
+                            )
                             replayed_units += 1
                             replay_wall += replay.wall_seconds
                             if replay.cpu_seconds is not None:
@@ -377,11 +441,10 @@ def profile_replay_shard(
                             if heartbeats is not None:
                                 heartbeat_total += heartbeats
                             goals = replay.response.get("goals")
-                            step_success = (
-                                "message" not in replay.response
-                                and not replay.response.get("sorries")
-                                and isinstance(replay.response.get("proofState"), int)
-                            )
+                            step_success = proof_step_succeeded(replay.response)
+                            if requires_runtime_fallback(replay.response):
+                                replay_supported = False
+                                replay_fallback_reason = AUXILIARY_DECLARATION_ERROR
                             step.update(
                                 {
                                     **_result_metrics(replay),
@@ -407,6 +470,25 @@ def profile_replay_shard(
                             stop_client()
                             replay_available = False
                         record["steps"].append(step)
+
+                    if not replay_supported:
+                        replay_eligible -= 1
+                        replay_fallback += 1
+                        replay_fallback_units += len(units)
+                        record["replay_eligible"] = False
+                        record["replay_fallback_reason"] = replay_fallback_reason
+                        record["sequential"] = {
+                            "supported": False,
+                            "not_attempted_reason": replay_fallback_reason,
+                            "reached_units_before_fallback": sum(
+                                step["reachability"] == "reached"
+                                for step in record["steps"]
+                            ),
+                        }
+                        output.write(
+                            json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n"
+                        )
+                        continue
 
                     sequential_complete = bool(units and replay_available and last_goals == [])
                     sequential_match = sequential_complete == verdict
@@ -443,7 +525,11 @@ def profile_replay_shard(
     native_artifact_path = native_artifact_path.resolve()
     lean_workspace = lean_workspace.resolve()
     repl_root = lean_workspace / ".lake/packages/REPL"
-    repl_executable = repl_root / ".lake/build/bin/repl"
+    resolved_repl_executable = (
+        repl_executable.resolve()
+        if repl_executable is not None
+        else repl_root / ".lake/build/bin/repl"
+    )
     return {
         "analysis": "reached-tactic-cost-profile-v1",
         "configuration": {
@@ -453,6 +539,7 @@ def profile_replay_shard(
             "restart_every": restart_every,
             "timeout_seconds": timeout_seconds,
             "memory_limit_bytes": memory_limit_bytes,
+            "repl_executable": str(resolved_repl_executable),
             "proposal_id_filter_count": len(proposal_ids) if proposal_ids is not None else None,
         },
         "hardware": {
@@ -463,6 +550,9 @@ def profile_replay_shard(
         "counts": {
             "selected_proposals": selected,
             "native_eligible": eligible,
+            "replay_eligible": replay_eligible,
+            "replay_fallback": replay_fallback,
+            "replay_fallback_units": replay_fallback_units,
             "full_completed": full_completed,
             "verdict_matches": verdict_matches,
             "verdict_disagreements": selected - verdict_matches - full_timeouts - full_errors,
@@ -499,7 +589,7 @@ def profile_replay_shard(
             "project_git": _git_state(manifest_path.parent.parent),
             "lean_workspace_git": _git_state(lean_workspace),
             "repl_git": _git_state(repl_root),
-            "repl_executable_sha256": _sha256_file(repl_executable),
+            "repl_executable_sha256": _sha256_file(resolved_repl_executable),
             "lean_toolchain": (lean_workspace / "lean-toolchain").read_text(encoding="utf-8").strip(),
             "lean_version": _capture(["lake", "env", "lean", "--version"], cwd=lean_workspace),
         },

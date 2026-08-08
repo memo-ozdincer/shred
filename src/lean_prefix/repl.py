@@ -51,9 +51,9 @@ def heartbeat_count(response: dict[str, Any]) -> int | None:
 
 
 def heartbeat_wrapper(tactic: str) -> str:
-    """Wrap a tactic sequence without changing its relative indentation."""
-    indented = "\n".join(f"  {line}" for line in tactic.splitlines())
-    return f"count_heartbeats\n{indented}"
+    """Measure a tactic under C0's unlimited-heartbeat option."""
+    indented = "\n".join(f"    {line}" for line in tactic.splitlines())
+    return f"set_option maxHeartbeats 0 in\n  count_heartbeats\n{indented}"
 
 
 def _proc_cpu_seconds(pid: int) -> float | None:
@@ -290,6 +290,16 @@ class LeanRepl:
             }
         )
 
-    def proof_step(self, proof_state: int, tactic: str, *, count_heartbeats: bool = True) -> ReplResult:
+    def proof_step(
+        self,
+        proof_state: int,
+        tactic: str,
+        *,
+        count_heartbeats: bool = True,
+        decl_name: str | None = None,
+    ) -> ReplResult:
         source = heartbeat_wrapper(tactic) if count_heartbeats else tactic
-        return self.request({"proofState": proof_state, "tactic": source})
+        request: dict[str, Any] = {"proofState": proof_state, "tactic": source}
+        if decl_name is not None:
+            request["declName"] = decl_name
+        return self.request(request)

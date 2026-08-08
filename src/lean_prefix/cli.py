@@ -52,6 +52,7 @@ def _parser() -> argparse.ArgumentParser:
     replay.add_argument("--restart-every", type=int, default=128)
     replay.add_argument("--timeout-seconds", type=float, default=300.0)
     replay.add_argument("--memory-limit-gib", type=float, default=24.0)
+    replay.add_argument("--repl-executable", type=Path)
     replay.add_argument("--progress-every", type=int, default=100)
     replay.add_argument("--proposal-id", action="append")
     summary = commands.add_parser("summarize-replay", help="aggregate replay cost shards")
@@ -119,6 +120,7 @@ def main(argv: list[str] | None = None) -> int:
                 restart_every=args.restart_every,
                 timeout_seconds=args.timeout_seconds,
                 memory_limit_bytes=int(args.memory_limit_gib * 1024**3),
+                repl_executable=args.repl_executable,
                 progress_every=args.progress_every,
                 proposal_ids=set(args.proposal_id) if args.proposal_id else None,
             )

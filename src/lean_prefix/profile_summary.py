@@ -79,6 +79,7 @@ def summarize_replay_profiles(
     verdict_disagreements = full_failures = sequential_disagreements = sequential_failures = 0
     syntactic_units = reached_units = unreachable_units = invalid_root_units = replayed = 0
     root_unavailable = 0
+    replay_eligible = replay_fallback = replay_fallback_units = 0
     missing_full_cpu = missing_step_cpu = 0
 
     for record in _records(artifact_paths):
@@ -100,15 +101,27 @@ def summarize_replay_profiles(
             full_wall_by_theorem[theorem] += float(full["wall_seconds"])
 
         sequential = record.get("sequential")
-        if record.get("native_eligible"):
+        native_eligible = bool(record.get("native_eligible"))
+        record_replay_eligible = native_eligible and bool(
+            record.get("replay_eligible", native_eligible)
+        )
+        if record_replay_eligible:
+            replay_eligible += 1
             if not isinstance(sequential, dict) or "complete" not in sequential:
                 sequential_failures += 1
             elif sequential.get("verdict_match") is False:
                 sequential_disagreements += 1
             if isinstance(sequential, dict) and sequential.get("root_available") is False:
                 root_unavailable += 1
+        elif native_eligible:
+            replay_fallback += 1
+            replay_fallback_units += int(
+                record.get("native_unit_count", len(record.get("steps", [])))
+            )
 
         syntactic_units += int(record.get("native_unit_count", len(record.get("steps", []))))
+        if not record_replay_eligible:
+            continue
         for step in record.get("steps", []):
             reachability = step.get("reachability", "reached")
             if reachability == "unreachable_after_failure":
@@ -207,6 +220,9 @@ def summarize_replay_profiles(
             "unreachable_invalid_root": invalid_root_units,
             "replayed_units": replayed,
             "root_unavailable": root_unavailable,
+            "replay_eligible_proposals": replay_eligible,
+            "replay_fallback_proposals": replay_fallback,
+            "replay_fallback_units": replay_fallback_units,
             "missing_full_cpu": missing_full_cpu,
             "missing_step_cpu": missing_step_cpu,
             "unique_profiled_prefixes": len(prefix_wall),

@@ -113,13 +113,45 @@ class ProfileSummaryTests(unittest.TestCase):
             row = {
                 "proposal_id": "unknown",
                 "theorem_name": "t",
-                "native_eligible": False,
+                "native_eligible": True,
+                "replay_eligible": True,
                 "full": {"complete": False, "verdict_match": True},
+                "sequential": {"complete": False, "verdict_match": True},
                 "steps": [{"reachability": "mystery"}],
             }
             path.write_text(json.dumps(row) + "\n")
             with self.assertRaises(ProfileSummaryError):
                 summarize_replay_profiles([path])
+
+    def test_replay_fallback_retains_full_cost_but_excludes_prefix_cost(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "profile.jsonl"
+            row = {
+                "proposal_id": "fallback",
+                "theorem_name": "t",
+                "native_eligible": True,
+                "replay_eligible": False,
+                "native_unit_count": 1,
+                "full": {
+                    "complete": True,
+                    "verdict_match": True,
+                    "cpu_seconds": 3.0,
+                    "wall_seconds": 4.0,
+                },
+                "sequential": {"supported": False},
+                "steps": [{
+                    "prefix_sha256": "must-not-count",
+                    "reachability": "reached",
+                    "cpu_seconds": 2.0,
+                    "wall_seconds": 2.0,
+                }],
+            }
+            path.write_text(json.dumps(row) + "\n")
+            report = summarize_replay_profiles([path], expected_proposals=1)
+            self.assertEqual(report["status"], "complete")
+            self.assertEqual(report["counts"]["replay_fallback_proposals"], 1)
+            self.assertEqual(report["cpu_seconds"]["full_independent_verification"], 3.0)
+            self.assertEqual(report["cpu_seconds"]["profiled_reached_units"], 0)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,10 @@ restart_every="${LEAN_PREFIX_RESTART_EVERY:-128}"
 memory_gib="${LEAN_PREFIX_MEMORY_GIB:-24}"
 timeout_seconds="${LEAN_PREFIX_TIMEOUT_SECONDS:-300}"
 cli="${LEAN_PREFIX_CLI:-python -m lean_prefix}"
+repl_args=()
+if [[ -n "${LEAN_PREFIX_REPL_EXECUTABLE:-}" ]]; then
+  repl_args=(--repl-executable "$LEAN_PREFIX_REPL_EXECUTABLE")
+fi
 
 mkdir -p artifacts/replay reports/private/replay
 
@@ -25,4 +29,5 @@ $cli profile-replay \
   --shard-index "$shard_index" \
   --restart-every "$restart_every" \
   --timeout-seconds "$timeout_seconds" \
-  --memory-limit-gib "$memory_gib"
+  --memory-limit-gib "$memory_gib" \
+  "${repl_args[@]}"

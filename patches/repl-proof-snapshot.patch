@@ -1,0 +1,56 @@
+diff --git a/REPL/JSON.lean b/REPL/JSON.lean
+index c1a16e3..8bbc6fc 100644
+--- a/REPL/JSON.lean
++++ b/REPL/JSON.lean
+@@ -47,6 +47,7 @@ structure Command extends CommandOptions where
+ structure ProofStep where
+   proofState : Nat
+   tactic : String
++  declName : Option String := none
+ deriving ToJson, FromJson
+ 
+ /-- Line and column information for error messages and sorries. -/
+diff --git a/REPL/Main.lean b/REPL/Main.lean
+index fe71ced..ada4c98 100644
+--- a/REPL/Main.lean
++++ b/REPL/Main.lean
+@@ -271,7 +271,15 @@ def runProofStep (s : ProofStep) : M IO (ProofStepResponse ⊕ Error) := do
+   | none => return .inr ⟨"Unknown proof state."⟩
+   | some proofState =>
+     try
+-      let proofState' ← proofState.runString s.tactic
++      let configuredProofState : ProofSnapshot := {
++        proofState with
++        coreContext := { proofState.coreContext with maxHeartbeats := 0 }
++        termContext := {
++          proofState.termContext with
++          declName? := s.declName.map String.toName
++        }
++      }
++      let proofState' ← configuredProofState.runString s.tactic
+       return .inl (← createProofStepReponse proofState' proofState)
+     catch ex =>
+       return .inr ⟨"Lean error:\n" ++ ex.toString⟩
+diff --git a/REPL/Snapshots.lean b/REPL/Snapshots.lean
+index 165094e..83650f5 100644
+--- a/REPL/Snapshots.lean
++++ b/REPL/Snapshots.lean
+@@ -140,7 +140,8 @@ def runMetaM (p : ProofSnapshot) (t : MetaM α) : IO (α × ProofSnapshot) := do
+ 
+ /-- Run a `TermElabM` monadic function in the current `ProofSnapshot`, updating the `Term.State`. -/
+ def runTermElabM (p : ProofSnapshot) (t : TermElabM α) : IO (α × ProofSnapshot) := do
+-  let ((a, termState), p') ← p.runMetaM (Lean.Elab.Term.TermElabM.run (s := p.termState)
++  let ((a, termState), p') ← p.runMetaM (Lean.Elab.Term.TermElabM.run
++    (ctx := p.termContext) (s := p.termState)
+     (do let r ← t; Term.synthesizeSyntheticMVarsNoPostponing; pure r))
+   return (a, { p' with termState })
+ 
+@@ -205,7 +206,7 @@ def create (ctx : ContextInfo) (lctx? : Option LocalContext) (env? : Option Env
+       metaState := ← getThe Meta.State
+       metaContext := ← readThe Meta.Context
+       termState := {}
+-      termContext := {}
++      termContext := { declName? := ctx.parentDecl? }
+       tacticState := { goals }
+       tacticContext := { elaborator := .anonymous } }
+ 

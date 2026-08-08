@@ -108,7 +108,7 @@ Consequence: units after the first failed or timed-out unit are labeled
 `unreachable_after_failure`. A complete-proof/sequential disagreement, missing
 root snapshot, timeout, or missing replay blocks the gate.
 
-## D-007 — Keep the upstream REPL unchanged
+## D-007 — Keep the upstream REPL protocol unchanged
 
 Date: 2026-08-08
 
@@ -126,6 +126,10 @@ flags fixes both transport properties without forking Lean or the verifier.
 Consequence: Linux PTY and `/proc` process CPU/RSS telemetry are explicit Phase
 2 platform requirements. Heartbeats remain available as Lean-native effort
 telemetry when OS CPU clock granularity is too coarse for cheap tactics.
+
+The requirement that the REPL executable itself remain byte-for-byte upstream
+is superseded by D-010 after authentic replay showed that upstream proof
+snapshots omit context required to preserve the C0 execution policy.
 
 ## D-008 — Use measured occupancy on standard-memory CPU nodes
 
@@ -172,3 +176,35 @@ Consequence: invalid-root proposals and their syntactic units remain explicitly
 counted, conservatively reduce the measured opportunity fraction through the
 full-verification denominator, and cannot create cache savings. The rule does
 not make an invalid proof pass and does not exclude any proposal.
+
+## D-010 — Patch only the proof-snapshot execution adapter
+
+Date: 2026-08-08
+
+Status: accepted before restarting the full Phase 2 run
+
+Decision: build a reproducible three-hunk patch over pinned REPL commit
+`c6199a81de2a7e16cb27d6f85f56cff7043cd27f`. The patch carries the theorem
+declaration name in proof snapshots and restores C0's
+`set_option maxHeartbeats 0` for each proof-step request. It does not modify
+Lean, Mathlib, the kernel, the complete-proof verifier, any proof text, or the
+final acceptance predicate. `Lean.cdot` and `Lean.calcTactic` units, which are
+structural syntax rather than standalone tactics, use explicit independent
+verification fallback. Any error-severity proof-step message is a failed step.
+
+Reason: 14,496 completed authentic proposals had perfect complete-proof
+agreement with C0 but 724 sequential disagreements. Hand inspection and raw
+protocol reproduction identified four distinct causes: error messages were not
+treated as failures; structural syntax cannot be submitted standalone; proof
+snapshots dropped the declaration context needed for auxiliary declarations;
+and proof-step execution silently reverted to 200,000 heartbeats despite C0's
+unlimited setting. The last case included a valid tactic requiring more than
+241 million heartbeats.
+
+Consequence: `patches/repl-proof-snapshot.patch` and
+`scripts/build_patched_repl.sh` are part of the measured execution adapter.
+Every replay report records the resulting executable SHA-256. A six-proposal
+regression set now has 6/6 complete-verdict agreement, 4/4 sequential agreement
+for replay-eligible proposals, and two explicit structural fallbacks. The six
+previously completed shards must be rerun before the full measurement resumes;
+their earlier telemetry is diagnostic only.

@@ -24,7 +24,8 @@ ordinary independent execution.
 - Repository: `/scratch/memoozd/rl/lean-prefix`
 - Remote: `https://github.com/memo-ozdincer/lean-prefix.git` (private)
 - Branch: `main`
-- Last implementation commit before this handoff: `e3a9131`
+- Last clean implementation commit before the current replay correction:
+  `5fc8e91`
 - Git author: `Memo Ozdincer <73766315+memo-ozdincer@users.noreply.github.com>`
 - Lean workspace: `/scratch/memoozd/rl/DeepSeek-Prover-V1.5/mathlib4`
 - Mathlib commit: `2f65ba7f1a9144b20c8e7358513548e317d26de1`
@@ -89,21 +90,29 @@ scontrol show job 19352896
 ssh c126 'hostname; nproc; free -h'
 ```
 
-The first Phase 2 launch was stopped before any shard completed after authentic
-malformed theorem declarations exposed a missing explicit invalid-root path.
-Decision D-009 and the associated tests define the correction. Empty or partial
-gzip files from that stopped launch are not results and may be overwritten. A
-targeted replay of proposal
-`53699aeac823df1902a21420b7b6a2637343566bb4fd7a6081329c40b44ed42f`
-then reproduced the full rejection and consolidated as complete with one
-explicit invalid root and zero reached tactic units.
+The first Phase 2 launch exposed malformed theorem roots, handled by D-009. A
+second diagnostic launch completed six shards (14,496 proposals) with zero full
+C0-verdict disagreements but 724 sequential disagreements. Raw REPL inspection
+showed that proof-step execution lost theorem declaration context, restored a
+200,000-heartbeat default despite C0's unlimited setting, accepted zero-goal
+responses containing error messages, and attempted structural `Lean.cdot` and
+`Lean.calcTactic` nodes as standalone tactics. D-010 defines the narrow
+correction and explicit fallbacks.
+
+The reproducibly patched executable has SHA-256
+`89a35afd9f7a472b45e57dfd5dd0cede08bd0485ca4ac71b860d486cde8a42f3`.
+An exact six-proposal regression on `c126` now has 6/6 full verdict agreement,
+4/4 sequential agreement among replay-eligible proposals, two structural
+fallbacks, and no errors or timeouts. The earlier six shard reports are
+diagnostic only and must be overwritten by the corrected breadth rerun.
 
 ## Exact next action
 
-First ensure this repository is clean at the final handoff commit and that the
-native artifact hash matches. Then, in a persistent `tmux` session on `c126`,
-run 128 deterministic shards with concurrency 112 using the commands in
-`COMPUTE.md`. All outputs must remain under this repository on `/scratch`.
+First rerun shard indices 7, 46, 53, 62, 78, and 93 with the patched executable
+and require zero full and sequential disagreements. Then ensure this repository
+is clean at the final handoff commit and that the native artifact hash matches.
+Run all 128 deterministic shards fresh with concurrency 112 using the commands
+in `COMPUTE.md`. All outputs must remain under this repository on `/scratch`.
 
 At 30 and 60 minutes record:
 
