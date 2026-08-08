@@ -1,0 +1,2016 @@
+{
+  "analysis": "deterministic-hand-review-sample-v1",
+  "examples": [
+    {
+      "candidate_index": 15,
+      "category": "correct_deepest_shared_prefix",
+      "correct": true,
+      "eligible": true,
+      "error": null,
+      "exact_edges": [
+        "  constructor",
+        "\n  intro h",
+        "\n  use f 0",
+        "\n  intro x",
+        "\n  have h1 := h x 0 0",
+        "\n  simp at h1",
+        "\n  have h2 := h 0 0 x",
+        "\n  simp at h2",
+        "\n  have h3 := h 0 x 0",
+        "\n  simp at h3",
+        "\n  linarith",
+        "\n  intro h",
+        "\n  rcases h with \u27e8c, h\u27e9",
+        "\n  intro x y z h1",
+        "\n  have h2 := h (x-y)",
+        "\n  have h3 := h (y-z)",
+        "\n  have h4 := h (z-x)",
+        "\n  have h5 := h (x+y+z)",
+        "\n  simp at h2 h3 h4 h5",
+        "\n  linarith"
+      ],
+      "proof": "  constructor\n  intro h\n  use f 0\n  intro x\n  have h1 := h x 0 0\n  simp at h1\n  have h2 := h 0 0 x\n  simp at h2\n  have h3 := h 0 x 0\n  simp at h3\n  linarith\n  intro h\n  rcases h with \u27e8c, h\u27e9\n  intro x y z h1\n  have h2 := h (x-y)\n  have h3 := h (y-z)\n  have h4 := h (z-x)\n  have h5 := h (x+y+z)\n  simp at h2 h3 h4 h5\n  linarith\n```",
+      "proposal_id": "bc385a78a8ada3df42faa09597794e56b732c898af1c7d3670ba27ceadef28da",
+      "shared_prefix_depth": 20,
+      "theorem_name": "lean_workbook_plus_21880",
+      "theorem_oracle_ratio": 2.0240384615384617,
+      "units": [
+        {
+          "startByte": 2,
+          "stopByte": 13,
+          "syntaxKind": "Lean.Parser.Tactic.constructor",
+          "text": "constructor"
+        },
+        {
+          "startByte": 16,
+          "stopByte": 23,
+          "syntaxKind": "Lean.Parser.Tactic.intro",
+          "text": "intro h"
+        },
+        {
+          "startByte": 26,
+          "stopByte": 33,
+          "syntaxKind": "Mathlib.Tactic.useSyntax",
+          "text": "use f 0"
+        },
+        {
+          "startByte": 36,
+          "stopByte": 43,
+          "syntaxKind": "Lean.Parser.Tactic.intro",
+          "text": "intro x"
+        },
+        {
+          "startByte": 46,
+          "stopByte": 64,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h1 := h x 0 0"
+        },
+        {
+          "startByte": 67,
+          "stopByte": 77,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp at h1"
+        },
+        {
+          "startByte": 80,
+          "stopByte": 98,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h2 := h 0 0 x"
+        },
+        {
+          "startByte": 101,
+          "stopByte": 111,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp at h2"
+        },
+        {
+          "startByte": 114,
+          "stopByte": 132,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h3 := h 0 x 0"
+        },
+        {
+          "startByte": 135,
+          "stopByte": 145,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp at h3"
+        },
+        {
+          "startByte": 148,
+          "stopByte": 156,
+          "syntaxKind": "linarith",
+          "text": "linarith"
+        },
+        {
+          "startByte": 159,
+          "stopByte": 166,
+          "syntaxKind": "Lean.Parser.Tactic.intro",
+          "text": "intro h"
+        },
+        {
+          "startByte": 169,
+          "stopByte": 193,
+          "syntaxKind": "Lean.Parser.Tactic.rcases",
+          "text": "rcases h with \u27e8c, h\u27e9"
+        },
+        {
+          "startByte": 196,
+          "stopByte": 210,
+          "syntaxKind": "Lean.Parser.Tactic.intro",
+          "text": "intro x y z h1"
+        },
+        {
+          "startByte": 213,
+          "stopByte": 231,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h2 := h (x-y)"
+        },
+        {
+          "startByte": 234,
+          "stopByte": 252,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h3 := h (y-z)"
+        },
+        {
+          "startByte": 255,
+          "stopByte": 273,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h4 := h (z-x)"
+        },
+        {
+          "startByte": 276,
+          "stopByte": 296,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h5 := h (x+y+z)"
+        },
+        {
+          "startByte": 299,
+          "stopByte": 318,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp at h2 h3 h4 h5"
+        },
+        {
+          "startByte": 321,
+          "stopByte": 329,
+          "syntaxKind": "linarith",
+          "text": "linarith"
+        }
+      ],
+      "verification_time": null
+    },
+    {
+      "candidate_index": 15,
+      "category": "correct_exact_duplicate",
+      "correct": true,
+      "eligible": true,
+      "error": null,
+      "exact_edges": [
+        "  constructor",
+        "\n  intro h",
+        "\n  use f 0",
+        "\n  intro x",
+        "\n  have h1 := h x 0 0",
+        "\n  simp at h1",
+        "\n  have h2 := h 0 0 x",
+        "\n  simp at h2",
+        "\n  have h3 := h 0 x 0",
+        "\n  simp at h3",
+        "\n  linarith",
+        "\n  intro h",
+        "\n  rcases h with \u27e8c, h\u27e9",
+        "\n  intro x y z h1",
+        "\n  have h2 := h (x-y)",
+        "\n  have h3 := h (y-z)",
+        "\n  have h4 := h (z-x)",
+        "\n  have h5 := h (x+y+z)",
+        "\n  simp at h2 h3 h4 h5",
+        "\n  linarith"
+      ],
+      "proof": "  constructor\n  intro h\n  use f 0\n  intro x\n  have h1 := h x 0 0\n  simp at h1\n  have h2 := h 0 0 x\n  simp at h2\n  have h3 := h 0 x 0\n  simp at h3\n  linarith\n  intro h\n  rcases h with \u27e8c, h\u27e9\n  intro x y z h1\n  have h2 := h (x-y)\n  have h3 := h (y-z)\n  have h4 := h (z-x)\n  have h5 := h (x+y+z)\n  simp at h2 h3 h4 h5\n  linarith\n```",
+      "proposal_id": "bc385a78a8ada3df42faa09597794e56b732c898af1c7d3670ba27ceadef28da",
+      "shared_prefix_depth": 20,
+      "theorem_name": "lean_workbook_plus_21880",
+      "theorem_oracle_ratio": 2.0240384615384617,
+      "units": [
+        {
+          "startByte": 2,
+          "stopByte": 13,
+          "syntaxKind": "Lean.Parser.Tactic.constructor",
+          "text": "constructor"
+        },
+        {
+          "startByte": 16,
+          "stopByte": 23,
+          "syntaxKind": "Lean.Parser.Tactic.intro",
+          "text": "intro h"
+        },
+        {
+          "startByte": 26,
+          "stopByte": 33,
+          "syntaxKind": "Mathlib.Tactic.useSyntax",
+          "text": "use f 0"
+        },
+        {
+          "startByte": 36,
+          "stopByte": 43,
+          "syntaxKind": "Lean.Parser.Tactic.intro",
+          "text": "intro x"
+        },
+        {
+          "startByte": 46,
+          "stopByte": 64,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h1 := h x 0 0"
+        },
+        {
+          "startByte": 67,
+          "stopByte": 77,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp at h1"
+        },
+        {
+          "startByte": 80,
+          "stopByte": 98,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h2 := h 0 0 x"
+        },
+        {
+          "startByte": 101,
+          "stopByte": 111,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp at h2"
+        },
+        {
+          "startByte": 114,
+          "stopByte": 132,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h3 := h 0 x 0"
+        },
+        {
+          "startByte": 135,
+          "stopByte": 145,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp at h3"
+        },
+        {
+          "startByte": 148,
+          "stopByte": 156,
+          "syntaxKind": "linarith",
+          "text": "linarith"
+        },
+        {
+          "startByte": 159,
+          "stopByte": 166,
+          "syntaxKind": "Lean.Parser.Tactic.intro",
+          "text": "intro h"
+        },
+        {
+          "startByte": 169,
+          "stopByte": 193,
+          "syntaxKind": "Lean.Parser.Tactic.rcases",
+          "text": "rcases h with \u27e8c, h\u27e9"
+        },
+        {
+          "startByte": 196,
+          "stopByte": 210,
+          "syntaxKind": "Lean.Parser.Tactic.intro",
+          "text": "intro x y z h1"
+        },
+        {
+          "startByte": 213,
+          "stopByte": 231,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h2 := h (x-y)"
+        },
+        {
+          "startByte": 234,
+          "stopByte": 252,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h3 := h (y-z)"
+        },
+        {
+          "startByte": 255,
+          "stopByte": 273,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h4 := h (z-x)"
+        },
+        {
+          "startByte": 276,
+          "stopByte": 296,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h5 := h (x+y+z)"
+        },
+        {
+          "startByte": 299,
+          "stopByte": 318,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp at h2 h3 h4 h5"
+        },
+        {
+          "startByte": 321,
+          "stopByte": 329,
+          "syntaxKind": "linarith",
+          "text": "linarith"
+        }
+      ],
+      "verification_time": null
+    },
+    {
+      "candidate_index": 26,
+      "category": "correct_longest_sequence",
+      "correct": true,
+      "eligible": true,
+      "error": null,
+      "exact_edges": [
+        "  apply And.intro",
+        "\n  ext x",
+        "\n  rw [Set.ext_iff] at h1 h2 h3",
+        "\n  specialize h1 x",
+        "\n  specialize h2 x",
+        "\n  specialize h3 x",
+        "\n  simp at h1 h2 h3",
+        "\n  aesop",
+        "\n  apply And.intro",
+        "\n  ext x",
+        "\n  rw [Set.ext_iff] at h1 h2 h3",
+        "\n  specialize h1 x",
+        "\n  specialize h2 x",
+        "\n  specialize h3 x",
+        "\n  simp at h1 h2 h3",
+        "\n  aesop",
+        "\n  ext x",
+        "\n  rw [Set.ext_iff] at h1 h2 h3",
+        "\n  specialize h1 x",
+        "\n  specialize h2 x",
+        "\n  specialize h3 x",
+        "\n  simp at h1 h2 h3",
+        "\n  aesop"
+      ],
+      "proof": "  apply And.intro\n  ext x\n  rw [Set.ext_iff] at h1 h2 h3\n  specialize h1 x\n  specialize h2 x\n  specialize h3 x\n  simp at h1 h2 h3\n  aesop\n  apply And.intro\n  ext x\n  rw [Set.ext_iff] at h1 h2 h3\n  specialize h1 x\n  specialize h2 x\n  specialize h3 x\n  simp at h1 h2 h3\n  aesop\n  ext x\n  rw [Set.ext_iff] at h1 h2 h3\n  specialize h1 x\n  specialize h2 x\n  specialize h3 x\n  simp at h1 h2 h3\n  aesop\n```",
+      "proposal_id": "b07ad5efd1ce6107e0e17601cffebec4394f99bd1a4a3a7585550f7f551f4ee9",
+      "shared_prefix_depth": 0,
+      "theorem_name": "lean_workbook_plus_78255",
+      "theorem_oracle_ratio": 1.1067961165048543,
+      "units": [
+        {
+          "startByte": 2,
+          "stopByte": 17,
+          "syntaxKind": "Lean.Parser.Tactic.apply",
+          "text": "apply And.intro"
+        },
+        {
+          "startByte": 20,
+          "stopByte": 25,
+          "syntaxKind": "Lean.Elab.Tactic.Ext.ext",
+          "text": "ext x"
+        },
+        {
+          "startByte": 28,
+          "stopByte": 56,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [Set.ext_iff] at h1 h2 h3"
+        },
+        {
+          "startByte": 59,
+          "stopByte": 74,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h1 x"
+        },
+        {
+          "startByte": 77,
+          "stopByte": 92,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h2 x"
+        },
+        {
+          "startByte": 95,
+          "stopByte": 110,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h3 x"
+        },
+        {
+          "startByte": 113,
+          "stopByte": 129,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp at h1 h2 h3"
+        },
+        {
+          "startByte": 132,
+          "stopByte": 137,
+          "syntaxKind": "Aesop.Frontend.Parser.aesopTactic",
+          "text": "aesop"
+        },
+        {
+          "startByte": 140,
+          "stopByte": 155,
+          "syntaxKind": "Lean.Parser.Tactic.apply",
+          "text": "apply And.intro"
+        },
+        {
+          "startByte": 158,
+          "stopByte": 163,
+          "syntaxKind": "Lean.Elab.Tactic.Ext.ext",
+          "text": "ext x"
+        },
+        {
+          "startByte": 166,
+          "stopByte": 194,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [Set.ext_iff] at h1 h2 h3"
+        },
+        {
+          "startByte": 197,
+          "stopByte": 212,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h1 x"
+        },
+        {
+          "startByte": 215,
+          "stopByte": 230,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h2 x"
+        },
+        {
+          "startByte": 233,
+          "stopByte": 248,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h3 x"
+        },
+        {
+          "startByte": 251,
+          "stopByte": 267,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp at h1 h2 h3"
+        },
+        {
+          "startByte": 270,
+          "stopByte": 275,
+          "syntaxKind": "Aesop.Frontend.Parser.aesopTactic",
+          "text": "aesop"
+        },
+        {
+          "startByte": 278,
+          "stopByte": 283,
+          "syntaxKind": "Lean.Elab.Tactic.Ext.ext",
+          "text": "ext x"
+        },
+        {
+          "startByte": 286,
+          "stopByte": 314,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [Set.ext_iff] at h1 h2 h3"
+        },
+        {
+          "startByte": 317,
+          "stopByte": 332,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h1 x"
+        },
+        {
+          "startByte": 335,
+          "stopByte": 350,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h2 x"
+        },
+        {
+          "startByte": 353,
+          "stopByte": 368,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h3 x"
+        },
+        {
+          "startByte": 371,
+          "stopByte": 387,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp at h1 h2 h3"
+        },
+        {
+          "startByte": 390,
+          "stopByte": 395,
+          "syntaxKind": "Aesop.Frontend.Parser.aesopTactic",
+          "text": "aesop"
+        }
+      ],
+      "verification_time": 4.483698606491089
+    },
+    {
+      "candidate_index": 11,
+      "category": "correct_no_shared_prefix",
+      "correct": true,
+      "eligible": true,
+      "error": null,
+      "exact_edges": [
+        "  simp only [mul_add, mul_comm, mul_left_comm]",
+        "\n  nlinarith [sq_nonneg (a - b), sq_nonneg (b - c), sq_nonneg (c - d), sq_nonneg (d - a)]"
+      ],
+      "proof": "  simp only [mul_add, mul_comm, mul_left_comm]\n  nlinarith [sq_nonneg (a - b), sq_nonneg (b - c), sq_nonneg (c - d), sq_nonneg (d - a)]\n```",
+      "proposal_id": "00029f9e383fa0aa8eb6f37785aa4fd4596d91569954c23ec325b9a41b7b9208",
+      "shared_prefix_depth": 0,
+      "theorem_name": "lean_workbook_plus_7074",
+      "theorem_oracle_ratio": 1.1527777777777777,
+      "units": [
+        {
+          "startByte": 2,
+          "stopByte": 46,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp only [mul_add, mul_comm, mul_left_comm]"
+        },
+        {
+          "startByte": 49,
+          "stopByte": 135,
+          "syntaxKind": "nlinarith",
+          "text": "nlinarith [sq_nonneg (a - b), sq_nonneg (b - c), sq_nonneg (c - d), sq_nonneg (d - a)]"
+        }
+      ],
+      "verification_time": null
+    },
+    {
+      "candidate_index": 14,
+      "category": "correct_slowest_with_telemetry",
+      "correct": true,
+      "eligible": true,
+      "error": null,
+      "exact_edges": [
+        "  field_simp [add_comm, add_left_comm, add_assoc]",
+        "\n  ring"
+      ],
+      "proof": "  field_simp [add_comm, add_left_comm, add_assoc]\n  ring\n```",
+      "proposal_id": "dc61e8d4f946a5270acd09a001a89de70134f542e65bf9b8a10cd45d4f4daca9",
+      "shared_prefix_depth": 0,
+      "theorem_name": "lean_workbook_plus_74227",
+      "theorem_oracle_ratio": 1.0689655172413792,
+      "units": [
+        {
+          "startByte": 2,
+          "stopByte": 49,
+          "syntaxKind": "Mathlib.Tactic.FieldSimp.fieldSimp",
+          "text": "field_simp [add_comm, add_left_comm, add_assoc]"
+        },
+        {
+          "startByte": 52,
+          "stopByte": 56,
+          "syntaxKind": "Mathlib.Tactic.RingNF.ring",
+          "text": "ring"
+        }
+      ],
+      "verification_time": 222.76483702659607
+    },
+    {
+      "candidate_index": 28,
+      "category": "correct_structured_syntax",
+      "correct": true,
+      "eligible": true,
+      "error": null,
+      "exact_edges": [
+        "  rw [ht]",
+        "\n  constructor",
+        "\n  intro h",
+        "\n  have h' : (x - 12 / x) ^ 2 + 24 = 10 * (x - 12 / x) := h",
+        "\n  field_simp at h'",
+        "\n  ring_nf at h'",
+        "\n  rw [\u2190 sub_eq_zero] at h'",
+        "\n  have h'' : (x - 12 / x - 4) * (x - 12 / x - 6) = 0 := by linarith",
+        "\n  have h''' : x - 12 / x - 4 = 0 \u2228 x - 12 / x - 6 = 0 := mul_eq_zero.mp h''",
+        "\n  cases' h''' with h''' h'''",
+        "\n  left",
+        "\n  linarith",
+        "\n  right",
+        "\n  linarith",
+        "\n  intro h",
+        "\n  cases' h with h h",
+        "\n  rw [h]",
+        "\n  norm_num",
+        "\n  rw [h]",
+        "\n  norm_num"
+      ],
+      "proof": "  rw [ht]\n  constructor\n  intro h\n  have h' : (x - 12 / x) ^ 2 + 24 = 10 * (x - 12 / x) := h\n  field_simp at h'\n  ring_nf at h'\n  rw [\u2190 sub_eq_zero] at h'\n  have h'' : (x - 12 / x - 4) * (x - 12 / x - 6) = 0 := by linarith\n  have h''' : x - 12 / x - 4 = 0 \u2228 x - 12 / x - 6 = 0 := mul_eq_zero.mp h''\n  cases' h''' with h''' h'''\n  left\n  linarith\n  right\n  linarith\n  intro h\n  cases' h with h h\n  rw [h]\n  norm_num\n  rw [h]\n  norm_num\n```",
+      "proposal_id": "b43bd55e89a3f787d7259717736b288b61eb39627a64941b016d465d90f5f9fe",
+      "shared_prefix_depth": 7,
+      "theorem_name": "lean_workbook_plus_65615",
+      "theorem_oracle_ratio": 1.1729323308270676,
+      "units": [
+        {
+          "startByte": 2,
+          "stopByte": 9,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [ht]"
+        },
+        {
+          "startByte": 12,
+          "stopByte": 23,
+          "syntaxKind": "Lean.Parser.Tactic.constructor",
+          "text": "constructor"
+        },
+        {
+          "startByte": 26,
+          "stopByte": 33,
+          "syntaxKind": "Lean.Parser.Tactic.intro",
+          "text": "intro h"
+        },
+        {
+          "startByte": 36,
+          "stopByte": 92,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h' : (x - 12 / x) ^ 2 + 24 = 10 * (x - 12 / x) := h"
+        },
+        {
+          "startByte": 95,
+          "stopByte": 111,
+          "syntaxKind": "Mathlib.Tactic.FieldSimp.fieldSimp",
+          "text": "field_simp at h'"
+        },
+        {
+          "startByte": 114,
+          "stopByte": 127,
+          "syntaxKind": "Mathlib.Tactic.RingNF.ringNF",
+          "text": "ring_nf at h'"
+        },
+        {
+          "startByte": 130,
+          "stopByte": 156,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [\u2190 sub_eq_zero] at h'"
+        },
+        {
+          "startByte": 159,
+          "stopByte": 224,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h'' : (x - 12 / x - 4) * (x - 12 / x - 6) = 0 := by linarith"
+        },
+        {
+          "startByte": 227,
+          "stopByte": 302,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have h''' : x - 12 / x - 4 = 0 \u2228 x - 12 / x - 6 = 0 := mul_eq_zero.mp h''"
+        },
+        {
+          "startByte": 305,
+          "stopByte": 331,
+          "syntaxKind": "Mathlib.Tactic.cases'",
+          "text": "cases' h''' with h''' h'''"
+        },
+        {
+          "startByte": 334,
+          "stopByte": 338,
+          "syntaxKind": "Lean.Parser.Tactic.left",
+          "text": "left"
+        },
+        {
+          "startByte": 341,
+          "stopByte": 349,
+          "syntaxKind": "linarith",
+          "text": "linarith"
+        },
+        {
+          "startByte": 352,
+          "stopByte": 357,
+          "syntaxKind": "Lean.Parser.Tactic.right",
+          "text": "right"
+        },
+        {
+          "startByte": 360,
+          "stopByte": 368,
+          "syntaxKind": "linarith",
+          "text": "linarith"
+        },
+        {
+          "startByte": 371,
+          "stopByte": 378,
+          "syntaxKind": "Lean.Parser.Tactic.intro",
+          "text": "intro h"
+        },
+        {
+          "startByte": 381,
+          "stopByte": 398,
+          "syntaxKind": "Mathlib.Tactic.cases'",
+          "text": "cases' h with h h"
+        },
+        {
+          "startByte": 401,
+          "stopByte": 407,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [h]"
+        },
+        {
+          "startByte": 410,
+          "stopByte": 418,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 421,
+          "stopByte": 427,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [h]"
+        },
+        {
+          "startByte": 430,
+          "stopByte": 438,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        }
+      ],
+      "verification_time": null
+    },
+    {
+      "candidate_index": 17,
+      "category": "fallback_bracketed_root",
+      "correct": true,
+      "eligible": false,
+      "error": "bracketed root tactic sequence requires independent fallback",
+      "exact_edges": null,
+      "proof": "  {\n    use 7, 1\n    ring\n  }\n```",
+      "proposal_id": "5031b8f35799bb4ec2268537bd2a1593e48798b12a7e6ca1f0d3305a3cbf6f05",
+      "shared_prefix_depth": null,
+      "theorem_name": "lean_workbook_plus_46036",
+      "theorem_oracle_ratio": 1.7272727272727273,
+      "units": [],
+      "verification_time": null
+    },
+    {
+      "candidate_index": 23,
+      "category": "fallback_parse_or_range_error",
+      "correct": false,
+      "eligible": false,
+      "error": "<input>:3:25: expected end of input",
+      "exact_edges": null,
+      "proof": "  rw [\u2190 h\u2082]\n  have h\u2083 : a \u2264 b \u2227 b \u2264 c := h\u2081\n  have h\u2084 : a * b * c = 9! := h\u2082\n  have h\u2085 : a * b * c \u2265 a * a * a := by\n    apply Nat.mul_le_mul\n    apply Nat.mul_le_mul\n    exact h\u2083.1\n    exact h\u2083.2\n    exact h\u2083.2\n  have h\u2086 : a * a * a \u2264 a * b * c := by\n    rw [\u2190 h\u2084]\n  exact le_trans h\u2085 h\u2086\n```",
+      "proposal_id": "0006476df4f1053d6a5e17a7cf4bbfc21fa40a3023a7ab489b16d4b64a4f42a8",
+      "shared_prefix_depth": null,
+      "theorem_name": "lean_workbook_plus_23346",
+      "theorem_oracle_ratio": 1.278688524590164,
+      "units": [],
+      "verification_time": null
+    },
+    {
+      "candidate_index": 22,
+      "category": "fallback_top_level_semicolon",
+      "correct": true,
+      "eligible": false,
+      "error": "top-level semicolon sequence requires independent fallback",
+      "exact_edges": null,
+      "proof": "  refine' \u27e8fun n => u n, fun n hn => _\u27e9\n  cases n\n  exfalso; linarith\n  simp [h\u2081.1, h\u2081.2.1, h\u2081.2.2, h\u2082, h\u2083]\n```",
+      "proposal_id": "000c5c6c2875ecb45a356e512e6eb54f7d6e62e8ff8e79d91db352544078252b",
+      "shared_prefix_depth": null,
+      "theorem_name": "lean_workbook_plus_70981",
+      "theorem_oracle_ratio": 1.2,
+      "units": [],
+      "verification_time": null
+    },
+    {
+      "candidate_index": 2,
+      "category": "fallback_unexpected_end",
+      "correct": false,
+      "eligible": false,
+      "error": "<input>:29:29: unexpected end of input; expected ':='",
+      "exact_edges": null,
+      "proof": "  intro hn\n  have h0 : 0 < 2 := by norm_num\n  have h1 : 0 < n := by linarith\n  have h2 : \u2200 i \u2208 Finset.range n, 1 \u2264 i \u2227 i \u2264 n := by\n    intro i hi\n    simp only [Finset.mem_range] at hi\n    constructor <;> linarith\n  calc\n    \u2211 i in Finset.range n, Real.sqrt ((a i)^2 + (a i + a (i + 1))^2) \u2265\n        \u2211 i in Finset.Icc 1 n, Real.sqrt ((a i)^2 + (a i + a (i + 1))^2) := by\n        apply Finset.sum_mono_set_of_nonneg\n        intro i hi\n        exact Real.sqrt_nonneg _\n    _ \u2265 \u2211 i in Finset.Icc 1 n, Real.sqrt (5 : \u211d) := by\n        apply Finset.sum_le_sum\n        intro i hi\n        have h3 : 1 \u2264 i \u2227 i \u2264 n := h2 i hi\n        have h4 : 2 \u2264 a i := ha i\n        have h5 : 2 \u2264 a (i + 1) := ha (i + 1)\n        have h6 : (a i : \u211d) ^ 2 + (a i + a (i + 1)) ^ 2 \u2265 5 := by\n          have h7 : (a i : \u211d) ^ 2 \u2265 4 := by\n            have h8 : (a i : \u211d) \u2265 2 := by linarith\n            exact sq_ge_sq h8\n          have h9 : (a i + a (i + 1)) ^ 2 \u2265 1 := by\n            have h10 : (a i + a (i + 1) : \u211d) \u2265 3 := by linarith\n            exact sq_ge_sq h10\n          linarith\n        exact Real.sqrt_le_sqrt h6\n    _ = Real.sqrt (5 : \u211d) * n",
+      "proposal_id": "0021726c5010e394f270747b9cad7db22ac13b7a327d79440ba3e625119c4e63",
+      "shared_prefix_depth": null,
+      "theorem_name": "lean_workbook_plus_72518",
+      "theorem_oracle_ratio": 1.192,
+      "units": [],
+      "verification_time": null
+    },
+    {
+      "candidate_index": 19,
+      "category": "fallback_unknown_tactic",
+      "correct": false,
+      "eligible": false,
+      "error": "<input>:2:3: unknown tactic",
+      "exact_edges": null,
+      "proof": "  field_simp [add_comm, add_left_comm, add_assoc]\n  le_of_sub_nonneg\n  field_simp [ha.ne', hb.ne', hc.ne']\n  ring_nf\n  positivity\n```",
+      "proposal_id": "0021c4c265704c5dd54dc5f756ebf432c9cebcc08d333eeda5d3e8e3e68b84bf",
+      "shared_prefix_depth": null,
+      "theorem_name": "lean_workbook_plus_51649",
+      "theorem_oracle_ratio": 1.094488188976378,
+      "units": [],
+      "verification_time": null
+    },
+    {
+      "candidate_index": 0,
+      "category": "highest_reuse_theorem_representative",
+      "correct": true,
+      "eligible": true,
+      "error": null,
+      "exact_edges": [
+        "  refine' \u27e8_, rfl\u27e9"
+      ],
+      "proof": "  refine' \u27e8_, rfl\u27e9\n```",
+      "proposal_id": "916c319ddf5a2766c719cfac79e12896b30b95f52dde7ee86f9c71064f3de53d",
+      "shared_prefix_depth": 1,
+      "theorem_name": "lean_workbook_plus_43008",
+      "theorem_oracle_ratio": 4.666666666666667,
+      "units": [
+        {
+          "startByte": 2,
+          "stopByte": 22,
+          "syntaxKind": "Lean.Parser.Tactic.refine'",
+          "text": "refine' \u27e8_, rfl\u27e9"
+        }
+      ],
+      "verification_time": null
+    },
+    {
+      "candidate_index": 24,
+      "category": "incorrect_deepest_shared_prefix",
+      "correct": false,
+      "eligible": true,
+      "error": null,
+      "exact_edges": [
+        "  constructor",
+        "\n  specialize h 0 1 (by norm_num)",
+        "\n  exact h",
+        "\n  constructor",
+        "\n  specialize h 1 2 (by norm_num)",
+        "\n  exact h",
+        "\n  constructor",
+        "\n  specialize h 2 3 (by norm_num)",
+        "\n  exact h",
+        "\n  constructor",
+        "\n  specialize h 3 4 (by norm_num)",
+        "\n  exact h",
+        "\n  constructor",
+        "\n  specialize h 4 5 (by norm_num)",
+        "\n  exact h",
+        "\n  constructor",
+        "\n  specialize h 5 6 (by norm_num)",
+        "\n  exact h",
+        "\n  specialize h 6 7 (by norm_num)",
+        "\n  exact h"
+      ],
+      "proof": "  constructor\n  specialize h 0 1 (by norm_num)\n  exact h\n  constructor\n  specialize h 1 2 (by norm_num)\n  exact h\n  constructor\n  specialize h 2 3 (by norm_num)\n  exact h\n  constructor\n  specialize h 3 4 (by norm_num)\n  exact h\n  constructor\n  specialize h 4 5 (by norm_num)\n  exact h\n  constructor\n  specialize h 5 6 (by norm_num)\n  exact h\n  specialize h 6 7 (by norm_num)\n  exact h\n```",
+      "proposal_id": "1e369866facd40276bfe86d79b5e89124b73b80ca98a439f2f330903d7e167cc",
+      "shared_prefix_depth": 20,
+      "theorem_name": "lean_workbook_plus_46094",
+      "theorem_oracle_ratio": 1.2735849056603774,
+      "units": [
+        {
+          "startByte": 2,
+          "stopByte": 13,
+          "syntaxKind": "Lean.Parser.Tactic.constructor",
+          "text": "constructor"
+        },
+        {
+          "startByte": 16,
+          "stopByte": 46,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h 0 1 (by norm_num)"
+        },
+        {
+          "startByte": 49,
+          "stopByte": 56,
+          "syntaxKind": "Lean.Parser.Tactic.exact",
+          "text": "exact h"
+        },
+        {
+          "startByte": 59,
+          "stopByte": 70,
+          "syntaxKind": "Lean.Parser.Tactic.constructor",
+          "text": "constructor"
+        },
+        {
+          "startByte": 73,
+          "stopByte": 103,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h 1 2 (by norm_num)"
+        },
+        {
+          "startByte": 106,
+          "stopByte": 113,
+          "syntaxKind": "Lean.Parser.Tactic.exact",
+          "text": "exact h"
+        },
+        {
+          "startByte": 116,
+          "stopByte": 127,
+          "syntaxKind": "Lean.Parser.Tactic.constructor",
+          "text": "constructor"
+        },
+        {
+          "startByte": 130,
+          "stopByte": 160,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h 2 3 (by norm_num)"
+        },
+        {
+          "startByte": 163,
+          "stopByte": 170,
+          "syntaxKind": "Lean.Parser.Tactic.exact",
+          "text": "exact h"
+        },
+        {
+          "startByte": 173,
+          "stopByte": 184,
+          "syntaxKind": "Lean.Parser.Tactic.constructor",
+          "text": "constructor"
+        },
+        {
+          "startByte": 187,
+          "stopByte": 217,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h 3 4 (by norm_num)"
+        },
+        {
+          "startByte": 220,
+          "stopByte": 227,
+          "syntaxKind": "Lean.Parser.Tactic.exact",
+          "text": "exact h"
+        },
+        {
+          "startByte": 230,
+          "stopByte": 241,
+          "syntaxKind": "Lean.Parser.Tactic.constructor",
+          "text": "constructor"
+        },
+        {
+          "startByte": 244,
+          "stopByte": 274,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h 4 5 (by norm_num)"
+        },
+        {
+          "startByte": 277,
+          "stopByte": 284,
+          "syntaxKind": "Lean.Parser.Tactic.exact",
+          "text": "exact h"
+        },
+        {
+          "startByte": 287,
+          "stopByte": 298,
+          "syntaxKind": "Lean.Parser.Tactic.constructor",
+          "text": "constructor"
+        },
+        {
+          "startByte": 301,
+          "stopByte": 331,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h 5 6 (by norm_num)"
+        },
+        {
+          "startByte": 334,
+          "stopByte": 341,
+          "syntaxKind": "Lean.Parser.Tactic.exact",
+          "text": "exact h"
+        },
+        {
+          "startByte": 344,
+          "stopByte": 374,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h 6 7 (by norm_num)"
+        },
+        {
+          "startByte": 377,
+          "stopByte": 384,
+          "syntaxKind": "Lean.Parser.Tactic.exact",
+          "text": "exact h"
+        }
+      ],
+      "verification_time": null
+    },
+    {
+      "candidate_index": 24,
+      "category": "incorrect_exact_duplicate",
+      "correct": false,
+      "eligible": true,
+      "error": null,
+      "exact_edges": [
+        "  constructor",
+        "\n  specialize h 0 1 (by norm_num)",
+        "\n  exact h",
+        "\n  constructor",
+        "\n  specialize h 1 2 (by norm_num)",
+        "\n  exact h",
+        "\n  constructor",
+        "\n  specialize h 2 3 (by norm_num)",
+        "\n  exact h",
+        "\n  constructor",
+        "\n  specialize h 3 4 (by norm_num)",
+        "\n  exact h",
+        "\n  constructor",
+        "\n  specialize h 4 5 (by norm_num)",
+        "\n  exact h",
+        "\n  constructor",
+        "\n  specialize h 5 6 (by norm_num)",
+        "\n  exact h",
+        "\n  specialize h 6 7 (by norm_num)",
+        "\n  exact h"
+      ],
+      "proof": "  constructor\n  specialize h 0 1 (by norm_num)\n  exact h\n  constructor\n  specialize h 1 2 (by norm_num)\n  exact h\n  constructor\n  specialize h 2 3 (by norm_num)\n  exact h\n  constructor\n  specialize h 3 4 (by norm_num)\n  exact h\n  constructor\n  specialize h 4 5 (by norm_num)\n  exact h\n  constructor\n  specialize h 5 6 (by norm_num)\n  exact h\n  specialize h 6 7 (by norm_num)\n  exact h\n```",
+      "proposal_id": "1e369866facd40276bfe86d79b5e89124b73b80ca98a439f2f330903d7e167cc",
+      "shared_prefix_depth": 20,
+      "theorem_name": "lean_workbook_plus_46094",
+      "theorem_oracle_ratio": 1.2735849056603774,
+      "units": [
+        {
+          "startByte": 2,
+          "stopByte": 13,
+          "syntaxKind": "Lean.Parser.Tactic.constructor",
+          "text": "constructor"
+        },
+        {
+          "startByte": 16,
+          "stopByte": 46,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h 0 1 (by norm_num)"
+        },
+        {
+          "startByte": 49,
+          "stopByte": 56,
+          "syntaxKind": "Lean.Parser.Tactic.exact",
+          "text": "exact h"
+        },
+        {
+          "startByte": 59,
+          "stopByte": 70,
+          "syntaxKind": "Lean.Parser.Tactic.constructor",
+          "text": "constructor"
+        },
+        {
+          "startByte": 73,
+          "stopByte": 103,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h 1 2 (by norm_num)"
+        },
+        {
+          "startByte": 106,
+          "stopByte": 113,
+          "syntaxKind": "Lean.Parser.Tactic.exact",
+          "text": "exact h"
+        },
+        {
+          "startByte": 116,
+          "stopByte": 127,
+          "syntaxKind": "Lean.Parser.Tactic.constructor",
+          "text": "constructor"
+        },
+        {
+          "startByte": 130,
+          "stopByte": 160,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h 2 3 (by norm_num)"
+        },
+        {
+          "startByte": 163,
+          "stopByte": 170,
+          "syntaxKind": "Lean.Parser.Tactic.exact",
+          "text": "exact h"
+        },
+        {
+          "startByte": 173,
+          "stopByte": 184,
+          "syntaxKind": "Lean.Parser.Tactic.constructor",
+          "text": "constructor"
+        },
+        {
+          "startByte": 187,
+          "stopByte": 217,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h 3 4 (by norm_num)"
+        },
+        {
+          "startByte": 220,
+          "stopByte": 227,
+          "syntaxKind": "Lean.Parser.Tactic.exact",
+          "text": "exact h"
+        },
+        {
+          "startByte": 230,
+          "stopByte": 241,
+          "syntaxKind": "Lean.Parser.Tactic.constructor",
+          "text": "constructor"
+        },
+        {
+          "startByte": 244,
+          "stopByte": 274,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h 4 5 (by norm_num)"
+        },
+        {
+          "startByte": 277,
+          "stopByte": 284,
+          "syntaxKind": "Lean.Parser.Tactic.exact",
+          "text": "exact h"
+        },
+        {
+          "startByte": 287,
+          "stopByte": 298,
+          "syntaxKind": "Lean.Parser.Tactic.constructor",
+          "text": "constructor"
+        },
+        {
+          "startByte": 301,
+          "stopByte": 331,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h 5 6 (by norm_num)"
+        },
+        {
+          "startByte": 334,
+          "stopByte": 341,
+          "syntaxKind": "Lean.Parser.Tactic.exact",
+          "text": "exact h"
+        },
+        {
+          "startByte": 344,
+          "stopByte": 374,
+          "syntaxKind": "Lean.Parser.Tactic.specialize",
+          "text": "specialize h 6 7 (by norm_num)"
+        },
+        {
+          "startByte": 377,
+          "stopByte": 384,
+          "syntaxKind": "Lean.Parser.Tactic.exact",
+          "text": "exact h"
+        }
+      ],
+      "verification_time": null
+    },
+    {
+      "candidate_index": 6,
+      "category": "incorrect_longest_sequence",
+      "correct": false,
+      "eligible": true,
+      "error": null,
+      "exact_edges": [
+        "  simp only [Int.ModEq]",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]",
+        "\n  norm_num",
+        "\n  rw [pow_succ]"
+      ],
+      "proof": "  simp only [Int.ModEq]\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]\n  norm_num\n  rw [pow_succ]",
+      "proposal_id": "f10f42f9543a4577bb00e3450f206c4f1659b3c6863cfceb2820212a8a7e2c12",
+      "shared_prefix_depth": 0,
+      "theorem_name": "lean_workbook_plus_20860",
+      "theorem_oracle_ratio": 1.0473684210526315,
+      "units": [
+        {
+          "startByte": 2,
+          "stopByte": 23,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp only [Int.ModEq]"
+        },
+        {
+          "startByte": 26,
+          "stopByte": 39,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 42,
+          "stopByte": 50,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 53,
+          "stopByte": 66,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 69,
+          "stopByte": 77,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 80,
+          "stopByte": 93,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 96,
+          "stopByte": 104,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 107,
+          "stopByte": 120,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 123,
+          "stopByte": 131,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 134,
+          "stopByte": 147,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 150,
+          "stopByte": 158,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 161,
+          "stopByte": 174,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 177,
+          "stopByte": 185,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 188,
+          "stopByte": 201,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 204,
+          "stopByte": 212,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 215,
+          "stopByte": 228,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 231,
+          "stopByte": 239,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 242,
+          "stopByte": 255,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 258,
+          "stopByte": 266,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 269,
+          "stopByte": 282,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 285,
+          "stopByte": 293,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 296,
+          "stopByte": 309,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 312,
+          "stopByte": 320,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 323,
+          "stopByte": 336,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 339,
+          "stopByte": 347,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 350,
+          "stopByte": 363,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 366,
+          "stopByte": 374,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 377,
+          "stopByte": 390,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 393,
+          "stopByte": 401,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 404,
+          "stopByte": 417,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 420,
+          "stopByte": 428,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 431,
+          "stopByte": 444,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 447,
+          "stopByte": 455,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 458,
+          "stopByte": 471,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 474,
+          "stopByte": 482,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 485,
+          "stopByte": 498,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 501,
+          "stopByte": 509,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 512,
+          "stopByte": 525,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 528,
+          "stopByte": 536,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 539,
+          "stopByte": 552,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 555,
+          "stopByte": 563,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 566,
+          "stopByte": 579,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 582,
+          "stopByte": 590,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 593,
+          "stopByte": 606,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 609,
+          "stopByte": 617,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 620,
+          "stopByte": 633,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 636,
+          "stopByte": 644,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 647,
+          "stopByte": 660,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 663,
+          "stopByte": 671,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 674,
+          "stopByte": 687,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 690,
+          "stopByte": 698,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 701,
+          "stopByte": 714,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 717,
+          "stopByte": 725,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 728,
+          "stopByte": 741,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 744,
+          "stopByte": 752,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 755,
+          "stopByte": 768,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 771,
+          "stopByte": 779,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 782,
+          "stopByte": 795,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 798,
+          "stopByte": 806,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 809,
+          "stopByte": 822,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 825,
+          "stopByte": 833,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 836,
+          "stopByte": 849,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 852,
+          "stopByte": 860,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 863,
+          "stopByte": 876,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 879,
+          "stopByte": 887,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 890,
+          "stopByte": 903,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 906,
+          "stopByte": 914,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 917,
+          "stopByte": 930,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 933,
+          "stopByte": 941,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 944,
+          "stopByte": 957,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 960,
+          "stopByte": 968,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 971,
+          "stopByte": 984,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 987,
+          "stopByte": 995,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 998,
+          "stopByte": 1011,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 1014,
+          "stopByte": 1022,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 1025,
+          "stopByte": 1038,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        },
+        {
+          "startByte": 1041,
+          "stopByte": 1049,
+          "syntaxKind": "Mathlib.Tactic.normNum",
+          "text": "norm_num"
+        },
+        {
+          "startByte": 1052,
+          "stopByte": 1065,
+          "syntaxKind": "Lean.Parser.Tactic.rwSeq",
+          "text": "rw [pow_succ]"
+        }
+      ],
+      "verification_time": null
+    },
+    {
+      "candidate_index": 26,
+      "category": "incorrect_no_shared_prefix",
+      "correct": false,
+      "eligible": true,
+      "error": null,
+      "exact_edges": [
+        "  simp only [Int.floor_eq_iff, Int.cast_neg] at hx",
+        "\n  constructor <;> linarith [hx.1, hx.2]"
+      ],
+      "proof": "  simp only [Int.floor_eq_iff, Int.cast_neg] at hx\n  constructor <;> linarith [hx.1, hx.2]\n```",
+      "proposal_id": "00008ccfaa625a97a7f593cefaeca7e50b749d710d02c52b065a926510d129c9",
+      "shared_prefix_depth": 0,
+      "theorem_name": "lean_workbook_plus_67386",
+      "theorem_oracle_ratio": 1.4333333333333333,
+      "units": [
+        {
+          "startByte": 2,
+          "stopByte": 50,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp only [Int.floor_eq_iff, Int.cast_neg] at hx"
+        },
+        {
+          "startByte": 53,
+          "stopByte": 90,
+          "syntaxKind": "Lean.Parser.Tactic.\u00abtactic_<;>_\u00bb",
+          "text": "constructor <;> linarith [hx.1, hx.2]"
+        }
+      ],
+      "verification_time": null
+    },
+    {
+      "candidate_index": 12,
+      "category": "incorrect_slowest_with_telemetry",
+      "correct": false,
+      "eligible": true,
+      "error": null,
+      "exact_edges": [
+        "  simpa [Real.sqrt_eq_iff_sq_eq] using Real.rpow_logb (by norm_num) (by norm_num) (Real.sqrt_pos.mpr (by norm_num))"
+      ],
+      "proof": "  simpa [Real.sqrt_eq_iff_sq_eq] using Real.rpow_logb (by norm_num) (by norm_num) (Real.sqrt_pos.mpr (by norm_num))\n```",
+      "proposal_id": "1ad0ba0aa0403861f61a7feaa887f2c61eb19559f11880d7109611a00fd8e68a",
+      "shared_prefix_depth": 0,
+      "theorem_name": "lean_workbook_plus_7278",
+      "theorem_oracle_ratio": 1.0066225165562914,
+      "units": [
+        {
+          "startByte": 2,
+          "stopByte": 115,
+          "syntaxKind": "Lean.Parser.Tactic.simpa",
+          "text": "simpa [Real.sqrt_eq_iff_sq_eq] using Real.rpow_logb (by norm_num) (by norm_num) (Real.sqrt_pos.mpr (by norm_num))"
+        }
+      ],
+      "verification_time": 300.11373233795166
+    },
+    {
+      "candidate_index": 16,
+      "category": "incorrect_structured_syntax",
+      "correct": false,
+      "eligible": true,
+      "error": null,
+      "exact_edges": [
+        "  refine' fun \u03b5 \u03b5pos => _",
+        "\n  have := hx 2 (by norm_num)",
+        "\n  obtain \u27e8k, hk\u2081, hk\u2082, hk\u2083\u27e9 := this",
+        "\n  clear hx",
+        "\n  use 2",
+        "\n  intro n hn",
+        "\n  cases' n with n",
+        "\n  exfalso",
+        "\n  linarith",
+        "\n  cases' n with n",
+        "\n  exfalso",
+        "\n  linarith",
+        "\n  simp only [Nat.succ_pos', Nat.succ_le_succ_iff, Nat.cast_add, Nat.cast_one, add_assoc] at hn",
+        "\n  have hk\u2084 := hk\u2081",
+        "\n  have hk\u2085 := hk\u2082",
+        "\n  have hk\u2086 := hk\u2083",
+        "\n  clear hk\u2081 hk\u2082 hk\u2083",
+        "\n  simp only [Nat.cast_add, Nat.cast_one, add_assoc] at hk\u2084 hk\u2085 hk\u2086",
+        "\n  have hk\u2087 := hk\u2085",
+        "\n  have hk\u2088 := hk\u2086",
+        "\n  clear hk\u2085 hk\u2086",
+        "\n  simp only [Nat.cast_add, Nat.cast_one, add_assoc] at hk\u2087 hk\u2088",
+        "\n  have hk\u2089 := hk\u2088",
+        "\n  have hk\u2081\u2080 := hk\u2087",
+        "\n  clear hk\u2088 hk\u2087",
+        "\n  simp only [Nat.cast_add, Nat.cast_one, add_assoc] at hk\u2089 hk\u2081\u2080",
+        "\n  have hk\u2081\u2081 := hk\u2089",
+        "\n  have hk\u2081\u2082 := hk\u2081\u2080",
+        "\n  clear hk\u2089 hk\u2081\u2080",
+        "\n  simp only [Nat.cast_add, Nat.cast_one, add_assoc] at hk\u2081\u2081 hk\u2081\u2082",
+        "\n  have hk\u2081\u2083 := hk\u2081\u2082",
+        "\n  have hk\u2081\u2084 := hk\u2081\u2081",
+        "\n  clear hk\u2081\u2082 hk\u2081\u2081",
+        "\n  simp only [Nat.cast_add, Nat.cast_one, add_assoc] at hk\u2081\u2083 hk\u2081\u2084",
+        "\n  have h"
+      ],
+      "proof": "  refine' fun \u03b5 \u03b5pos => _\n  have := hx 2 (by norm_num)\n  obtain \u27e8k, hk\u2081, hk\u2082, hk\u2083\u27e9 := this\n  clear hx\n  use 2\n  intro n hn\n  cases' n with n\n  exfalso\n  linarith\n  cases' n with n\n  exfalso\n  linarith\n  simp only [Nat.succ_pos', Nat.succ_le_succ_iff, Nat.cast_add, Nat.cast_one, add_assoc] at hn\n  have hk\u2084 := hk\u2081\n  have hk\u2085 := hk\u2082\n  have hk\u2086 := hk\u2083\n  clear hk\u2081 hk\u2082 hk\u2083\n  simp only [Nat.cast_add, Nat.cast_one, add_assoc] at hk\u2084 hk\u2085 hk\u2086\n  have hk\u2087 := hk\u2085\n  have hk\u2088 := hk\u2086\n  clear hk\u2085 hk\u2086\n  simp only [Nat.cast_add, Nat.cast_one, add_assoc] at hk\u2087 hk\u2088\n  have hk\u2089 := hk\u2088\n  have hk\u2081\u2080 := hk\u2087\n  clear hk\u2088 hk\u2087\n  simp only [Nat.cast_add, Nat.cast_one, add_assoc] at hk\u2089 hk\u2081\u2080\n  have hk\u2081\u2081 := hk\u2089\n  have hk\u2081\u2082 := hk\u2081\u2080\n  clear hk\u2089 hk\u2081\u2080\n  simp only [Nat.cast_add, Nat.cast_one, add_assoc] at hk\u2081\u2081 hk\u2081\u2082\n  have hk\u2081\u2083 := hk\u2081\u2082\n  have hk\u2081\u2084 := hk\u2081\u2081\n  clear hk\u2081\u2082 hk\u2081\u2081\n  simp only [Nat.cast_add, Nat.cast_one, add_assoc] at hk\u2081\u2083 hk\u2081\u2084\n  have h",
+      "proposal_id": "0bfc5fd21615882781819e2a6fef2ba50d35fa8d101e1a094df620085d0c76bb",
+      "shared_prefix_depth": 1,
+      "theorem_name": "lean_workbook_plus_39297",
+      "theorem_oracle_ratio": 1.1182432432432432,
+      "units": [
+        {
+          "startByte": 2,
+          "stopByte": 27,
+          "syntaxKind": "Lean.Parser.Tactic.refine'",
+          "text": "refine' fun \u03b5 \u03b5pos => _"
+        },
+        {
+          "startByte": 30,
+          "stopByte": 56,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have := hx 2 (by norm_num)"
+        },
+        {
+          "startByte": 59,
+          "stopByte": 102,
+          "syntaxKind": "Lean.Parser.Tactic.obtain",
+          "text": "obtain \u27e8k, hk\u2081, hk\u2082, hk\u2083\u27e9 := this"
+        },
+        {
+          "startByte": 105,
+          "stopByte": 113,
+          "syntaxKind": "Lean.Parser.Tactic.clear",
+          "text": "clear hx"
+        },
+        {
+          "startByte": 116,
+          "stopByte": 121,
+          "syntaxKind": "Mathlib.Tactic.useSyntax",
+          "text": "use 2"
+        },
+        {
+          "startByte": 124,
+          "stopByte": 134,
+          "syntaxKind": "Lean.Parser.Tactic.intro",
+          "text": "intro n hn"
+        },
+        {
+          "startByte": 137,
+          "stopByte": 152,
+          "syntaxKind": "Mathlib.Tactic.cases'",
+          "text": "cases' n with n"
+        },
+        {
+          "startByte": 155,
+          "stopByte": 162,
+          "syntaxKind": "Lean.Parser.Tactic.tacticExfalso",
+          "text": "exfalso"
+        },
+        {
+          "startByte": 165,
+          "stopByte": 173,
+          "syntaxKind": "linarith",
+          "text": "linarith"
+        },
+        {
+          "startByte": 176,
+          "stopByte": 191,
+          "syntaxKind": "Mathlib.Tactic.cases'",
+          "text": "cases' n with n"
+        },
+        {
+          "startByte": 194,
+          "stopByte": 201,
+          "syntaxKind": "Lean.Parser.Tactic.tacticExfalso",
+          "text": "exfalso"
+        },
+        {
+          "startByte": 204,
+          "stopByte": 212,
+          "syntaxKind": "linarith",
+          "text": "linarith"
+        },
+        {
+          "startByte": 215,
+          "stopByte": 307,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp only [Nat.succ_pos', Nat.succ_le_succ_iff, Nat.cast_add, Nat.cast_one, add_assoc] at hn"
+        },
+        {
+          "startByte": 310,
+          "stopByte": 329,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have hk\u2084 := hk\u2081"
+        },
+        {
+          "startByte": 332,
+          "stopByte": 351,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have hk\u2085 := hk\u2082"
+        },
+        {
+          "startByte": 354,
+          "stopByte": 373,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have hk\u2086 := hk\u2083"
+        },
+        {
+          "startByte": 376,
+          "stopByte": 399,
+          "syntaxKind": "Lean.Parser.Tactic.clear",
+          "text": "clear hk\u2081 hk\u2082 hk\u2083"
+        },
+        {
+          "startByte": 402,
+          "stopByte": 472,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp only [Nat.cast_add, Nat.cast_one, add_assoc] at hk\u2084 hk\u2085 hk\u2086"
+        },
+        {
+          "startByte": 475,
+          "stopByte": 494,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have hk\u2087 := hk\u2085"
+        },
+        {
+          "startByte": 497,
+          "stopByte": 516,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have hk\u2088 := hk\u2086"
+        },
+        {
+          "startByte": 519,
+          "stopByte": 536,
+          "syntaxKind": "Lean.Parser.Tactic.clear",
+          "text": "clear hk\u2085 hk\u2086"
+        },
+        {
+          "startByte": 539,
+          "stopByte": 603,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp only [Nat.cast_add, Nat.cast_one, add_assoc] at hk\u2087 hk\u2088"
+        },
+        {
+          "startByte": 606,
+          "stopByte": 625,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have hk\u2089 := hk\u2088"
+        },
+        {
+          "startByte": 628,
+          "stopByte": 650,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have hk\u2081\u2080 := hk\u2087"
+        },
+        {
+          "startByte": 653,
+          "stopByte": 670,
+          "syntaxKind": "Lean.Parser.Tactic.clear",
+          "text": "clear hk\u2088 hk\u2087"
+        },
+        {
+          "startByte": 673,
+          "stopByte": 740,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp only [Nat.cast_add, Nat.cast_one, add_assoc] at hk\u2089 hk\u2081\u2080"
+        },
+        {
+          "startByte": 743,
+          "stopByte": 765,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have hk\u2081\u2081 := hk\u2089"
+        },
+        {
+          "startByte": 768,
+          "stopByte": 793,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have hk\u2081\u2082 := hk\u2081\u2080"
+        },
+        {
+          "startByte": 796,
+          "stopByte": 816,
+          "syntaxKind": "Lean.Parser.Tactic.clear",
+          "text": "clear hk\u2089 hk\u2081\u2080"
+        },
+        {
+          "startByte": 819,
+          "stopByte": 889,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp only [Nat.cast_add, Nat.cast_one, add_assoc] at hk\u2081\u2081 hk\u2081\u2082"
+        },
+        {
+          "startByte": 892,
+          "stopByte": 917,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have hk\u2081\u2083 := hk\u2081\u2082"
+        },
+        {
+          "startByte": 920,
+          "stopByte": 945,
+          "syntaxKind": "Lean.Parser.Tactic.tacticHave_",
+          "text": "have hk\u2081\u2084 := hk\u2081\u2081"
+        },
+        {
+          "startByte": 948,
+          "stopByte": 971,
+          "syntaxKind": "Lean.Parser.Tactic.clear",
+          "text": "clear hk\u2081\u2082 hk\u2081\u2081"
+        },
+        {
+          "startByte": 974,
+          "stopByte": 1044,
+          "syntaxKind": "Lean.Parser.Tactic.simp",
+          "text": "simp only [Nat.cast_add, Nat.cast_one, add_assoc] at hk\u2081\u2083 hk\u2081\u2084"
+        },
+        {
+          "startByte": 1047,
+          "stopByte": 1053,
+          "syntaxKind": "Mathlib.Tactic.tacticHave_",
+          "text": "have h"
+        }
+      ],
+      "verification_time": null
+    }
+  ],
+  "manifest": "data/c0.manifest.json",
+  "native_artifact": {
+    "path": "artifacts/c0_native_units.jsonl.gz",
+    "sha256": "c53e4240355373d1b16c80634305f1b3611f6970607267479a3825ac8e3d4331"
+  },
+  "proposals_joined": 308960,
+  "selection_rule": "global extrema and lexicographically stable representatives across correctness, reuse, syntax, fallback, duplication, and available verifier telemetry strata"
+}

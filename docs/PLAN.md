@@ -5,6 +5,8 @@ do not begin merely because the implementation is interesting.
 
 ## Phase 0 — Corpus integrity
 
+Status: complete.
+
 - Reproduce 9,655 theorems, 308,960 registered proposals, 168,029 correct
   proposals, and 32 excluded padding proposals.
 - Verify every source SHA-256 in `data/c0.manifest.json`.
@@ -14,6 +16,9 @@ do not begin merely because the implementation is interesting.
 Gate: exact agreement with the authoritative C0 validation.
 
 ## Phase 1 — Exact-reuse characterization
+
+Status: complete. See `reports/c0_exact_analysis.json`,
+`reports/c0_native_prefix.json`, and `reports/c0_hand_review.md`.
 
 - Define tactic boundaries using Lean itself.
 - Measure parser eligibility and fallback coverage.
@@ -25,6 +30,8 @@ Gate: the measured reuse must be real under Lean-native parsing, not an artifact
 of whitespace removal or heuristic line grouping.
 
 ## Phase 2 — Cost-weighted oracle
+
+Status: next.
 
 - Add per-tactic queue, execution, state-size, outcome, and timeout telemetry to
   an independent replay harness.
@@ -72,4 +79,3 @@ Gate: make only claims supported by the registered comparison.
 - Structured metrics and trace export.
 - Containers and pinned toolchain installation.
 - Compatibility adapter for one real rollout pipeline.
-

@@ -1,0 +1,14 @@
+name = "lean_prefix_native"
+version = "0.1.0"
+defaultTargets = ["lean-prefix-extract"]
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/xinhjBrant/mathlib4.git"
+rev = "2f65ba7f1a9144b20c8e7358513548e317d26de1"
+
+[[lean_exe]]
+name = "lean-prefix-extract"
+root = "LeanPrefix.Extract"
+supportInterpreter = true
+

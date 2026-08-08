@@ -22,22 +22,21 @@ The project asks one question:
 > Given exactly the same complete proof attempts, can exact shared-prefix
 > execution return exactly the same Lean verdicts with materially less work?
 
-## Starting evidence
+## Measured discovery evidence
 
-The source corpus contains 9,655 theorems and 308,960 registered proposals from
-a frozen DeepSeek-Prover C0 rollout. A preliminary read-only analysis using the
-source project's operational proof-step parser observed:
+The self-contained source corpus has 9,655 theorems and 308,960 registered
+proposals from a frozen DeepSeek-Prover C0 rollout. Checked-in analyses measure:
 
-- 42,815 exact duplicate proposals (13.9%);
-- 53.6% of proposals sharing an exact first parsed step with another proposal
-  for the same theorem;
-- 913,966 parsed step occurrences versus 712,284 distinct prefix-trie nodes;
-- an unweighted 1.28x oracle ratio, or 201,682 repeated step occurrences.
+- 42,815 exact duplicate proposal occurrences (13.86%);
+- 304,546 proposals (98.57%) eligible for conservative Lean-native splitting;
+- 53.71% of eligible proposals sharing an exact first tactic prefix with
+  another proposal for the same theorem;
+- 888,421 eligible tactic occurrences versus 689,193 exact prefix-trie nodes;
+- an unweighted 1.289x oracle ratio, or 199,228 repeated tactic occurrences.
 
-These are **observations**, not repository-reproduced measurements and not a
-speedup claim. Cheap and expensive tactics are weighted equally in that count.
-The first milestones reproduce the corpus and then replace heuristic parsing
-with Lean-native boundaries and cost-weighted measurements.
+These are **measured syntax-level opportunity counts**, not a speedup claim.
+Cheap, expensive, and never-reached tactics are weighted equally. The next gate
+is independent Lean replay with per-tactic timing and reachability.
 
 ## Scientific boundary
 
@@ -58,9 +57,11 @@ See:
 
 ## Repository status
 
-Bootstrap stage. The only executable functionality is an immutable-corpus
-auditor and a pure prefix-trie accounting primitive. No performance result or
-Lean execution-engine result is claimed yet.
+Phase 1 characterization is complete. The repository audits the immutable
+corpus, assigns stable proposal identities, parses proof attempts using the
+pinned Lean environment, computes exact whole-proof and rooted-prefix reuse,
+and selects deterministic human-review cases. No execution-engine speedup is
+claimed yet.
 
 ## Quick start
 
@@ -70,6 +71,7 @@ python -m venv .venv
 python -m pip install -e .
 python -m unittest discover -s tests -v
 lean-prefix audit --manifest data/c0.manifest.json
+lean-prefix analyze-exact --manifest data/c0.manifest.json
 ```
 
 The complete C0 corpus is included as four deterministic gzip shards under

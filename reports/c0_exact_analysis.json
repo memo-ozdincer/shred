@@ -1,0 +1,29 @@
+{
+  "analysis": "exact-complete-proof-v1",
+  "correct": 168029,
+  "duplicate_proposal_occurrences": 42815,
+  "duplicate_proposal_share": 0.1385778094251683,
+  "per_proposal_verifier_telemetry": {
+    "coverage": 0.05541170378042465,
+    "rows": 17120,
+    "verification_seconds": {
+      "max": 300.11373233795166,
+      "median": 5.422710657119751,
+      "p90": 7.594908237457275,
+      "p95": 8.363254308700562,
+      "p99": 10.648339748382568
+    }
+  },
+  "proof_bytes": {
+    "max": 1950.0,
+    "median": 75.0,
+    "p90": 171.0,
+    "p99": 440.0
+  },
+  "proposals": 308960,
+  "theorem_duplicate_share": 0.8591403417918178,
+  "theorems": 9655,
+  "theorems_with_exact_duplicates": 8295,
+  "unique_exact_proofs_within_theorem": 266145,
+  "whole_proof_oracle_ratio": 1.160870953803378
+}

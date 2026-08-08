@@ -14,6 +14,8 @@ artifacts/
 cache/
 external-data/
 reports/private/
+reports/c0_native_prefix_sample.json
+reports/c0_native_prefix_stress.json
 *.jsonl
 *.parquet
 !data/c0/proofs/*.jsonl.gz
