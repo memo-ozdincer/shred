@@ -236,3 +236,29 @@ telemetry but have `heartbeats: null`; aggregate reports count
 `heartbeat_uninstrumented_units`. The six-shard breadth gate must pass again
 before a full-corpus launch. It subsequently passed with zero full or sequential
 disagreements across 14,496 proposals and no missing CPU telemetry.
+
+## D-012 — Preserve C0 fenced parsing and stop at proof completion
+
+Date: 2026-08-08
+
+Status: accepted after the complete diagnostic census
+
+Decision: mirror the C0 verifier's exact fenced-code regular expression before
+submitting a full proof. A generated response without a matching closing fence
+is an explicit independent-verification fallback and is never replayed as if
+the missing delimiter had been repaired. During sequential replay, the first
+error-free zero-goal response completes the proof even if no further proof-state
+ID is returned. Later native units are recorded as
+`unreachable_after_completion` and consume no replay cost.
+
+Reason: the clean 128-shard diagnostic census covered all 308,960 proposals and
+found 36 full C0-label disagreements, all C0-false to profiler-true. Inspection
+showed that the profiler had stripped or forgiven missing closing fences while
+C0 submitted `failed to parse`. The same census found valid proofs whose goals
+closed before syntactically present trailing tactics; attempting those tails
+manufactured sequential failures.
+
+Consequence: fenced parse failures retain their independent baseline cost and
+proposal accounting but cannot create prefix savings. Early-completion tails
+are separately counted and excluded from reached-prefix cost. This correction
+does not alter proof text, Lean, Mathlib, or the acceptance rule.

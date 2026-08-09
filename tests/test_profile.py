@@ -2,6 +2,7 @@ import unittest
 
 from lean_prefix.profile import (
     ReplayProfileError,
+    c0_verifier_declaration,
     heartbeat_instrumentation_supported,
     lean_complete,
     proof_step_succeeded,
@@ -17,6 +18,14 @@ class ReplayProfileTests(unittest.TestCase):
         self.assertTrue(lean_complete({"env": 1}))
         self.assertFalse(lean_complete({"messages": [{"severity": "error", "data": "bad"}]}))
         self.assertFalse(lean_complete({"sorries": [{"goal": "False"}]}))
+
+    def test_c0_fenced_code_contract_is_exact(self):
+        statement = "theorem t : True := by\n"
+        self.assertEqual(
+            c0_verifier_declaration(statement, "  trivial\n```"),
+            statement + "  trivial",
+        )
+        self.assertIsNone(c0_verifier_declaration(statement, "  trivial"))
 
     def test_root_placeholder_starts_on_a_new_indented_line(self):
         self.assertEqual(theorem_root_code("example : True := by\n"), "example : True := by\n  sorry")
@@ -60,6 +69,7 @@ class ReplayProfileTests(unittest.TestCase):
         }
         self.assertFalse(proof_step_succeeded(response))
         self.assertTrue(proof_step_succeeded({"proofState": 1, "goals": []}))
+        self.assertTrue(proof_step_succeeded({"goals": []}))
 
     def test_auxiliary_declaration_limitation_requires_fallback(self):
         response = {

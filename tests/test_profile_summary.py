@@ -123,6 +123,38 @@ class ProfileSummaryTests(unittest.TestCase):
             with self.assertRaises(ProfileSummaryError):
                 summarize_replay_profiles([path])
 
+    def test_unreachable_completed_tail_is_not_counted_as_work(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "profile.jsonl"
+            row = {
+                "proposal_id": "early-completion",
+                "theorem_name": "t",
+                "native_eligible": True,
+                "replay_eligible": True,
+                "native_unit_count": 2,
+                "full": {
+                    "complete": True,
+                    "verdict_match": True,
+                    "cpu_seconds": 2.0,
+                    "wall_seconds": 2.0,
+                },
+                "sequential": {"complete": True, "verdict_match": True},
+                "steps": [
+                    {
+                        "prefix_sha256": "done",
+                        "reachability": "reached",
+                        "cpu_seconds": 1.0,
+                        "wall_seconds": 1.0,
+                    },
+                    {"reachability": "unreachable_after_completion"},
+                ],
+            }
+            path.write_text(json.dumps(row) + "\n")
+            report = summarize_replay_profiles([path], expected_proposals=1)
+            self.assertEqual(report["status"], "complete")
+            self.assertEqual(report["counts"]["native_reached_units"], 1)
+            self.assertEqual(report["counts"]["unreachable_after_completion"], 1)
+
     def test_replay_fallback_retains_full_cost_but_excludes_prefix_cost(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "profile.jsonl"

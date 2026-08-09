@@ -115,13 +115,22 @@ the final breadth rerun also passes with 14,496/14,496 full verdict agreement,
 CPU telemetry. The six-shard 11.74% opportunity fraction is diagnostic only,
 not the registered full-corpus gate result.
 
+The later uniform 128-shard census completed all 308,960 unique proposals under
+commit `4a7e7b2`, but it is diagnostic only. Final totals were 36 full C0-label
+disagreements, 72 sequential disagreements, 35 process errors, 118 full
+timeouts, and 6 replay timeouts; the summarizer refused a cost claim. All 36
+full disagreements were C0-false to profiler-true and traced to the profiler
+forgiving missing closing code fences. D-012 records exact C0 fenced parsing
+and correct zero-goal early completion. The raw census artifacts remain under
+`artifacts/replay/` and reports under `reports/private/replay/`.
+
 ## Exact next action
 
-Shard indices 7, 46, 53, 62, 78, and 93 are complete under the final corrected
-code and passed the breadth gate. Ensure this repository is clean at the final
-handoff commit and that the native artifact hash matches, then run the remaining
-122 deterministic shards with concurrency up to 112 using the resume command
-in `COMPUTE.md`. All outputs must remain under this repository on `/scratch`.
+Run the complete census mismatch set against D-012's correction and classify
+the remaining structured-control disagreements. Do not launch another full
+cost run until the targeted set has exact full/sequential agreement or explicit
+fallback, and reduce final concurrency substantially below 112 to avoid the
+observed contention timeouts and process exits.
 
 At 30 and 60 minutes record:
 

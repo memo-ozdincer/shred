@@ -62,3 +62,12 @@ sequential verdicts agree, with no failures, missing CPU telemetry, or duplicate
 proposal IDs. Its 11.74% opportunity estimate is diagnostic, not the registered
 gate result, because these six shards were selected through earlier completion.
 The remaining 122 shards are now the next evidence-producing run.
+
+A subsequent uniform full-corpus launch completed all 128 shards and 308,960
+unique proposal IDs under commit `4a7e7b2`. It is diagnostic, not a cost result:
+the summarizer correctly refused the claim after finding 36 full C0-label
+disagreements, 72 sequential disagreements, 35 REPL process errors, 118 full
+timeouts, and 6 replay timeouts. D-012 records the exact C0 parsing and
+early-completion causes identified from this census. Heavy 112-way contention
+also makes that concurrency unsuitable for the final measurement despite safe
+memory use.

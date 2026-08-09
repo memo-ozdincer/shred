@@ -7,11 +7,12 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import subprocess
 import time
 from typing import Any, Sequence
 
-from lean_prefix.native import deterministic_gzip_text, proof_body
+from lean_prefix.native import deterministic_gzip_text
 from lean_prefix.repl import LeanRepl, ReplError, ReplResult, ReplTimeout, heartbeat_count
 from lean_prefix.review import iter_joined_records
 
@@ -22,6 +23,10 @@ import Aesop
 set_option maxHeartbeats 0
 
 open BigOperators Real Nat Topology Rat
+"""
+C0_PROMPT = """Complete the following Lean 4 code:
+
+```lean4
 """
 
 UNSUPPORTED_STANDALONE_SYNTAX = frozenset({"Lean.cdot", "Lean.calcTactic"})
@@ -54,7 +59,10 @@ def proof_step_succeeded(response: dict[str, Any]) -> bool:
     return (
         "message" not in response
         and not response.get("sorries")
-        and isinstance(response.get("proofState"), int)
+        and (
+            isinstance(response.get("proofState"), int)
+            or response.get("goals") == []
+        )
         and not any(
             message.get("severity") == "error"
             for message in response.get("messages", [])
@@ -85,6 +93,18 @@ def heartbeat_instrumentation_supported(syntax_kind: str) -> bool:
 def theorem_root_code(statement: str) -> str:
     separator = "" if statement.endswith("\n") else "\n"
     return statement + separator + "  sorry"
+
+
+def c0_verifier_declaration(statement: str, proof: str) -> str | None:
+    """Mirror C0's fenced-code extraction and return the declaration body."""
+    code_file = C0_PROMPT + C0_BASE_CONTEXT + statement + proof
+    match = re.search(r"```lean4\n(.*?)\n```", code_file, re.DOTALL)
+    if match is None:
+        return None
+    parsed = match.group(1)
+    if not parsed.startswith(C0_BASE_CONTEXT):
+        raise ReplayProfileError("C0 parser returned code outside the pinned base context")
+    return parsed[len(C0_BASE_CONTEXT):]
 
 
 def theorem_root_outcome(
@@ -198,7 +218,8 @@ def profile_replay_shard(
     since_restart = 0
     selected = full_completed = verdict_matches = full_timeouts = full_errors = 0
     eligible = replay_eligible = replay_fallback = replay_fallback_units = 0
-    units_total = reached_units = unreachable_units = invalid_root_units = 0
+    units_total = reached_units = unreachable_units = completed_tail_units = 0
+    invalid_root_units = 0
     sequential_matches = sequential_disagreements = root_timeouts = root_errors = 0
     root_unavailable = 0
     replayed_units = replay_timeouts = replay_errors = 0
@@ -291,7 +312,10 @@ def profile_replay_shard(
                     "sequential": None,
                     "steps": [],
                 }
-                code = str(proposal.record["theorem_statement"]) + proof_body(proposal.proof)
+                statement = str(proposal.record["theorem_statement"])
+                declaration = c0_verifier_declaration(statement, proposal.proof)
+                parse_failed = declaration is None
+                code = "failed to parse" if parse_failed else declaration
                 try:
                     active, env = ensure_client()
                     full = active.elaborate(code, env=env)
@@ -303,6 +327,7 @@ def profile_replay_shard(
                     verdict_matches += int(verdict == proposal.correct)
                     record["full"] = {
                         **_result_metrics(full),
+                        "c0_parse_failed": parse_failed,
                         "complete": verdict,
                         "verdict_match": verdict == proposal.correct,
                         "message_count": len(full.response.get("messages", [])),
@@ -327,6 +352,18 @@ def profile_replay_shard(
                 if edges is not None:
                     eligible += 1
                     units_total += len(units)
+                    if parse_failed:
+                        replay_fallback += 1
+                        replay_fallback_units += len(units)
+                        record["replay_fallback_reason"] = "C0 fenced-code parse failure"
+                        record["sequential"] = {
+                            "supported": False,
+                            "not_attempted_reason": record["replay_fallback_reason"],
+                        }
+                        output.write(
+                            json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n"
+                        )
+                        continue
                     unsupported = unsupported_standalone_syntax(units)
                     if unsupported:
                         replay_fallback += 1
@@ -349,7 +386,7 @@ def profile_replay_shard(
                             active,
                             env,
                             proposal.theorem_name,
-                            str(proposal.record["theorem_statement"]),
+                            statement,
                         )
                     except ReplTimeout as error:
                         root_timeouts += 1
@@ -410,15 +447,23 @@ def profile_replay_shard(
                         continue
 
                     replay_available = True
+                    replay_complete = False
                     replay_supported = True
                     replay_fallback_reason: str | None = None
                     last_goals: list[Any] | None = None
                     for depth, (edge, unit) in enumerate(
                         zip(edges, units, strict=True), start=1
                     ):
-                        reachability = "reached" if replay_available else "unreachable_after_failure"
+                        if replay_complete:
+                            reachability = "unreachable_after_completion"
+                        elif replay_available:
+                            reachability = "reached"
+                        else:
+                            reachability = "unreachable_after_failure"
                         if replay_available:
                             reached_units += 1
+                        elif replay_complete:
+                            completed_tail_units += 1
                         else:
                             unreachable_units += 1
                         step: dict[str, Any] = {
@@ -429,7 +474,11 @@ def profile_replay_shard(
                             "reachability": reachability,
                         }
                         if not replay_available:
-                            step["not_attempted_reason"] = "prior exact unit failed or timed out"
+                            step["not_attempted_reason"] = (
+                                "proof already completed"
+                                if replay_complete
+                                else "prior exact unit failed or timed out"
+                            )
                             record["steps"].append(step)
                             continue
                         try:
@@ -463,12 +512,23 @@ def profile_replay_shard(
                                     "heartbeats": heartbeats,
                                     "success": step_success,
                                     "error": replay.response.get("message"),
+                                    "error_messages": [
+                                        message.get("data")
+                                        for message in replay.response.get("messages", [])
+                                        if message.get("severity") == "error"
+                                    ],
                                     "goals_after": len(goals) if isinstance(goals, list) else None,
                                 }
                             )
                             if step_success:
-                                current_state = int(replay.response["proofState"])
                                 last_goals = goals if isinstance(goals, list) else None
+                                if last_goals == []:
+                                    replay_complete = True
+                                    replay_available = False
+                                elif isinstance(replay.response.get("proofState"), int):
+                                    current_state = int(replay.response["proofState"])
+                                else:
+                                    replay_available = False
                             else:
                                 replay_available = False
                         except ReplTimeout as error:
@@ -502,7 +562,7 @@ def profile_replay_shard(
                         )
                         continue
 
-                    sequential_complete = bool(units and replay_available and last_goals == [])
+                    sequential_complete = bool(units and replay_complete)
                     sequential_match = sequential_complete == verdict
                     sequential_matches += int(sequential_match)
                     sequential_disagreements += int(not sequential_match)
@@ -513,7 +573,7 @@ def profile_replay_shard(
                             step["reachability"] == "reached" for step in record["steps"]
                         ),
                         "unreachable_units": sum(
-                            step["reachability"] == "unreachable_after_failure"
+                            step["reachability"].startswith("unreachable_")
                             for step in record["steps"]
                         ),
                     }
@@ -573,6 +633,7 @@ def profile_replay_shard(
             "native_units": units_total,
             "reached_units": reached_units,
             "unreachable_after_failure": unreachable_units,
+            "unreachable_after_completion": completed_tail_units,
             "unreachable_invalid_root": invalid_root_units,
             "sequential_verdict_matches": sequential_matches,
             "sequential_verdict_disagreements": sequential_disagreements,

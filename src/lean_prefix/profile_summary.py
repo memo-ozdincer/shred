@@ -77,7 +77,8 @@ def summarize_replay_profiles(
     prefix_heartbeats: dict[str, list[float]] = defaultdict(list)
     prefix_theorem: dict[str, str] = {}
     verdict_disagreements = full_failures = sequential_disagreements = sequential_failures = 0
-    syntactic_units = reached_units = unreachable_units = invalid_root_units = replayed = 0
+    syntactic_units = reached_units = unreachable_units = completed_tail_units = 0
+    invalid_root_units = replayed = 0
     root_unavailable = 0
     replay_eligible = replay_fallback = replay_fallback_units = 0
     missing_full_cpu = missing_step_cpu = 0
@@ -126,6 +127,9 @@ def summarize_replay_profiles(
             reachability = step.get("reachability", "reached")
             if reachability == "unreachable_after_failure":
                 unreachable_units += 1
+                continue
+            if reachability == "unreachable_after_completion":
+                completed_tail_units += 1
                 continue
             if reachability == "unreachable_invalid_root":
                 invalid_root_units += 1
@@ -217,6 +221,7 @@ def summarize_replay_profiles(
             "native_syntactic_units": syntactic_units,
             "native_reached_units": reached_units,
             "unreachable_after_failure": unreachable_units,
+            "unreachable_after_completion": completed_tail_units,
             "unreachable_invalid_root": invalid_root_units,
             "replayed_units": replayed,
             "root_unavailable": root_unavailable,
