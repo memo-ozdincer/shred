@@ -104,7 +104,7 @@ process deaths, three historical C0-label disagreements, and zero
 profiler-induced disagreements. The strict summarizer refuses a claim. The
 checked-in diagnostic decomposition is
 `reports/c0_opportunity_decomposition.json`, SHA-256
-`94e079420e4b4195a11c543e69653c1b843c5bacf10b0cfd292ebdb5a15c4ad1`.
+`92ef7b7e2edf3a2e6452d549596ee1624f958e8331f9dc172f96e96614009e64`.
 Its exact-prefix estimate is 3.762% (bootstrap 3.401%–4.159%), so D-017 stops
 the version-one executor.
 
