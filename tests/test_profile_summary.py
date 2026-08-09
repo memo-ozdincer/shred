@@ -185,6 +185,40 @@ class ProfileSummaryTests(unittest.TestCase):
             self.assertEqual(report["cpu_seconds"]["full_independent_verification"], 3.0)
             self.assertEqual(report["cpu_seconds"]["profiled_reached_units"], 0)
 
+    def test_full_timeout_is_an_accounted_negative_verdict_and_fallback(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "profile.jsonl"
+            row = {
+                "proposal_id": "timeout",
+                "theorem_name": "t",
+                "native_eligible": True,
+                "replay_eligible": False,
+                "native_unit_count": 1,
+                "full": {
+                    "complete": False,
+                    "verdict_match": True,
+                    "timed_out": True,
+                    "cpu_seconds": 299.0,
+                    "wall_seconds": 300.0,
+                },
+                "sequential": {
+                    "supported": False,
+                    "not_attempted_reason": "full independent verification reached its timeout",
+                },
+                "steps": [],
+            }
+            path.write_text(json.dumps(row) + "\n")
+            report = summarize_replay_profiles([path], expected_proposals=1)
+            self.assertEqual(report["status"], "complete")
+            self.assertEqual(report["counts"]["full_failures"], 0)
+            self.assertEqual(report["counts"]["replay_fallback_proposals"], 1)
+            self.assertEqual(
+                report["cpu_seconds"]["full_independent_verification"], 299.0
+            )
+            self.assertEqual(
+                report["cpu_seconds"]["reusable_prefix_opportunity"], 0.0
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

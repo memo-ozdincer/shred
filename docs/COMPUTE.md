@@ -1,68 +1,91 @@
 # Phase 2 Compute Runbook
 
-The replay profiler is CPU- and RAM-bound; it does not use GPUs. Each worker
-owns one persistent pinned Lean REPL and processes complete theorem blocks.
-Outputs are written directly under the repository on scratch so they survive
-the allocation. A node-local copy of the 3.9 GiB Mathlib workspace is optional
-for faster startup, but it is never the sole output location.
+The corrected profiler is CPU-bound and uses no GPU. Each worker owns one
+persistent pinned Lean REPL. Every output is written directly to `/scratch`, so
+completed reports survive the end of an allocation.
 
-## Recommended allocation
+## Frozen execution settings
 
-A standard Nibi CPU node provides 192 logical CPUs and 748 GiB allocatable RAM
-(`766000M`). Use 112 workers initially, one persistent REPL per worker, a 24
-GiB hard address-space limit per REPL, a 300-second request timeout, and restart
-each process after 128 proposals.
+- 128 deterministic theorem shards;
+- unchanged complete declaration as the authoritative baseline;
+- separate in-process Lean C-profiler request for conservative attribution;
+- 300-second timeout for either request;
+- restart each REPL after 128 proposals;
+- 48 GiB hard address-space limit per process;
+- patched REPL executable SHA-256
+  `89a35afd9f7a472b45e57dfd5dd0cede08bd0485ca4ac71b860d486cde8a42f3`.
 
-The 24 GiB value is a limit, not reserved memory. The largest RSS observed in
-the integration checks was 3.71 GiB, so 112 workers project to about 416 GiB at
-that observed peak and leave over 300 GiB for heavier cases, Python processes,
-the OS, and filesystem cache. Check aggregate memory after 30 and 60 minutes.
-Reduce concurrency if available RAM falls below 100 GiB or if the kernel/Slurm
-reports memory pressure. A 6 TiB node is convenient but not required.
+The address-space value is a safety ceiling, not reserved RAM. Six-worker
+monitoring on `c126` observed roughly 3.7–3.9 GiB RSS per active Lean process
+and more than 730 GiB node memory available. The earlier 112-worker diagnostic
+had safe memory but unacceptable CPU/cache contention and long timeout tails.
+Use 24–32 workers for the complete run; do not return to 112 merely because RAM
+is available.
 
-## Run
+## Final breadth gate
 
-From a clean checkout with `artifacts/c0_native_units.jsonl.gz` restored to the
-checksum in `reports/c0_native_prefix.json`:
+The deterministic breadth set is shards 7, 46, 53, 62, 78, and 93 (14,496
+proposals total). Run it from the clean final-profiler commit under run name
+`replay_d018_breadth`. Its durable paths are:
 
-```bash
-export LEAN_WORKSPACE=/path/to/pinned/mathlib4
-export LEAN_PREFIX_SHARD_COUNT=128
-export LEAN_PREFIX_CLI=.venv/bin/lean-prefix
-export LEAN_PREFIX_REPL_EXECUTABLE=/scratch/memoozd/rl/lean-prefix/artifacts/repl-patched-c6199a8-v2/.lake/build/bin/repl
-export PATH=/scratch/memoozd/.elan/bin:$PATH
-
-seq 0 127 | xargs -P 112 -I '{}' env LEAN_PREFIX_SHARD_INDEX='{}' \
-  scripts/profile_replay_shard.sh
+```text
+artifacts/replay_d018_breadth/shard-INDEX-of-128.jsonl.gz
+reports/private/replay_d018_breadth/shard-INDEX-of-128.json
 ```
 
-Every shard scans the small compressed manifests but executes only theorems
-whose stable corpus ordinal belongs to that shard. Each shard writes directly
-to scratch. Its gzip artifact is durable once the corresponding JSON report is
-written; a gzip interrupted before that point is incomplete and should be
-overwritten by rerunning that shard.
-
-To resume without overwriting completed shards:
-
-```bash
-for index in $(seq 0 127); do
-  report="reports/private/replay/shard-${index}-of-128.json"
-  test -s "$report" || echo "$index"
-done | xargs -P 112 -I '{}' env LEAN_PREFIX_SHARD_INDEX='{}' \
-  scripts/profile_replay_shard.sh
-```
-
-Run the worker command in a persistent terminal such as `tmux`. The allocation
-ending kills active workers, but completed artifacts remain on `/scratch`.
-
-## Consolidate and gate
-
-After all shards finish, pass every artifact to the summarizer and require all
-308,960 proposal IDs:
+Consolidate only after all six reports exist:
 
 ```bash
 args=()
-for path in artifacts/replay/shard-*.jsonl.gz; do
+for index in 7 46 53 62 78 93; do
+  args+=(--artifact "artifacts/replay_d018_breadth/shard-${index}-of-128.jsonl.gz")
+done
+.venv/bin/lean-prefix summarize-replay "${args[@]}" \
+  --expected-proposals 14496 \
+  --gate-fraction 0.15 \
+  --output reports/private/replay_d018_breadth_summary.json
+```
+
+This breadth result is a semantic and operational gate, not the registered
+performance result. Require complete accounting, zero verifier disagreement,
+zero profile-enabled verdict disagreement, and no missing CPU values.
+
+## Complete census
+
+From a clean committed checkout:
+
+```bash
+export PATH=/scratch/memoozd/.elan/bin:$PATH
+export LEAN_WORKSPACE=/scratch/memoozd/rl/DeepSeek-Prover-V1.5/mathlib4
+export LEAN_PREFIX_SHARD_COUNT=128
+export LEAN_PREFIX_CLI=.venv/bin/lean-prefix
+export LEAN_PREFIX_MEMORY_GIB=48
+export LEAN_PREFIX_TIMEOUT_SECONDS=300
+export LEAN_PREFIX_RESTART_EVERY=128
+export LEAN_PREFIX_RUN_NAME=replay_d019
+export LEAN_PREFIX_REPL_EXECUTABLE=/scratch/memoozd/rl/lean-prefix/artifacts/repl-patched-c6199a8-v2/.lake/build/bin/repl
+
+seq 0 127 | xargs -P 32 -I '{}' env LEAN_PREFIX_SHARD_INDEX='{}' \
+  scripts/profile_replay_shard.sh
+```
+
+To resume, select shards by missing report. A partial gzip without its report
+is incomplete and may be overwritten; never overwrite a completed report
+casually.
+
+```bash
+for index in $(seq 0 127); do
+  report="reports/private/${LEAN_PREFIX_RUN_NAME}/shard-${index}-of-128.json"
+  test -s "$report" || echo "$index"
+done | xargs -P 32 -I '{}' env LEAN_PREFIX_SHARD_INDEX='{}' \
+  scripts/profile_replay_shard.sh
+```
+
+Consolidate and require every registered proposal:
+
+```bash
+args=()
+for path in artifacts/${LEAN_PREFIX_RUN_NAME}/shard-*.jsonl.gz; do
   args+=(--artifact "$path")
 done
 .venv/bin/lean-prefix summarize-replay "${args[@]}" \
@@ -71,34 +94,24 @@ done
   --output reports/c0_replay_cost_summary.json
 ```
 
-The summarizer refuses duplicate proposal IDs, refuses a cost claim on any
-verdict disagreement, labels missing mappings/replays as incomplete, and uses
-a fixed theorem-bootstrap seed. Preserve all shard artifacts until the final
-report, hashes, and backup have been verified.
+The summarizer fails closed on duplicate IDs or verdict disagreement and marks
+missing full/step CPU or incomplete eligible profiling as incomplete. The 15%
+threshold is frozen. Profiler-request CPU and wall time are overhead telemetry,
+not part of the independent baseline denominator or claimed opportunity.
 
-## Expected scale
+## Monitoring
 
-The login-node integration run is not a throughput benchmark. A planning range
-for 112 workers is roughly 9–23 wall-clock hours, dominated by authentic tactic
-cost and 300-second tails. Use completed-shard progress and aggregate CPU after
-the first 30 and 60 minutes to revise the ETA; do not extrapolate from syntax
-extraction, which is orders of magnitude cheaper.
-
-## Operational checks
-
-From the login node, verify that the allocation still belongs to this run:
+Check progress and memory without changing the run:
 
 ```bash
 squeue -j "$SLURM_JOB_ID" -o '%.18i %.24j %.2t %.10M %.10l %.4C %.10m %R'
-```
-
-On the compute node, monitor worker and node memory without changing the run:
-
-```bash
 free -h
-pgrep -af '/REPL/.lake/build/bin/repl' | wc -l
 ps -C repl -o rss= | awk '{sum += $1; if ($1 > max) max = $1} END {printf "rss_total_gib=%.1f rss_max_gib=%.1f\n", sum/1048576, max/1048576}'
+find "reports/private/${LEAN_PREFIX_RUN_NAME}" -type f \
+  -name 'shard-*-of-128.json' | wc -l
 ```
 
-Do not interpret a single theorem, startup interval, or partially completed
-set of fast shards as the gate result.
+Reduce concurrency if available RAM falls below 100 GiB, the scheduler reports
+memory pressure, or throughput degrades with rising timeout/process-error
+counts. Do not change proof inputs, timeout, acceptance, or the scientific gate
+to improve throughput.

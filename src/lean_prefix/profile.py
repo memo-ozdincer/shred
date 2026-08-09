@@ -1,4 +1,4 @@
-"""Reached-tactic replay and cost telemetry for the Phase 2 feasibility gate."""
+"""Conservative reached-tactic cost telemetry for the Phase 2 feasibility gate."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ import time
 from typing import Any, Sequence
 
 from lean_prefix.native import deterministic_gzip_text
-from lean_prefix.repl import LeanRepl, ReplError, ReplResult, ReplTimeout, heartbeat_count
+from lean_prefix.repl import LeanRepl, ReplError, ReplResult, ReplTimeout
 from lean_prefix.review import iter_joined_records
 
 
@@ -28,11 +28,20 @@ C0_PROMPT = """Complete the following Lean 4 code:
 
 ```lean4
 """
+IN_PROCESS_PROFILE_PREFIX = (
+    "set_option profiler true\n"
+    "set_option profiler.threshold 0\n"
+)
 
-UNSUPPORTED_STANDALONE_SYNTAX = frozenset({"Lean.cdot", "Lean.calcTactic"})
-HEARTBEAT_UNSAFE_SYNTAX = frozenset({"Lean.Parser.Tactic.«tactic_<;>_»"})
-AUXILIARY_DECLARATION_ERROR = (
-    "auxiliary declaration cannot be created when declaration name is not available"
+UNSUPPORTED_PROFILE_SYNTAX = frozenset(
+    {
+        "Lean.cdot",
+        "Lean.calcTactic",
+        "Lean.Parser.Tactic.case",
+        "Lean.Parser.Tactic.tacticSeqBracketed",
+        "Lean.Parser.Tactic.«tactic_<;>_»",
+        "Mathlib.Tactic.induction'",
+    }
 )
 
 
@@ -55,40 +64,12 @@ def lean_complete(response: dict[str, Any]) -> bool:
     return True
 
 
-def proof_step_succeeded(response: dict[str, Any]) -> bool:
-    return (
-        "message" not in response
-        and not response.get("sorries")
-        and (
-            isinstance(response.get("proofState"), int)
-            or response.get("goals") == []
-        )
-        and not any(
-            message.get("severity") == "error"
-            for message in response.get("messages", [])
-        )
-    )
-
-
-def requires_runtime_fallback(response: dict[str, Any]) -> bool:
-    return any(
-        message.get("severity") == "error"
-        and AUXILIARY_DECLARATION_ERROR in str(message.get("data", ""))
-        for message in response.get("messages", [])
-    )
-
-
-def unsupported_standalone_syntax(units: Sequence[dict[str, Any]]) -> list[str]:
+def unsupported_profile_syntax(units: Sequence[dict[str, Any]]) -> list[str]:
     return sorted({
         str(unit.get("syntaxKind"))
         for unit in units
-        if unit.get("syntaxKind") in UNSUPPORTED_STANDALONE_SYNTAX
+        if unit.get("syntaxKind") in UNSUPPORTED_PROFILE_SYNTAX
     })
-
-
-def heartbeat_instrumentation_supported(syntax_kind: str) -> bool:
-    return syntax_kind not in HEARTBEAT_UNSAFE_SYNTAX
-
 
 def theorem_root_code(statement: str) -> str:
     separator = "" if statement.endswith("\n") else "\n"
@@ -105,6 +86,102 @@ def c0_verifier_declaration(statement: str, proof: str) -> str | None:
     if not parsed.startswith(C0_BASE_CONTEXT):
         raise ReplayProfileError("C0 parser returned code outside the pinned base context")
     return parsed[len(C0_BASE_CONTEXT):]
+
+
+_PROFILE_LINE = re.compile(
+    r"^(?P<label>.+?) took (?P<value>[0-9.eE+-]+)(?P<unit>ns|us|µs|ms|s)$"
+)
+
+
+def in_process_reached_steps(
+    units: Sequence[dict[str, Any]], profiler_stderr: str
+) -> list[dict[str, Any]]:
+    """Recover a conservative reached-prefix cost from Lean's C profiler log."""
+    expected = [str(unit.get("syntaxKind")) for unit in units]
+    if not expected:
+        return []
+    scales = {"ns": 1e-9, "us": 1e-6, "µs": 1e-6, "ms": 1e-3, "s": 1.0}
+    entries: list[dict[str, Any]] = []
+    for line in profiler_stderr.splitlines():
+        match = _PROFILE_LINE.fullmatch(line.strip())
+        if match is None:
+            continue
+        entries.append({
+            "label": match.group("label"),
+            "seconds": float(match.group("value")) * scales[match.group("unit")],
+        })
+    if not entries:
+        return []
+
+    def unique_ordered_indices(wanted_labels: Sequence[str]) -> tuple[str, list[int]]:
+        states: dict[int, tuple[int, tuple[int, ...] | None]] = {
+            index: (1, (index,))
+            for index, entry in enumerate(entries)
+            if entry["label"] == wanted_labels[0]
+        }
+        if not states:
+            return "absent", []
+        for wanted in wanted_labels[1:]:
+            next_states: dict[int, tuple[int, tuple[int, ...] | None]] = {}
+            for index, entry in enumerate(entries):
+                if entry["label"] != wanted:
+                    continue
+                predecessors = [
+                    (count, path)
+                    for prior, (count, path) in states.items()
+                    if prior < index
+                ]
+                count = min(2, sum(item_count for item_count, _ in predecessors))
+                if count == 1:
+                    path = next(
+                        item_path
+                        for item_count, item_path in predecessors
+                        if item_count == 1
+                    )
+                    assert path is not None
+                    next_states[index] = (1, path + (index,))
+                elif count > 1:
+                    next_states[index] = (2, None)
+            states = next_states
+            if not states:
+                return "absent", []
+        total = min(2, sum(count for count, _ in states.values()))
+        if total != 1:
+            return "ambiguous", []
+        path = next(path for count, path in states.values() if count == 1)
+        assert path is not None
+        return "unique", list(path)
+
+    matched_indices: list[int] = []
+    for prefix_length in range(len(expected), 0, -1):
+        status, indices = unique_ordered_indices([
+            f"tactic execution of {wanted}"
+            for wanted in expected[:prefix_length]
+        ])
+        if status == "ambiguous":
+            # Syntax-kind-only profiler records cannot prove which duplicate
+            # frame is the frozen top-level unit. Fail closed instead of
+            # choosing a favorable alignment.
+            return []
+        if status == "unique":
+            matched_indices = indices
+            break
+    if not matched_indices:
+        return []
+
+    reached: list[dict[str, Any]] = []
+    for depth, entry_index in enumerate(matched_indices):
+        if depth == 0:
+            # Work before the first outer tactic record includes theorem
+            # elaboration, so count only the tactic's own exclusive frame.
+            seconds = float(entries[entry_index]["seconds"])
+        else:
+            seconds = sum(
+                float(entry["seconds"])
+                for entry in entries[matched_indices[depth - 1] + 1 : entry_index + 1]
+            )
+        reached.append({"tag": expected[depth], "seconds": seconds})
+    return reached
 
 
 def theorem_root_outcome(
@@ -147,6 +224,14 @@ def _result_metrics(result: ReplResult) -> dict[str, Any]:
         "wall_seconds": result.wall_seconds,
         "cpu_seconds": result.cpu_seconds,
         "peak_rss_kib": result.peak_rss_kib,
+    }
+
+
+def _timeout_metrics(error: ReplTimeout) -> dict[str, Any]:
+    return {
+        "wall_seconds": error.wall_seconds,
+        "cpu_seconds": error.cpu_seconds,
+        "peak_rss_kib": error.peak_rss_kib,
     }
 
 
@@ -220,11 +305,13 @@ def profile_replay_shard(
     eligible = replay_eligible = replay_fallback = replay_fallback_units = 0
     units_total = reached_units = unreachable_units = completed_tail_units = 0
     invalid_root_units = 0
-    sequential_matches = sequential_disagreements = root_timeouts = root_errors = 0
+    profile_matches = profile_disagreements = root_timeouts = root_errors = 0
     root_unavailable = 0
-    replayed_units = replay_timeouts = replay_errors = 0
-    heartbeat_total = heartbeat_uninstrumented_units = 0
-    replay_wall = replay_cpu = full_wall = full_cpu = root_wall = root_cpu = 0.0
+    profiled_units = 0
+    profile_timeouts = profile_errors = profile_verdict_disagreements = 0
+    attributed_wall = attributed_cpu = 0.0
+    full_wall = full_cpu = root_wall = root_cpu = 0.0
+    profile_wall = profile_cpu = 0.0
     previous_theorem: str | None = None
     theorem_index = -1
     requested_ids = set(proposal_ids) if proposal_ids is not None else None
@@ -309,7 +396,7 @@ def profile_replay_shard(
                     "replay_eligible": False,
                     "replay_fallback_reason": None,
                     "full": None,
-                    "sequential": None,
+                    "profile": None,
                     "steps": [],
                 }
                 statement = str(proposal.record["theorem_statement"])
@@ -318,7 +405,7 @@ def profile_replay_shard(
                 code = "failed to parse" if parse_failed else declaration
                 try:
                     active, env = ensure_client()
-                    full = active.elaborate(code, env=env)
+                    full = active.elaborate(code, env=env, all_tactics=False)
                     full_wall += full.wall_seconds
                     if full.cpu_seconds is not None:
                         full_cpu += full.cpu_seconds
@@ -331,19 +418,68 @@ def profile_replay_shard(
                         "complete": verdict,
                         "verdict_match": verdict == proposal.correct,
                         "message_count": len(full.response.get("messages", [])),
+                        "error_messages": [
+                            message.get("data")
+                            for message in full.response.get("messages", [])
+                            if message.get("severity") == "error"
+                        ],
                         "sorry_count": len(full.response.get("sorries", [])),
                         "system_error": full.response.get("message"),
                     }
                 except ReplTimeout as error:
                     full_timeouts += 1
-                    record["full"] = {"timed_out": True, "error": str(error)}
+                    timeout_match = not proposal.correct
+                    verdict_matches += int(timeout_match)
+                    if error.wall_seconds is not None:
+                        full_wall += error.wall_seconds
+                    if error.cpu_seconds is not None:
+                        full_cpu += error.cpu_seconds
+                    record["full"] = {
+                        **_timeout_metrics(error),
+                        "c0_parse_failed": parse_failed,
+                        "complete": False,
+                        "verdict_match": timeout_match,
+                        "timed_out": True,
+                        "error": str(error),
+                    }
                     stop_client()
-                    output.write(json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n")
+                    edges = native.get("exact_edges")
+                    units = native.get("units", [])
+                    if edges is not None:
+                        eligible += 1
+                        units_total += len(units)
+                        replay_fallback += 1
+                        replay_fallback_units += len(units)
+                        record["replay_fallback_reason"] = (
+                            "full independent verification reached its timeout"
+                        )
+                        record["profile"] = {
+                            "supported": False,
+                            "not_attempted_reason": record["replay_fallback_reason"],
+                        }
+                    output.write(
+                        json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n"
+                    )
                     continue
                 except ReplError as error:
                     full_errors += 1
                     record["full"] = {"timed_out": False, "error": str(error)}
                     stop_client()
+                    edges = native.get("exact_edges")
+                    units = native.get("units", [])
+                    if edges is not None:
+                        eligible += 1
+                        units_total += len(units)
+                        replay_fallback += 1
+                        replay_fallback_units += len(units)
+                        record["replay_fallback_reason"] = (
+                            "full independent verification failed at the process or "
+                            "protocol level"
+                        )
+                        record["profile"] = {
+                            "supported": False,
+                            "not_attempted_reason": record["replay_fallback_reason"],
+                        }
                     output.write(json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n")
                     continue
 
@@ -356,7 +492,7 @@ def profile_replay_shard(
                         replay_fallback += 1
                         replay_fallback_units += len(units)
                         record["replay_fallback_reason"] = "C0 fenced-code parse failure"
-                        record["sequential"] = {
+                        record["profile"] = {
                             "supported": False,
                             "not_attempted_reason": record["replay_fallback_reason"],
                         }
@@ -364,14 +500,15 @@ def profile_replay_shard(
                             json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n"
                         )
                         continue
-                    unsupported = unsupported_standalone_syntax(units)
+                    unsupported = unsupported_profile_syntax(units)
                     if unsupported:
                         replay_fallback += 1
                         replay_fallback_units += len(units)
                         record["replay_fallback_reason"] = (
-                            "unsupported standalone syntax: " + ", ".join(unsupported)
+                            "unsupported structural-control syntax: "
+                            + ", ".join(unsupported)
                         )
-                        record["sequential"] = {
+                        record["profile"] = {
                             "supported": False,
                             "not_attempted_reason": record["replay_fallback_reason"],
                         }
@@ -379,61 +516,179 @@ def profile_replay_shard(
                             json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n"
                         )
                         continue
-                    record["replay_eligible"] = True
-                    replay_eligible += 1
+                    assert declaration is not None
                     try:
-                        current_state, unavailable = ensure_root(
-                            active,
-                            env,
-                            proposal.theorem_name,
-                            statement,
+                        profile_full = active.elaborate(
+                            IN_PROCESS_PROFILE_PREFIX + declaration,
+                            env=env,
+                            all_tactics=False,
                         )
+                        profile_wall += profile_full.wall_seconds
+                        if profile_full.cpu_seconds is not None:
+                            profile_cpu += profile_full.cpu_seconds
+                        profile_verdict = lean_complete(profile_full.response)
+                        profile_match = profile_verdict == verdict
+                        profile_verdict_disagreements += int(not profile_match)
+                        record["in_process_profile"] = {
+                            **_result_metrics(profile_full),
+                            "complete": profile_verdict,
+                            "verdict_match": profile_match,
+                            "profiler_stderr_bytes": len(
+                                profile_full.stderr.encode("utf-8")
+                            ),
+                        }
+                        if not profile_match:
+                            raise ReplayProfileError(
+                                "profile-enabled full replay changed the Lean verdict for "
+                                f"{proposal.proposal_id}"
+                            )
+                    except ReplTimeout as error:
+                        profile_timeouts += 1
+                        if error.wall_seconds is not None:
+                            profile_wall += error.wall_seconds
+                        if error.cpu_seconds is not None:
+                            profile_cpu += error.cpu_seconds
+                        replay_fallback += 1
+                        replay_fallback_units += len(units)
+                        record["replay_fallback_reason"] = (
+                            "in-process profiling request reached its timeout"
+                        )
+                        record["in_process_profile"] = {
+                            **_timeout_metrics(error),
+                            "timed_out": True,
+                            "error": str(error),
+                        }
+                        record["profile"] = {
+                            "supported": False,
+                            "not_attempted_reason": record["replay_fallback_reason"],
+                        }
+                        stop_client()
+                        output.write(
+                            json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n"
+                        )
+                        continue
+                    except ReplError as error:
+                        profile_errors += 1
+                        replay_fallback += 1
+                        replay_fallback_units += len(units)
+                        record["replay_fallback_reason"] = (
+                            "in-process profiling request failed at the process or protocol level"
+                        )
+                        record["in_process_profile"] = {
+                            "timed_out": False,
+                            "error": str(error),
+                        }
+                        record["profile"] = {
+                            "supported": False,
+                            "not_attempted_reason": record["replay_fallback_reason"],
+                        }
+                        stop_client()
+                        output.write(
+                            json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n"
+                        )
+                        continue
+                    profiled_steps = in_process_reached_steps(
+                        units,
+                        profile_full.stderr,
+                    )
+                    current_state: int | None = 0 if profiled_steps else None
+                    unavailable: dict[str, Any] | None = None
+                    try:
+                        if current_state is None:
+                            current_state, unavailable = ensure_root(
+                                active,
+                                env,
+                                proposal.theorem_name,
+                                statement,
+                            )
                     except ReplTimeout as error:
                         root_timeouts += 1
-                        record["sequential"] = {"timed_out": True, "error": str(error)}
+                        replay_fallback += 1
+                        replay_fallback_units += len(units)
+                        if error.wall_seconds is not None:
+                            root_wall += error.wall_seconds
+                        if error.cpu_seconds is not None:
+                            root_cpu += error.cpu_seconds
+                        record["replay_fallback_reason"] = (
+                            "theorem-root replay probe reached its timeout"
+                        )
+                        record["profile"] = {
+                            **_timeout_metrics(error),
+                            "supported": False,
+                            "timed_out": True,
+                            "error": str(error),
+                            "not_attempted_reason": record["replay_fallback_reason"],
+                        }
                         stop_client()
-                        output.write(json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n")
+                        output.write(
+                            json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n"
+                        )
                         continue
                     except ReplError as error:
                         root_errors += 1
-                        record["sequential"] = {"timed_out": False, "error": str(error)}
+                        replay_fallback += 1
+                        replay_fallback_units += len(units)
+                        record["replay_fallback_reason"] = (
+                            "theorem-root replay probe failed at the process or protocol level"
+                        )
+                        record["profile"] = {
+                            "supported": False,
+                            "timed_out": False,
+                            "error": str(error),
+                            "not_attempted_reason": record["replay_fallback_reason"],
+                        }
                         stop_client()
-                        output.write(json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n")
+                        output.write(
+                            json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n"
+                        )
                         continue
 
                     if current_state is None:
-                        assert unavailable is not None
-                        root_unavailable += 1
-                        invalid_root_units += len(units)
-                        for depth, (edge, unit) in enumerate(
-                            zip(edges, units, strict=True), start=1
-                        ):
-                            record["steps"].append({
-                                "depth": depth,
-                                "prefix_sha256": _prefix_hash(
-                                    proposal.theorem_name, edges[:depth]
-                                ),
-                                "edge_sha256": hashlib.sha256(
-                                    edge.encode("utf-8")
-                                ).hexdigest(),
-                                "syntax_kind": unit["syntaxKind"],
-                                "reachability": "unreachable_invalid_root",
-                                "not_attempted_reason": (
-                                    "Lean rejected the theorem declaration before tactic mode"
-                                ),
-                            })
-                        sequential_complete = False
-                        sequential_match = sequential_complete == verdict
-                        sequential_matches += int(sequential_match)
-                        sequential_disagreements += int(not sequential_match)
-                        record["sequential"] = {
-                            "complete": sequential_complete,
-                            "verdict_match": sequential_match,
-                            "root_available": False,
-                            "root_failure": unavailable,
-                            "reached_units": 0,
-                            "unreachable_units": len(units),
-                        }
+                        if unavailable is None:
+                            replay_fallback += 1
+                            replay_fallback_units += len(units)
+                            record["replay_fallback_reason"] = (
+                                "no deterministic top-level alignment in the in-process profile"
+                            )
+                            record["profile"] = {
+                                "supported": False,
+                                "not_attempted_reason": record["replay_fallback_reason"],
+                            }
+                        else:
+                            root_unavailable += 1
+                            invalid_root_units += len(units)
+                            for depth, (edge, unit) in enumerate(
+                                zip(edges, units, strict=True), start=1
+                            ):
+                                record["steps"].append({
+                                    "depth": depth,
+                                    "prefix_sha256": _prefix_hash(
+                                        proposal.theorem_name, edges[:depth]
+                                    ),
+                                    "edge_sha256": hashlib.sha256(
+                                        edge.encode("utf-8")
+                                    ).hexdigest(),
+                                    "syntax_kind": unit["syntaxKind"],
+                                    "reachability": "unreachable_invalid_root",
+                                    "not_attempted_reason": (
+                                        "Lean rejected the theorem declaration before tactic mode"
+                                    ),
+                                })
+                            profiled_complete = False
+                            profiled_match = profiled_complete == verdict
+                            profile_matches += int(profiled_match)
+                            profile_disagreements += int(not profiled_match)
+                            record["replay_eligible"] = True
+                            replay_eligible += 1
+                            record["profile"] = {
+                                "method": "in_process_profile",
+                                "complete": profiled_complete,
+                                "verdict_match": profiled_match,
+                                "root_available": False,
+                                "root_failure": unavailable,
+                                "reached_units": 0,
+                                "unreachable_units": len(units),
+                            }
                         output.write(
                             json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n"
                         )
@@ -445,130 +700,94 @@ def profile_replay_shard(
                                 file=os.sys.stderr,
                             )
                         continue
-
-                    replay_available = True
-                    replay_complete = False
-                    replay_supported = True
-                    replay_fallback_reason: str | None = None
-                    last_goals: list[Any] | None = None
+                    record["replay_eligible"] = True
+                    replay_eligible += 1
+                    profile_request_wall = profile_full.wall_seconds
+                    if profile_request_wall <= 0:
+                        raise ReplayProfileError(
+                            "in-process profile request has non-positive wall time"
+                        )
+                    attributed_profile_wall = sum(
+                        float(step["seconds"]) for step in profiled_steps
+                    )
+                    cpu_allocation_denominator = max(
+                        profile_request_wall, attributed_profile_wall
+                    )
+                    record["in_process_profile"]["attributed_tactic_wall_seconds"] = (
+                        attributed_profile_wall
+                    )
+                    record["in_process_profile"]["cpu_allocation_denominator_seconds"] = (
+                        cpu_allocation_denominator
+                    )
                     for depth, (edge, unit) in enumerate(
                         zip(edges, units, strict=True), start=1
                     ):
-                        if replay_complete:
-                            reachability = "unreachable_after_completion"
-                        elif replay_available:
-                            reachability = "reached"
-                        else:
-                            reachability = "unreachable_after_failure"
-                        if replay_available:
+                        if depth <= len(profiled_steps):
+                            profile_step = profiled_steps[depth - 1]
+                            step_wall = float(profile_step["seconds"])
+                            step_cpu = (
+                                full.cpu_seconds * step_wall / cpu_allocation_denominator
+                                if full.cpu_seconds is not None
+                                else None
+                            )
                             reached_units += 1
-                        elif replay_complete:
-                            completed_tail_units += 1
-                        else:
-                            unreachable_units += 1
-                        step: dict[str, Any] = {
-                            "depth": depth,
-                            "prefix_sha256": _prefix_hash(proposal.theorem_name, edges[:depth]),
-                            "edge_sha256": hashlib.sha256(edge.encode("utf-8")).hexdigest(),
-                            "syntax_kind": unit["syntaxKind"],
-                            "reachability": reachability,
-                        }
-                        if not replay_available:
-                            step["not_attempted_reason"] = (
-                                "proof already completed"
-                                if replay_complete
-                                else "prior exact unit failed or timed out"
-                            )
-                            record["steps"].append(step)
-                            continue
-                        try:
-                            replay = active.proof_step(
-                                current_state,
-                                str(unit["text"]),
-                                count_heartbeats=heartbeat_instrumentation_supported(
-                                    str(unit["syntaxKind"])
+                            profiled_units += 1
+                            attributed_wall += step_wall
+                            if step_cpu is not None:
+                                attributed_cpu += step_cpu
+                            record["steps"].append({
+                                "depth": depth,
+                                "prefix_sha256": _prefix_hash(
+                                    proposal.theorem_name, edges[:depth]
                                 ),
-                                decl_name=proposal.theorem_name,
+                                "edge_sha256": hashlib.sha256(
+                                    edge.encode("utf-8")
+                                ).hexdigest(),
+                                "syntax_kind": unit["syntaxKind"],
+                                "reachability": "reached",
+                                "wall_seconds": step_wall,
+                                "cpu_seconds": step_cpu,
+                                "peak_rss_kib": profile_full.peak_rss_kib,
+                                "cost_source": (
+                                    "Lean C-profiler attributable wall share allocated against "
+                                    "unchanged full-request CPU"
+                                ),
+                            })
+                        else:
+                            reachability = (
+                                "unreachable_after_completion"
+                                if verdict
+                                else "unreachable_after_failure"
                             )
-                            replayed_units += 1
-                            replay_wall += replay.wall_seconds
-                            if replay.cpu_seconds is not None:
-                                replay_cpu += replay.cpu_seconds
-                            heartbeats = heartbeat_count(replay.response)
-                            if not heartbeat_instrumentation_supported(
-                                str(unit["syntaxKind"])
-                            ):
-                                heartbeat_uninstrumented_units += 1
-                            if heartbeats is not None:
-                                heartbeat_total += heartbeats
-                            goals = replay.response.get("goals")
-                            step_success = proof_step_succeeded(replay.response)
-                            if requires_runtime_fallback(replay.response):
-                                replay_supported = False
-                                replay_fallback_reason = AUXILIARY_DECLARATION_ERROR
-                            step.update(
-                                {
-                                    **_result_metrics(replay),
-                                    "heartbeats": heartbeats,
-                                    "success": step_success,
-                                    "error": replay.response.get("message"),
-                                    "error_messages": [
-                                        message.get("data")
-                                        for message in replay.response.get("messages", [])
-                                        if message.get("severity") == "error"
-                                    ],
-                                    "goals_after": len(goals) if isinstance(goals, list) else None,
-                                }
-                            )
-                            if step_success:
-                                last_goals = goals if isinstance(goals, list) else None
-                                if last_goals == []:
-                                    replay_complete = True
-                                    replay_available = False
-                                elif isinstance(replay.response.get("proofState"), int):
-                                    current_state = int(replay.response["proofState"])
-                                else:
-                                    replay_available = False
+                            if verdict:
+                                completed_tail_units += 1
                             else:
-                                replay_available = False
-                        except ReplTimeout as error:
-                            replay_timeouts += 1
-                            step.update({"timed_out": True, "error": str(error)})
-                            stop_client()
-                            replay_available = False
-                        except ReplError as error:
-                            replay_errors += 1
-                            step.update({"timed_out": False, "error": str(error)})
-                            stop_client()
-                            replay_available = False
-                        record["steps"].append(step)
+                                unreachable_units += 1
+                            record["steps"].append({
+                                "depth": depth,
+                                "prefix_sha256": _prefix_hash(
+                                    proposal.theorem_name, edges[:depth]
+                                ),
+                                "edge_sha256": hashlib.sha256(
+                                    edge.encode("utf-8")
+                                ).hexdigest(),
+                                "syntax_kind": unit["syntaxKind"],
+                                "reachability": reachability,
+                                "not_attempted_reason": (
+                                    "unchanged full proof completed before this unit"
+                                    if verdict
+                                    else "unchanged full proof failed before this unit"
+                                ),
+                            })
 
-                    if not replay_supported:
-                        replay_eligible -= 1
-                        replay_fallback += 1
-                        replay_fallback_units += len(units)
-                        record["replay_eligible"] = False
-                        record["replay_fallback_reason"] = replay_fallback_reason
-                        record["sequential"] = {
-                            "supported": False,
-                            "not_attempted_reason": replay_fallback_reason,
-                            "reached_units_before_fallback": sum(
-                                step["reachability"] == "reached"
-                                for step in record["steps"]
-                            ),
-                        }
-                        output.write(
-                            json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n"
-                        )
-                        continue
-
-                    sequential_complete = bool(units and replay_complete)
-                    sequential_match = sequential_complete == verdict
-                    sequential_matches += int(sequential_match)
-                    sequential_disagreements += int(not sequential_match)
-                    record["sequential"] = {
-                        "complete": sequential_complete,
-                        "verdict_match": sequential_match,
+                    profiled_complete = profile_verdict
+                    profiled_match = profile_match
+                    profile_matches += int(profiled_match)
+                    profile_disagreements += int(not profiled_match)
+                    record["profile"] = {
+                        "method": "in_process_profile",
+                        "complete": profiled_complete,
+                        "verdict_match": profiled_match,
                         "reached_units": sum(
                             step["reachability"] == "reached" for step in record["steps"]
                         ),
@@ -603,7 +822,7 @@ def profile_replay_shard(
         else repl_root / ".lake/build/bin/repl"
     )
     return {
-        "analysis": "reached-tactic-cost-profile-v1",
+        "analysis": "reached-tactic-cost-profile-v2",
         "configuration": {
             "shard_count": shard_count,
             "shard_index": shard_index,
@@ -627,7 +846,9 @@ def profile_replay_shard(
             "replay_fallback_units": replay_fallback_units,
             "full_completed": full_completed,
             "verdict_matches": verdict_matches,
-            "verdict_disagreements": selected - verdict_matches - full_timeouts - full_errors,
+            # A timeout is an accounted negative Lean verdict. Only protocol
+            # errors lack a verdict and must be removed from this difference.
+            "verdict_disagreements": selected - verdict_matches - full_errors,
             "full_timeouts": full_timeouts,
             "full_errors": full_errors,
             "native_units": units_total,
@@ -635,25 +856,26 @@ def profile_replay_shard(
             "unreachable_after_failure": unreachable_units,
             "unreachable_after_completion": completed_tail_units,
             "unreachable_invalid_root": invalid_root_units,
-            "sequential_verdict_matches": sequential_matches,
-            "sequential_verdict_disagreements": sequential_disagreements,
+            "profile_verdict_matches": profile_matches,
+            "profile_verdict_disagreements": profile_disagreements,
             "root_timeouts": root_timeouts,
             "root_errors": root_errors,
             "root_unavailable": root_unavailable,
-            "replayed_units": replayed_units,
-            "replay_timeouts": replay_timeouts,
-            "replay_errors": replay_errors,
-            "successful_replay_heartbeats": heartbeat_total,
-            "heartbeat_uninstrumented_units": heartbeat_uninstrumented_units,
+            "profiled_units": profiled_units,
+            "profile_timeouts": profile_timeouts,
+            "profile_errors": profile_errors,
+            "profile_verdict_disagreements": profile_verdict_disagreements,
         },
         "timing": {
             "wall_seconds": elapsed,
             "full_request_wall_seconds": full_wall,
             "full_request_cpu_seconds": full_cpu,
-            "replay_request_wall_seconds": replay_wall,
-            "replay_request_cpu_seconds": replay_cpu,
+            "attributed_tactic_wall_seconds": attributed_wall,
+            "attributed_tactic_cpu_seconds": attributed_cpu,
             "root_setup_wall_seconds": root_wall,
             "root_setup_cpu_seconds": root_cpu,
+            "in_process_profile_wall_seconds": profile_wall,
+            "in_process_profile_cpu_seconds": profile_cpu,
         },
         "inputs": {
             "manifest_sha256": _sha256_file(manifest_path),
@@ -664,7 +886,9 @@ def profile_replay_shard(
             "lean_workspace_git": _git_state(lean_workspace),
             "repl_git": _git_state(repl_root),
             "repl_executable_sha256": _sha256_file(resolved_repl_executable),
-            "lean_toolchain": (lean_workspace / "lean-toolchain").read_text(encoding="utf-8").strip(),
+            "lean_toolchain": (lean_workspace / "lean-toolchain")
+            .read_text(encoding="utf-8")
+            .strip(),
             "lean_version": _capture(["lake", "env", "lean", "--version"], cwd=lean_workspace),
         },
         "artifact": {

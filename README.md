@@ -35,9 +35,11 @@ proposals from a frozen DeepSeek-Prover C0 rollout. Checked-in analyses measure:
 - an unweighted 1.289x oracle ratio, or 199,228 repeated tactic occurrences.
 
 These are **measured syntax-level opportunity counts**, not a speedup claim.
-Cheap, expensive, and never-reached tactics are weighted equally. The cost
-profiler needed to resolve that uncertainty is implemented and integration
-tested; the complete C0 replay is the next evidence-producing run.
+Cheap, expensive, and never-reached tactics are weighted equally. The corrected
+cost profiler measures an unchanged complete-proof baseline and uses Lean's
+in-process C profiler for conservative reached-prefix attribution. Its targeted
+semantic regression passes; the representative complete C0 cost census remains
+the next evidence-producing run.
 
 ## Scientific boundary
 
@@ -61,11 +63,13 @@ See:
 
 ## Repository status
 
-Phase 1 characterization and the Phase 2 replay-profiler implementation are
-complete. The profiler verifies every complete proof independently, replays
-every eligible proof from an immutable theorem-root state, and records reached
-tactic cost and agreement. The full-corpus Phase 2 measurement has not yet
-run, and no execution-engine speedup is claimed.
+Phase 1 characterization is complete. Phase 2's initial reconstructed-state
+profiler was rejected after a complete diagnostic census showed that hidden
+Lean elaborator context can change replay behavior. The corrected profiler
+keeps the complete-proof verdict authoritative and collects conservative
+in-process tactic telemetry without resubmitting tactics. Its deterministic
+breadth gate has exact verdict agreement; no execution-engine speedup is
+claimed.
 
 ## Quick start
 

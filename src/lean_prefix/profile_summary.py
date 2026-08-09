@@ -74,9 +74,8 @@ def summarize_replay_profiles(
     full_wall_by_theorem: dict[str, float] = defaultdict(float)
     prefix_cpu: dict[str, list[float]] = defaultdict(list)
     prefix_wall: dict[str, list[float]] = defaultdict(list)
-    prefix_heartbeats: dict[str, list[float]] = defaultdict(list)
     prefix_theorem: dict[str, str] = {}
-    verdict_disagreements = full_failures = sequential_disagreements = sequential_failures = 0
+    verdict_disagreements = full_failures = profile_disagreements = profile_failures = 0
     syntactic_units = reached_units = unreachable_units = completed_tail_units = 0
     invalid_root_units = replayed = 0
     root_unavailable = 0
@@ -101,18 +100,19 @@ def summarize_replay_profiles(
         if isinstance(full.get("wall_seconds"), (int, float)):
             full_wall_by_theorem[theorem] += float(full["wall_seconds"])
 
-        sequential = record.get("sequential")
+        # Read the pre-D-014 name for diagnostic artifact compatibility.
+        profile = record.get("profile", record.get("sequential"))
         native_eligible = bool(record.get("native_eligible"))
         record_replay_eligible = native_eligible and bool(
             record.get("replay_eligible", native_eligible)
         )
         if record_replay_eligible:
             replay_eligible += 1
-            if not isinstance(sequential, dict) or "complete" not in sequential:
-                sequential_failures += 1
-            elif sequential.get("verdict_match") is False:
-                sequential_disagreements += 1
-            if isinstance(sequential, dict) and sequential.get("root_available") is False:
+            if not isinstance(profile, dict) or "complete" not in profile:
+                profile_failures += 1
+            elif profile.get("verdict_match") is False:
+                profile_disagreements += 1
+            if isinstance(profile, dict) and profile.get("root_available") is False:
                 root_unavailable += 1
         elif native_eligible:
             replay_fallback += 1
@@ -152,8 +152,6 @@ def summarize_replay_profiles(
                 missing_step_cpu += 1
             if isinstance(step.get("wall_seconds"), (int, float)):
                 prefix_wall[prefix].append(float(step["wall_seconds"]))
-            if isinstance(step.get("heartbeats"), (int, float)):
-                prefix_heartbeats[prefix].append(float(step["heartbeats"]))
 
     if expected_proposals is not None and len(seen) != expected_proposals:
         raise ProfileSummaryError(
@@ -163,9 +161,9 @@ def summarize_replay_profiles(
         raise ProfileSummaryError(
             f"refusing cost claim with {verdict_disagreements} verifier disagreements"
         )
-    if sequential_disagreements:
+    if profile_disagreements:
         raise ProfileSummaryError(
-            f"refusing cost claim with {sequential_disagreements} sequential replay disagreements"
+            f"refusing cost claim with {profile_disagreements} profile verdict disagreements"
         )
 
     def costs(groups: dict[str, list[float]]) -> tuple[float, float, float]:
@@ -175,7 +173,6 @@ def summarize_replay_profiles(
 
     independent_cpu, unique_cpu, saved_cpu = costs(prefix_cpu)
     independent_wall, unique_wall, saved_wall = costs(prefix_wall)
-    independent_heartbeats, unique_heartbeats, saved_heartbeats = costs(prefix_heartbeats)
     total_full_cpu = sum(full_cpu_by_theorem.values())
     total_full_wall = sum(full_wall_by_theorem.values())
 
@@ -199,12 +196,12 @@ def summarize_replay_profiles(
         hashes[str(path)] = digest.hexdigest()
 
     return {
-        "analysis": "reached-tactic-cost-summary-v1",
+        "analysis": "reached-tactic-cost-summary-v2",
         "status": (
             "complete"
             if (
                 full_failures == 0
-                and sequential_failures == 0
+                and profile_failures == 0
                 and replayed == reached_units
                 and missing_full_cpu == 0
                 and missing_step_cpu == 0
@@ -216,14 +213,14 @@ def summarize_replay_profiles(
             "proposals": len(seen),
             "full_failures": full_failures,
             "verdict_disagreements": verdict_disagreements,
-            "sequential_failures": sequential_failures,
-            "sequential_verdict_disagreements": sequential_disagreements,
+            "profile_failures": profile_failures,
+            "profile_verdict_disagreements": profile_disagreements,
             "native_syntactic_units": syntactic_units,
             "native_reached_units": reached_units,
             "unreachable_after_failure": unreachable_units,
             "unreachable_after_completion": completed_tail_units,
             "unreachable_invalid_root": invalid_root_units,
-            "replayed_units": replayed,
+            "profiled_units": replayed,
             "root_unavailable": root_unavailable,
             "replay_eligible_proposals": replay_eligible,
             "replay_fallback_proposals": replay_fallback,
@@ -248,11 +245,6 @@ def summarize_replay_profiles(
                 saved_wall / total_full_wall if total_full_wall else 0.0
             ),
         },
-        "heartbeats": {
-            "independent_successful_units": independent_heartbeats,
-            "unique_prefix_oracle_successful_units": unique_heartbeats,
-            "reusable_prefix_opportunity_successful_units": saved_heartbeats,
-        },
         "per_theorem_cpu_opportunity_fraction": {
             "median": _quantile(per_theorem_fractions, 0.5),
             "p90": _quantile(per_theorem_fractions, 0.9),
@@ -267,7 +259,7 @@ def summarize_replay_profiles(
             "measured_fraction": opportunity,
             "passes": (
                 full_failures == 0
-                and sequential_failures == 0
+                and profile_failures == 0
                 and replayed == reached_units
                 and missing_full_cpu == 0
                 and missing_step_cpu == 0

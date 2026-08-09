@@ -31,11 +31,14 @@ of whitespace removal or heuristic line grouping.
 
 ## Phase 2 — Cost-weighted oracle
 
-Status: implementation and small integration checks complete; full-corpus
-measurement next.
+Status: corrected implementation, mismatch-family regression, and six-shard
+breadth gate complete; full-corpus measurement next.
 
-- Add per-tactic queue, execution, state-size, outcome, and timeout telemetry to
-  an independent replay harness.
+- Preserve an unchanged complete-proof request as the verdict and CPU baseline.
+- Collect per-tactic exclusive timing in the same declaration with Lean's
+  in-process profiler, without wrapping or resubmitting individual tactics.
+- Align only a deterministic reached top-level prefix and treat unattributed
+  work and unsupported structures conservatively.
 - Measure which reused prefixes contain expensive computation.
 - Estimate achievable CPU-time, wall-time, and memory savings with confidence
   intervals or complete-corpus aggregation where feasible.
@@ -46,9 +49,9 @@ cost-weighted opportunity on authentic data. Record the threshold before seeing
 the final weighted result; do not tune it post hoc.
 
 The threshold was frozen at 15% of independent full-verification CPU time in
-Decision D-005. The 32-proposal first-theorem check measured 8.36%, but it is a
-single theorem selected for integration and is neither representative nor the
-registered gate result.
+Decision D-005. Earlier reconstructed-state estimates are diagnostic only and
+are superseded by D-013 and D-014. Only the corrected complete-corpus result is
+the registered gate result.
 
 ## Phase 3 — Reference baseline
 

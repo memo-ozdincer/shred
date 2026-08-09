@@ -58,11 +58,10 @@ Initial components:
 - corpus auditor;
 - Lean-native proof-unit extractor;
 - offline trie analyzer;
-- independent replay profiler;
+- conservative in-process cost profiler;
 - reference verifier;
 - prefix-trie executor;
 - result comparator and report generator.
 
 The profiler and reference verifier are reusable test oracles, not optional
 development scaffolding.
-

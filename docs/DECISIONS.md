@@ -89,7 +89,7 @@ version-one engine rather than broadening equality after seeing the result.
 
 Date: 2026-08-08
 
-Status: accepted
+Status: superseded by D-013 for Phase 2 cost measurement
 
 Decision: Phase 2 first checks each original complete proof through the same C0
 imports and options. Independently, it creates one immutable theorem-root proof
@@ -135,7 +135,7 @@ snapshots omit context required to preserve the C0 execution policy.
 
 Date: 2026-08-08
 
-Status: accepted for the Phase 2 run
+Status: superseded by D-015 after full-census contention was measured
 
 Decision: run 128 deterministic shards with at most 112 concurrent workers on
 a 192-core Nibi node with `766000M` allocated memory. Retain the 24 GiB
@@ -262,3 +262,111 @@ Consequence: fenced parse failures retain their independent baseline cost and
 proposal accounting but cannot create prefix savings. Early-completion tails
 are separately counted and excluded from reached-prefix cost. This correction
 does not alter proof text, Lean, Mathlib, or the acceptance rule.
+
+## D-013 — Reject reconstructed proof-state replay as cost evidence
+
+Date: 2026-08-09
+
+Status: accepted after targeted and full-corpus diagnostics
+
+Decision: do not use tactics restarted from serialized or reconstructed proof
+states to estimate the Phase 2 opportunity. Keep the patched REPL build as a
+reproducible diagnostic and possible Phase 3 implementation dependency, but do
+not treat its step-by-step replay timings as measurements of the unchanged C0
+execution.
+
+Reason: the diagnostic 128-shard census completed all 308,960 proposals, but
+reported 72 sequential-verdict disagreements, 35 process errors, 118 complete
+request timeouts, and 6 step-replay timeouts under 112-way concurrency. Exact
+targeted replay showed the deeper problem: a complete proof may hit
+`maxRecDepth` or fail inside nested simplification while the same visible goal
+and tactic succeeds after a standalone proof-state restart. Chaining authentic
+pre-tactic snapshots removed several discrepancies but not all of them because
+the visible goal does not capture every elaborator and recursion context.
+
+Consequence: these diagnostic artifacts cannot support a cost or verdict claim.
+Phase 2 must measure tactics during an unchanged complete declaration. Phase 3
+still requires its own exact verdict-equivalence tests; Phase 2 telemetry is not
+permission to assume that arbitrary state reconstruction is equivalent.
+
+## D-014 — Use Lean's in-process C profiler as a conservative cost oracle
+
+Date: 2026-08-09
+
+Status: accepted for the corrected Phase 2 measurement
+
+Decision: for each eligible proposal, first run the unchanged complete proof as
+the authoritative baseline and verdict. Then run the same declaration in the
+same pinned environment with only `profiler` enabled and parse Lean's exclusive
+`tactic execution of <syntaxKind>` records from that request's stderr. Match a
+deterministic reached top-level prefix against the already frozen Lean-native
+unit sequence. If syntax-kind-only profiler frames admit multiple ordered
+alignments, fall back rather than selecting one. Allocate baseline process CPU
+to each uniquely matched unit in proportion to its attributable profiler time
+divided by the greater of the profiling
+request's wall time and the sum of all attributed tactic time. This guarantees
+that attributed tactic CPU cannot exceed the unchanged baseline CPU even if
+profiler records overlap or round upward.
+Report profiling CPU and wall time separately and exclude that overhead from
+the gate denominator and savings.
+
+For the first tactic, count only its own exclusive profiler frame because work
+before it includes theorem elaboration. For each later tactic, count profiler
+records after the preceding matched top-level frame through the current frame.
+This is deliberately a lower bound: unattributed parent, parsing, linting, and
+post-proof work cannot create claimed prefix savings. A profile timeout,
+protocol error, missing deterministic alignment, parse failure, or currently
+unsupported structural-control form falls back explicitly to independent
+verification and contributes zero opportunity.
+
+Reason: this method does not wrap, resubmit, repair, or independently execute a
+tactic. The authoritative verdict still comes from the unchanged complete
+request, whose high-resolution process CPU is read from Linux `schedstat`. A
+19-proposal regression chosen from every known mismatch family completed in
+26.8 seconds with 19/19 unchanged full-verdict agreement, 14/14 agreement for
+profile-eligible proposals, 5 explicit structural fallbacks, 32 attributed
+reached units, and no timeout, process error, or profile-verdict change. Its
+documented-REPL artifact is
+`artifacts/replay_targeted_d016_profiler_v3.jsonl.gz`, SHA-256
+`29584e3207cf9f97875f933e6d48f041dcb3a4b9800a7d32edb94628e7a75f1c`.
+
+Consequence: the pre-registered 15% threshold is now evaluated against a
+conservative attributable CPU opportunity, not against the cost of an altered
+standalone replay. The targeted mismatch set validates semantics but is not a
+representative performance sample. A deterministic six-shard breadth gate must
+pass before the complete census is launched.
+
+## D-015 — Use 32 workers and a 48 GiB safety ceiling for the final census
+
+Date: 2026-08-09
+
+Status: accepted after the corrected six-shard breadth gate
+
+Decision: run the complete 128-shard census with 32 concurrent workers, a 48
+GiB per-process address-space ceiling, the unchanged 300-second timeout, and a
+128-proposal REPL restart interval. Write it to the new `replay_d018` run name;
+do not overwrite the earlier diagnostic census.
+
+Reason: the corrected six-worker breadth gate completed 14,496 proposals in
+20.2 minutes with zero request error or timeout. Active Lean processes used
+approximately 3.7–4.1 GiB RSS and the 755 GiB node retained about 736–737 GiB
+available. In contrast, the earlier 112-worker census produced severe
+CPU/cache contention, long tails, 118 full timeouts, and 35 process exits
+despite safe memory. Six-worker throughput projects about 1.4 hours at 32-way
+parallelism; allow 2–4 hours for shard variance and tails.
+
+The D017 breadth report is complete: 14,496/14,496 full verdicts and
+12,758/12,758 profile-eligible verdicts agree, with 1,508 explicit fallbacks,
+32,054 profiled units, and no missing CPU. Its conservative opportunity is
+6.463% (theorem-bootstrap 95% interval 5.519%–7.501%), below 15%. Because the
+six shards are an operational breadth set rather than the registered complete
+sample, this is a warning rather than the final gate decision. D017 started
+before the final ambiguity-safe frame matcher was frozen, so its verdict and
+throughput evidence remains valid but its cost estimate is diagnostic. Repeat
+the same breadth set from the clean commit before launching the full census.
+
+Consequence: D-008's 112-worker recommendation and 24 GiB limit are superseded.
+The final breadth rerun and complete census start only from clean committed
+implementations. The
+15% threshold, proof workload, verifier, parser, and profiler method remain
+unchanged.

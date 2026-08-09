@@ -29,6 +29,21 @@ class ReplError(RuntimeError):
 class ReplTimeout(ReplError):
     """Raised when Lean does not answer within the configured deadline."""
 
+    def __init__(
+        self,
+        message: str,
+        *,
+        wall_seconds: float | None = None,
+        cpu_seconds: float | None = None,
+        peak_rss_kib: int | None = None,
+        stderr: str = "",
+    ) -> None:
+        super().__init__(message)
+        self.wall_seconds = wall_seconds
+        self.cpu_seconds = cpu_seconds
+        self.peak_rss_kib = peak_rss_kib
+        self.stderr = stderr
+
 
 @dataclass(frozen=True)
 class ReplResult:
@@ -36,6 +51,7 @@ class ReplResult:
     wall_seconds: float
     cpu_seconds: float | None
     peak_rss_kib: int | None
+    stderr: str
 
 
 def heartbeat_count(response: dict[str, Any]) -> int | None:
@@ -57,6 +73,15 @@ def heartbeat_wrapper(tactic: str) -> str:
 
 
 def _proc_cpu_seconds(pid: int) -> float | None:
+    try:
+        # Linux scheduler runtime is nanosecond-resolution and does not require
+        # wrapping or otherwise changing the tactic being measured.
+        runtime_ns = int(
+            Path(f"/proc/{pid}/schedstat").read_text(encoding="utf-8").split()[0]
+        )
+        return runtime_ns / 1_000_000_000
+    except (FileNotFoundError, IndexError, OSError, ValueError):
+        pass
     try:
         fields = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8").split()
         ticks = int(fields[13]) + int(fields[14])
@@ -110,7 +135,7 @@ class LeanRepl:
         executable: Path = Path(".lake/packages/REPL/.lake/build/bin/repl"),
         lake: str = "lake",
         timeout_seconds: float = 300.0,
-        memory_limit_bytes: int | None = 24 * 1024**3,
+        memory_limit_bytes: int | None = 48 * 1024**3,
     ) -> None:
         self.workspace = workspace.resolve()
         self.executable = (
@@ -238,6 +263,11 @@ class LeanRepl:
         payload = json.dumps(request, ensure_ascii=False, separators=(",", ":")) + "\n\n"
         measured_pid_before = _largest_descendant(self._process.pid)
         cpu_before = _proc_cpu_seconds(measured_pid_before)
+        stderr_offset = (
+            os.fstat(self._stderr.fileno()).st_size
+            if self._stderr is not None
+            else 0
+        )
         started = time.monotonic()
         try:
             remaining = memoryview(payload.encode("utf-8"))
@@ -245,9 +275,37 @@ class LeanRepl:
                 written = os.write(self._master_fd, remaining)
                 remaining = remaining[written:]
             response = self._read_response(started + self.timeout_seconds)
-        except ReplTimeout:
+        except ReplTimeout as error:
+            wall_seconds = time.monotonic() - started
+            measured_pid_after = _largest_descendant(self._process.pid)
+            cpu_after = _proc_cpu_seconds(measured_pid_after)
+            cpu_seconds = (
+                cpu_after - cpu_before
+                if (
+                    measured_pid_before == measured_pid_after
+                    and cpu_before is not None
+                    and cpu_after is not None
+                )
+                else None
+            )
+            peak_rss_kib = _proc_peak_rss_kib(measured_pid_after)
+            stderr = (
+                os.pread(
+                    self._stderr.fileno(),
+                    os.fstat(self._stderr.fileno()).st_size - stderr_offset,
+                    stderr_offset,
+                ).decode("utf-8", errors="replace")
+                if self._stderr is not None
+                else ""
+            )
             self.close()
-            raise
+            raise ReplTimeout(
+                str(error),
+                wall_seconds=wall_seconds,
+                cpu_seconds=cpu_seconds,
+                peak_rss_kib=peak_rss_kib,
+                stderr=stderr,
+            ) from error
         wall_seconds = time.monotonic() - started
         measured_pid_after = _largest_descendant(self._process.pid)
         cpu_after = _proc_cpu_seconds(measured_pid_after)
@@ -265,6 +323,15 @@ class LeanRepl:
             wall_seconds=wall_seconds,
             cpu_seconds=cpu_seconds,
             peak_rss_kib=_proc_peak_rss_kib(measured_pid_after),
+            stderr=(
+                os.pread(
+                    self._stderr.fileno(),
+                    os.fstat(self._stderr.fileno()).st_size - stderr_offset,
+                    stderr_offset,
+                ).decode("utf-8", errors="replace")
+                if self._stderr is not None
+                else ""
+            ),
         )
 
     def initialize(self, code: str) -> ReplResult:

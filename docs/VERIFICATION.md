@@ -22,17 +22,19 @@
 - Repeated execution of cacheable prefixes yields equivalent states.
 - Effectful or nondeterministic operations are detected or fall back.
 
-Before the executor exists, the replay profiler must additionally prove:
+Before the executor exists, the cost profiler must additionally prove:
 
 - complete-proof verdicts agree with frozen C0 labels;
-- every eligible proposal either begins from the same immutable theorem-root
-  state or has an explicit Lean theorem-declaration error before tactic mode;
+- enabling the in-process profiler does not change the complete-proof verdict;
+- profiler records align to a deterministic prefix of frozen Lean-native units;
+- missing/ambiguous alignment, structural controls, parsing failures, errors,
+  and timeouts use explicit independent fallback and create no savings;
 - rejected-proof suffixes after the first failed unit are labeled unreachable,
   not zero-cost;
 - invalid-root tactic units are labeled `unreachable_invalid_root`, contribute
   zero reached-prefix work, and retain full verification cost in the denominator;
-- sequential exact-unit completion agrees with complete-proof verification;
-- tactic failures and 300-second timeouts remain attributable to proposals;
+- full-request failures and 300-second timeouts remain attributable to proposals;
+- profiler overhead is reported separately from the baseline and opportunity;
 - shard consolidation rejects duplicate or missing proposal IDs.
 
 ## Layer 4 — Verdict equivalence

@@ -1,0 +1,67 @@
+{
+  "analysis": "reached-tactic-cost-summary-v2",
+  "command": "lean-prefix summarize-replay --artifact artifacts/replay_d017/shard-7-of-128.jsonl.gz --artifact artifacts/replay_d017/shard-46-of-128.jsonl.gz --artifact artifacts/replay_d017/shard-53-of-128.jsonl.gz --artifact artifacts/replay_d017/shard-62-of-128.jsonl.gz --artifact artifacts/replay_d017/shard-78-of-128.jsonl.gz --artifact artifacts/replay_d017/shard-93-of-128.jsonl.gz --expected-proposals 14496 --gate-fraction 0.15 --output reports/c0_replay_breadth_d017.json",
+  "counts": {
+    "full_failures": 0,
+    "missing_full_cpu": 0,
+    "missing_step_cpu": 0,
+    "native_reached_units": 32054,
+    "native_syntactic_units": 41133,
+    "profile_failures": 0,
+    "profile_verdict_disagreements": 0,
+    "profiled_units": 32054,
+    "proposals": 14496,
+    "replay_eligible_proposals": 12758,
+    "replay_fallback_proposals": 1508,
+    "replay_fallback_units": 5460,
+    "root_unavailable": 415,
+    "unique_profiled_prefixes": 24075,
+    "unreachable_after_completion": 186,
+    "unreachable_after_failure": 2793,
+    "unreachable_invalid_root": 640,
+    "verdict_disagreements": 0
+  },
+  "cpu_seconds": {
+    "full_independent_verification": 3010.5006720580013,
+    "opportunity_fraction_of_full_verification": 0.06463068027933452,
+    "profiled_reached_units": 1796.8401773703583,
+    "reusable_prefix_opportunity": 194.5707064165024,
+    "unique_prefix_oracle": 1602.269470953856
+  },
+  "inputs": {
+    "artifacts": {
+      "artifacts/replay_d017/shard-46-of-128.jsonl.gz": "264bb59d8d405a0bbc7cdf097e38e70709b64be66ee24b0a1779d7187d5751ab",
+      "artifacts/replay_d017/shard-53-of-128.jsonl.gz": "357228aa2d4e95280abe638dcb6c944056bb27b40547310293b1dc3eef071a2e",
+      "artifacts/replay_d017/shard-62-of-128.jsonl.gz": "c216839322f21e5c28b878336d8cf25f77a9fb86947c1b60d6a587bff01b8254",
+      "artifacts/replay_d017/shard-7-of-128.jsonl.gz": "c2ba5c89f4d91129b1e43accc3c55b7b79491672bf49f71a85e1421471344185",
+      "artifacts/replay_d017/shard-78-of-128.jsonl.gz": "33ef84b51330b88130a8527551f4474c02d681dda7abe91179bc6e4f16fd4900",
+      "artifacts/replay_d017/shard-93-of-128.jsonl.gz": "d8a784d6e2dad34f4a81c0e0f683cf4bf80c6b6ec352f887dde1247bf0ceb7a5"
+    },
+    "expected_proposals": 14496
+  },
+  "per_theorem_cpu_opportunity_fraction": {
+    "max": 0.44530664250897806,
+    "median": 0.03717205629455913,
+    "p90": 0.15751703673801815,
+    "p99": 0.2937587153625854
+  },
+  "pre_registered_gate": {
+    "measured_fraction": 0.06463068027933452,
+    "passes": false,
+    "threshold": 0.15
+  },
+  "status": "complete",
+  "theorem_bootstrap_95_percent": {
+    "high": 0.07501169895396315,
+    "low": 0.05519249739986389,
+    "samples": 10000,
+    "seed": 42
+  },
+  "wall_seconds": {
+    "full_independent_verification": 3039.4196658730507,
+    "opportunity_fraction_of_full_verification": 0.06730637574853021,
+    "profiled_reached_units": 1879.1855978999934,
+    "reusable_prefix_opportunity": 204.5723220887237,
+    "unique_prefix_oracle": 1674.6132758112697
+  }
+}

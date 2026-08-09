@@ -3,13 +3,11 @@ import unittest
 from lean_prefix.profile import (
     ReplayProfileError,
     c0_verifier_declaration,
-    heartbeat_instrumentation_supported,
+    in_process_reached_steps,
     lean_complete,
-    proof_step_succeeded,
-    requires_runtime_fallback,
     theorem_root_code,
     theorem_root_outcome,
-    unsupported_standalone_syntax,
+    unsupported_profile_syntax,
 )
 
 
@@ -27,9 +25,78 @@ class ReplayProfileTests(unittest.TestCase):
         )
         self.assertIsNone(c0_verifier_declaration(statement, "  trivial"))
 
+    def test_in_process_profile_selects_direct_top_level_tactics(self):
+        units = [
+            {"syntaxKind": "Lean.Parser.Tactic.rintro"},
+            {"syntaxKind": "Lean.Parser.Tactic.rwSeq"},
+        ]
+        stderr = "\n".join([
+            "parsing took 2ms",
+            "tactic execution of Lean.Parser.Tactic.rintro took 3ms",
+            "simp took 5ms",
+            "tactic execution of Lean.Parser.Tactic.rewriteSeq took 7ms",
+            "tactic execution of Lean.Parser.Tactic.rwSeq took 11ms",
+            "linting took 13ms",
+        ])
+        reached = in_process_reached_steps(units, stderr)
+        self.assertEqual([step["tag"] for step in reached], [
+            "Lean.Parser.Tactic.rintro",
+            "Lean.Parser.Tactic.rwSeq",
+        ])
+        self.assertAlmostEqual(reached[0]["seconds"], 0.003)
+        self.assertAlmostEqual(reached[1]["seconds"], 0.023)
+
+    def test_in_process_profile_retains_only_reached_prefix(self):
+        units = [
+            {"syntaxKind": "Lean.Parser.Tactic.simp"},
+            {"syntaxKind": "Lean.Parser.Tactic.exact"},
+        ]
+        stderr = "tactic execution of Lean.Parser.Tactic.simp took 400us\n"
+        self.assertEqual(len(in_process_reached_steps(units, stderr)), 1)
+
+    def test_in_process_profile_requires_ordered_top_level_alignment(self):
+        units = [
+            {"syntaxKind": "Lean.Parser.Tactic.simp"},
+            {"syntaxKind": "Lean.Parser.Tactic.exact"},
+        ]
+        stderr = "\n".join([
+            "tactic execution of Lean.Parser.Tactic.exact took 1ms",
+            "tactic execution of Lean.Parser.Tactic.simp took 2ms",
+        ])
+        self.assertEqual(len(in_process_reached_steps(units, stderr)), 1)
+
+    def test_in_process_profile_parses_units_and_ignores_other_stderr(self):
+        units = [{"syntaxKind": "Lean.Parser.Tactic.simp"}]
+        stderr = "\n".join([
+            "warning: unrelated",
+            "tactic execution of Lean.Parser.Tactic.simp took 250us",
+            "another message took unknown",
+        ])
+        reached = in_process_reached_steps(units, stderr)
+        self.assertEqual(len(reached), 1)
+        self.assertAlmostEqual(reached[0]["seconds"], 0.00025)
+
+    def test_in_process_profile_falls_back_on_ambiguous_duplicate_frames(self):
+        units = [
+            {"syntaxKind": "Lean.Parser.Tactic.simp"},
+            {"syntaxKind": "Lean.Parser.Tactic.exact"},
+        ]
+        stderr = "\n".join([
+            "tactic execution of Lean.Parser.Tactic.simp took 1ms",
+            "tactic execution of Lean.Parser.Tactic.simp took 2ms",
+            "tactic execution of Lean.Parser.Tactic.exact took 3ms",
+        ])
+        self.assertEqual(in_process_reached_steps(units, stderr), [])
+
     def test_root_placeholder_starts_on_a_new_indented_line(self):
-        self.assertEqual(theorem_root_code("example : True := by\n"), "example : True := by\n  sorry")
-        self.assertEqual(theorem_root_code("example : True := by"), "example : True := by\n  sorry")
+        self.assertEqual(
+            theorem_root_code("example : True := by\n"),
+            "example : True := by\n  sorry",
+        )
+        self.assertEqual(
+            theorem_root_code("example : True := by"),
+            "example : True := by\n  sorry",
+        )
 
     def test_root_outcome_accepts_exactly_one_snapshot(self):
         self.assertEqual(
@@ -61,46 +128,22 @@ class ReplayProfileTests(unittest.TestCase):
         with self.assertRaises(ReplayProfileError):
             theorem_root_outcome("t", {"sorries": []})
 
-    def test_step_with_error_message_never_succeeds(self):
-        response = {
-            "proofState": 1,
-            "goals": [],
-            "messages": [{"severity": "error", "data": "bad tactic"}],
-        }
-        self.assertFalse(proof_step_succeeded(response))
-        self.assertTrue(proof_step_succeeded({"proofState": 1, "goals": []}))
-        self.assertTrue(proof_step_succeeded({"goals": []}))
-
-    def test_auxiliary_declaration_limitation_requires_fallback(self):
-        response = {
-            "messages": [{
-                "severity": "error",
-                "data": (
-                    "auxiliary declaration cannot be created when declaration "
-                    "name is not available"
-                ),
-            }],
-        }
-        self.assertTrue(requires_runtime_fallback(response))
-        self.assertFalse(requires_runtime_fallback({"messages": []}))
-
     def test_structural_sequences_are_not_standalone_tactics(self):
         units = [
             {"syntaxKind": "Lean.Parser.Tactic.simp"},
             {"syntaxKind": "Lean.cdot"},
             {"syntaxKind": "Lean.calcTactic"},
+            {"syntaxKind": "Lean.Parser.Tactic.«tactic_<;>_»"},
+            {"syntaxKind": "Mathlib.Tactic.induction'"},
         ]
         self.assertEqual(
-            unsupported_standalone_syntax(units),
-            ["Lean.calcTactic", "Lean.cdot"],
-        )
-
-    def test_semicolon_sequence_skips_heartbeat_wrapper(self):
-        self.assertFalse(
-            heartbeat_instrumentation_supported("Lean.Parser.Tactic.«tactic_<;>_»")
-        )
-        self.assertTrue(
-            heartbeat_instrumentation_supported("Lean.Parser.Tactic.exact")
+            unsupported_profile_syntax(units),
+            [
+                "Lean.Parser.Tactic.«tactic_<;>_»",
+                "Lean.calcTactic",
+                "Lean.cdot",
+                "Mathlib.Tactic.induction'",
+            ],
         )
 
 if __name__ == "__main__":

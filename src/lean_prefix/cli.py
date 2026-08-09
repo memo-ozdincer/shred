@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import shlex
 import sys
 
 from lean_prefix.audit import AuditError, audit_manifest
@@ -51,7 +52,7 @@ def _parser() -> argparse.ArgumentParser:
     replay.add_argument("--limit", type=int)
     replay.add_argument("--restart-every", type=int, default=128)
     replay.add_argument("--timeout-seconds", type=float, default=300.0)
-    replay.add_argument("--memory-limit-gib", type=float, default=24.0)
+    replay.add_argument("--memory-limit-gib", type=float, default=48.0)
     replay.add_argument("--repl-executable", type=Path)
     replay.add_argument("--progress-every", type=int, default=100)
     replay.add_argument("--proposal-id", action="append")
@@ -66,7 +67,8 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = _parser().parse_args(argv)
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    args = _parser().parse_args(raw_argv)
     try:
         if args.command == "audit":
             report = audit_manifest(args.manifest, args.source_root)
@@ -124,6 +126,7 @@ def main(argv: list[str] | None = None) -> int:
                 progress_every=args.progress_every,
                 proposal_ids=set(args.proposal_id) if args.proposal_id else None,
             )
+            report["command"] = shlex.join(["lean-prefix", *raw_argv])
             rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(rendered, encoding="utf-8")
@@ -137,6 +140,7 @@ def main(argv: list[str] | None = None) -> int:
                 bootstrap_samples=args.bootstrap_samples,
                 bootstrap_seed=args.bootstrap_seed,
             )
+            report["command"] = shlex.join(["lean-prefix", *raw_argv])
             rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(rendered, encoding="utf-8")
