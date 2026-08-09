@@ -23,12 +23,16 @@ fi
 artifact_dir="artifacts/${run_name}"
 report_dir="reports/private/${run_name}"
 build_dir="/tmp/lean-prefix-${run_name}-${SLURM_JOB_ID:-local}"
+project_root="$PWD"
 mkdir -p "$artifact_dir" "$report_dir" "$build_dir/LeanPrefix"
 
-lake env lean \
-  --root="$PWD/lean" \
-  -o "$build_dir/LeanPrefix/AutomaticCertificate.olean" \
-  "$PWD/lean/LeanPrefix/AutomaticCertificate.lean"
+(
+  cd "$LEAN_WORKSPACE"
+  lake env lean \
+    --root="$project_root/lean" \
+    -o "$build_dir/LeanPrefix/AutomaticCertificate.olean" \
+    "$project_root/lean/LeanPrefix/AutomaticCertificate.lean"
+)
 
 export LEAN_PATH="$build_dir:${LEAN_PATH:-}"
 export LEAN_WORKSPACE LEAN_PREFIX_REPL_EXECUTABLE
