@@ -486,3 +486,60 @@ Consequence: every D021 report records `restart_every_proposals: 1`. The rerun
 must preserve D019's current-verdict agreement and report all timeouts and
 process failures explicitly. D020 remains diagnostic-only and cannot be
 silently repaired, resumed, or consolidated with D021.
+
+## D-020 — Preserve D021 as a bounded upper-bound diagnostic
+
+Date: 2026-08-09
+
+Status: accepted after complete D021 consolidation
+
+Decision: preserve all ten D021 theorem captures, including their explicit
+fallbacks, and report visible-state grouping only as a deliberately enriched
+upper bound. Do not rerun or impute the unsupported records. The 120 GiB D022
+retry of theorem 80508 is retained only as evidence about its failure mode and
+is excluded from the aggregate.
+
+Reason: D021 accounts for all 320 frozen proposals with 190 unique tactic
+alignments, 130 fallbacks, two timeouts, and six process exits. The 312 requests
+that returned current verdicts agree exactly with D019. Restarting for every
+proposal removed cumulative memory growth, but the same four 80508 candidates
+failed under both 48 GiB and 120 GiB limits. Those failures are therefore
+deterministic `allTactics` instrumentation failures, not evidence that the
+proposals need a larger memory cap.
+
+Among the supported records, identical theorem, visible goal, and exact tactic
+groups have a 15.419% CPU opportunity upper bound, versus 5.408% for exact
+prefixes on the same selected records. The 10.011-point increment is not a
+speedup: printed goals omit hidden state, and the ten theorems were selected
+for maximal unsafe edge opportunity rather than representativeness.
+
+Consequence: the bounded census supports hand-reading and one narrower
+feasibility test, not a state-DAG implementation or general performance claim.
+The six process exits and two timeouts contribute zero state opportunity.
+
+## D-021 — Gate any successor on exact closing-certificate application
+
+Date: 2026-08-09
+
+Status: accepted as the next bounded question
+
+Decision: before designing full-state identity or arbitrary state-transition
+reuse, test whether an expensive closing tactic's generated proof can be
+reapplied to an exactly matched goal and local context, then accepted by
+ordinary Lean for less CPU than regenerating the tactic result. Restrict the
+first test to hand-audited convergent groups and make every unsupported context
+an explicit fallback.
+
+Reason: 113 accepted, aligned proposals end in a measured closing tactic. Their
+visible-state opportunity upper bound is 13.760% of selected full-verification
+CPU, but 8.617 percentage points are beyond exact prefixes and 6.132 of those
+points come from two `rfl` groups in theorem 41132. Applying a cached proof
+still incurs elaboration, definitional equality, and kernel checking; the
+large `rfl` cost may therefore survive certificate reuse. Excluding `rfl`, the
+closing increment beyond prefixes is only 2.485% of selected CPU. An actual
+application-cost measurement is necessary before calling this a project.
+
+Consequence: no general semantic cache is in scope yet. A successor survives
+only if ordinary Lean accepts the transplanted certificate and the measured
+end-to-end saving remains material after kernel checking. The initial project
+and failed exact-prefix gate remain unchanged.

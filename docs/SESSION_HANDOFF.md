@@ -110,25 +110,28 @@ the version-one executor.
 
 ## Exact next actions
 
-1. Commit and push D-019 and the per-proposal REPL isolation fix under Memo
-   Ozdincer's identity.
-2. Run D021 for the ten theorems frozen in
-   `reports/c0_visible_state_selection.json`, using fresh Lean processes for
-   every proposal and new `state_census_d021` output directories. Never merge
-   the partial D020 outputs; they are diagnostic-only.
-3. Consolidate D021's 320 proposals against D019 costs. Require exact current
-   verdict agreement and fail closed on ambiguous tactic alignment.
-4. Hand-read reconvergent high-cost groups. If exact visible states retain
-   little incremental opportunity beyond prefixes, stop. If they retain a
-   large opportunity, review whether full Lean state can be fingerprinted and
-   reused without the D-013 reconstruction bug before defining any new claim.
+1. Commit and push the provenance-checked D021 summarizer and D-020/D-021 under
+   Memo Ozdincer's identity.
+2. From that clean commit, generate `reports/c0_visible_state_summary.json`
+   from all ten D021 artifacts, all ten D021 capture reports, and all 128 D019
+   replay artifacts.
+3. Check in a concise hand review of the highest incremental groups, including
+   the two expensive `rfl` groups and the convergent `positivity`, `ring_nf`,
+   and `nlinarith` paths.
+4. Design the D-021 closing-certificate application benchmark. Do not build a
+   general state-DAG or semantic cache unless actual ordinary-Lean application
+   cost remains materially below regenerating the closing tactic.
 
 D020 was stopped after eight theorem reports. Persistent `allTactics`
 `ProofSnapshot` data caused cumulative memory growth (roughly 45 GiB in one
 worker under a 48 GiB cap), and theorem 80508 recorded four process errors.
-D-019 therefore requires a fresh REPL process per proposal. The Slurm step was
-cancelled, but allocation `19352896` on c126 remains running and must not be
-cancelled. Use only D021 for the registered state-census aggregate.
+D-019 therefore requires a fresh REPL process per proposal. D021 subsequently
+completed all 320 frozen proposals in step `19352896.91`: 190 aligned, 130
+fallback, two timeouts, six process exits, and 312/312 current-verdict agreement
+with D019. D022 retried theorem 80508 at 120 GiB and reproduced the same four
+process exits, so they are deterministic instrumentation failures rather than
+memory-cap failures. D022 is excluded from the aggregate. Allocation `19352896`
+on c126 remains running and must not be cancelled.
 
 Raw proposal-level traces and the native artifact are Git-ignored and live on
 `/scratch`; aggregate reports and documentation belong in Git. A shard is

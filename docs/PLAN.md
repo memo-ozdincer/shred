@@ -58,6 +58,17 @@ diagnostic-only exact-prefix estimate is 3.762% (bootstrap 3.401%–4.159%).
 Missing failure CPU can only lower the true fraction. D-017 therefore stops
 the plan here; Phases 3–6 are not authorized for the version-one mechanism.
 
+## Post-gate successor diagnostic
+
+Status: bounded visible-state census complete; implementation not authorized.
+
+D021 captured the frozen top-ten high-opportunity theorems with a fresh Lean
+process per proposal. Its visible-state upper bound is 15.419%, but the sample
+is intentionally enriched and pretty goals omit hidden state. The next gate is
+not a semantic-state engine: D-021 permits only an exact closing-certificate
+application benchmark on hand-audited groups. It must measure ordinary Lean's
+full elaboration and kernel-check cost and fail closed on unmatched contexts.
+
 ## Phase 3 — Reference baseline
 
 Status: stopped by the Phase 2 gate.

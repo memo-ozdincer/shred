@@ -92,3 +92,18 @@ One worker reached roughly 45 GiB RSS under its 48 GiB cap, and theorem 80508
 had four process errors. Per D-019, those partial outputs are quarantined as
 diagnostic-only. D021 restarts Lean for every proposal; only D021 may be
 consolidated into the visible-state report.
+
+D021 is now complete. It accounts for all 320 frozen proposals: 190 align,
+130 fall back, two time out, and six exit during deterministic `allTactics`
+instrumentation. All 312 available current verdicts agree with D019. A 120 GiB
+retry reproduced the same four 80508 exits, so those records remain explicit
+zero-opportunity fallbacks rather than being retried again (D-020).
+
+On this deliberately high-opportunity selection, exact visible goal plus exact
+tactic grouping has a 15.419% CPU upper bound, 10.011 percentage points beyond
+exact prefixes on the same records. This is not a speedup or a representative
+estimate. The closing-tactic subset has a 13.760% upper bound and an 8.617-point
+increment, but two expensive `rfl` groups supply 6.132 of those points. D-021
+therefore gates any successor on measuring the actual cost of reapplying a
+kernel-checked closing certificate; full state-DAG implementation is not
+authorized.

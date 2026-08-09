@@ -44,5 +44,20 @@ that diverge and later reconverge, then memoize an exact transition. Treat the
 distinction as a hypothesis until the visible-state census and a full-state
 feasibility review support it.
 
+D021 finds real visible reconvergence in the deliberately enriched top-ten
+sample: a 15.419% state-edge upper bound, 10.011 points beyond exact prefixes.
+Hand review shows different model-generated preambles washing out before the
+same `positivity`, `ring_nf`, `nlinarith`, or `rfl` call. This keeps the
+successor hypothesis alive, but does not make pretty goals safe cache keys.
+
+The narrowest next experiment is a closing-certificate cache (D-021): reuse a
+generated proof only when the goal and local context match exactly, then let
+ordinary Lean check it. The apparent closing opportunity is dominated by two
+very expensive `rfl` groups, where definitional equality and kernel reduction
+may remain expensive even with a cached term. Measure that cost before building
+a general library. Arbitrary state transformations, alpha-normalized context
+matching, and kernel-level normalization memoization remain separate future
+ideas, not inferred features of the current repository.
+
 An item moves into scope only through a recorded decision after the primary
 method is measured and understood.

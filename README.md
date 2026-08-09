@@ -68,10 +68,12 @@ See:
 
 Phase 1 characterization and the complete Phase 2 census are finished. No
 execution-engine speedup is claimed, and Phases 3–6 are stopped by the failed
-gate. A bounded post-gate diagnostic now asks whether visibly identical Lean
-states reached by different prefixes retain enough opportunity to justify a
-separate proof-state-DAG project. Pretty-printed goals are explicitly not
-treated as full state or executable cache keys.
+gate. A bounded top-ten diagnostic found visible reconvergence, but on an
+intentionally enriched sample and with printed goals that omit hidden Lean
+state. The next permitted question is narrower: whether a closing proof
+certificate can be reapplied and checked by ordinary Lean materially faster
+than regenerating the tactic result. No proof-state-DAG or semantic cache is
+currently claimed or authorized.
 
 ## Quick start
 

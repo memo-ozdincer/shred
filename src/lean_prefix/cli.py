@@ -107,6 +107,7 @@ def _parser() -> argparse.ArgumentParser:
         "summarize-state-census", help="score visible-state reconvergence diagnostics"
     )
     state_summary.add_argument("--state-artifact", type=Path, action="append", required=True)
+    state_summary.add_argument("--state-report", type=Path, action="append")
     state_summary.add_argument("--replay-artifact", type=Path, action="append", required=True)
     state_summary.add_argument("--output", type=Path, required=True)
     return parser
@@ -238,7 +239,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == "summarize-state-census":
             report = summarize_visible_state_census(
-                args.state_artifact, args.replay_artifact
+                args.state_artifact, args.replay_artifact, args.state_report
             )
             report["command"] = shlex.join(["lean-prefix", *raw_argv])
             rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
