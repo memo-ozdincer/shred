@@ -210,7 +210,7 @@ def wrap_final_tactic(proof: str, units: list[dict[str, Any]]) -> str | None:
     if indentation.strip():
         raise CertificatePrevalenceError("final tactic does not begin after indentation")
     nested = indentation + b"  "
-    wrapped = b"reuse_closing in\n" + nested + tactic.replace(b"\n", b"\n" + nested)
+    wrapped = b"reuse_closing in\n" + nested + tactic.replace(b"\n", b"\n  ")
     transformed_body = (source[:start] + wrapped + source[stop:]).decode("utf-8")
     return transformed_body + proof[len(body):]
 

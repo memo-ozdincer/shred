@@ -163,3 +163,9 @@ sibling goals. Its partial run had 36 correct-to-incorrect disagreements and
 was cancelled and quarantined (D-025). The key now requires exactly one
 outstanding goal; multi-goal states execute unchanged as explicit uncacheable
 fallbacks. D028 is the corrected registered run.
+
+D028 removed the multi-goal disagreements but exposed one structured-tactic
+splicing error: continuation lines in a native `·` block were over-indented.
+It was cancelled and quarantined with one correct-to-incorrect disagreement
+(D-026). The transformer now preserves relative indentation and adds exactly
+two nesting spaces. D029 is the only eligible prevalence run.

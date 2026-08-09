@@ -138,6 +138,11 @@ exactly one outstanding goal; multi-goal states are uncacheable fallbacks. The
 next clean run name is `certificate_d028`; never consolidate D026 or D027 with
 it.
 
+D028 step `19352896.113` is quarantined too. It had one remaining disagreement
+caused by over-indenting continuation lines of a native structured `·` tactic
+when nesting it under the wrapper. D-026 fixes the splice and adds a regression.
+The next clean run name is `certificate_d029`; consolidate only D029.
+
 D020 was stopped after eight theorem reports. Persistent `allTactics`
 `ProofSnapshot` data caused cumulative memory growth (roughly 45 GiB in one
 worker under a 48 GiB cap), and theorem 80508 recorded four process errors.

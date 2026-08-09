@@ -18,6 +18,24 @@ class CertificatePrevalenceTests(unittest.TestCase):
         self.assertIn("import LeanPrefix.AutomaticCertificate", CERTIFICATE_CONTEXT)
         self.assertIn("open LeanPrefix.AutomaticCertificate", CERTIFICATE_CONTEXT)
 
+    def test_structured_tactic_keeps_relative_indentation_when_nested(self):
+        proof = "  · constructor\n    · trivial\n    · trivial\n```"
+        wrapped = wrap_final_tactic(
+            proof,
+            [{
+                "startByte": 2,
+                "stopByte": 46,
+                "text": "· constructor\n    · trivial\n    · trivial",
+            }],
+        )
+        self.assertEqual(
+            wrapped,
+            "  reuse_closing in\n"
+            "    · constructor\n"
+            "      · trivial\n"
+            "      · trivial\n```",
+        )
+
     def test_final_native_tactic_is_wrapped_without_heuristic_splitting(self):
         proof = "by\n  ring_nf\n  nlinarith\n```"
         wrapped = wrap_final_tactic(

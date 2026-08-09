@@ -693,3 +693,26 @@ an explicit vector of goal identities, assignments, ordering, and isolation
 tests and is outside the current minimal mechanism. D028 measures only the
 single-goal mechanism already supported by D024; multi-goal work remains fully
 accounted fallback CPU.
+
+## D-026 — Preserve relative indentation when wrapping structured tactics
+
+Date: 2026-08-09
+
+Status: accepted during D028 partial audit
+
+Decision: cancel and quarantine D028 step `19352896.113`. When nesting the
+native final tactic under `reuse_closing`, retain the exact native byte range
+and all original intra-tactic indentation, adding exactly two spaces to every
+line. Add a structured `Lean.cdot` regression and rerun as D029.
+
+Reason: D028 reduced the representative disagreements to exactly one. Candidate
+16 of theorem 9788 is a single native `·` block containing a constructor and
+two nested bullets. The first transformer correctly wrapped the authoritative
+native range but prepended the outer indentation plus two spaces to continuation
+lines, over-indenting the nested bullets. Lean closed and captured the first
+branch, then rejected the remaining bullets as commands. Baseline was correct;
+cached mode was not. This is a source-splicing error, not certificate evidence.
+
+Consequence: D028 timings and prevalence are diagnostic-only. D029 alone may be
+consolidated. The corrected transformer changes no tactic text or relative
+structure; it only introduces the two spaces required by the wrapper nesting.
