@@ -27,6 +27,10 @@ CERTIFICATE_CONTEXT = C0_BASE_CONTEXT.replace(
     "import Mathlib\nimport Aesop\n",
     "import LeanPrefix.AutomaticCertificate\nimport Aesop\n",
     1,
+).replace(
+    "open BigOperators Real Nat Topology Rat\n",
+    "open BigOperators Real Nat Topology Rat\nopen LeanPrefix.AutomaticCertificate\n",
+    1,
 )
 _EVENT = re.compile(r"LEAN_PREFIX_CERT event=(?P<event>[a-z_]+)(?: (?P<fields>.*))?")
 

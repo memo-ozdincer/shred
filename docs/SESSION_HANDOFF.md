@@ -125,6 +125,12 @@ exercise is `lean/LeanPrefix/AutomaticCertificateTest.lean`. Selection,
 read-only input preparation, paired theorem execution, and strict consolidation
 are in `src/lean_prefix/certificate_prevalence.py` and exposed through the CLI.
 
+D026 step `19352896.105` is invalid and was cancelled without cancelling the
+allocation. The module was imported but its tactic namespace was not opened,
+so cached proofs failed as unknown tactics. D-024 quarantines all D026 raw
+outputs. The context now explicitly opens `LeanPrefix.AutomaticCertificate`;
+the corrected run must use `certificate_d027` and must not consolidate D026.
+
 D020 was stopped after eight theorem reports. Persistent `allTactics`
 `ProofSnapshot` data caused cumulative memory growth (roughly 45 GiB in one
 worker under a 48 GiB cap), and theorem 80508 recorded four process errors.

@@ -638,3 +638,28 @@ reinterpretation of the failed exact-prefix claim. No production cache is
 authorized until the representative stratum has zero verdict disagreements,
 automatic hits survive hand audit, and measured end-to-end savings remain
 material after all overhead and fallback work.
+
+## D-024 — Quarantine the invalid D026 namespace run
+
+Date: 2026-08-09
+
+Status: accepted during D026 execution
+
+Decision: cancel only D026 step `19352896.105`, retain its raw outputs under
+the D026 names for debugging, and exclude every D026 cached verdict and timing
+from scientific consolidation. Preserve the allocation. Add the missing
+`open LeanPrefix.AutomaticCertificate` to the pinned REPL context, require a
+successful authentic wrapped smoke to emit cache events, and use a new D027
+run directory for the corrected measurement.
+
+Reason: a partial paired consolidation after 158 theorem reports showed 2,469
+representative verdict disagreements, near-zero cached CPU, and zero cache
+events. The module was imported, but its namespaced tactic syntax was not
+opened in the generated REPL context, so instrumented proofs failed immediately
+as unknown tactics. This is an instrumentation failure, not evidence about
+certificate prevalence or speed.
+
+Consequence: D026 is diagnostic-only and must never be merged with D027. The
+failure demonstrates why partial verdict consolidation is mandatory during
+long performance runs. The frozen theorem selection and prepared inputs remain
+valid because neither depends on the faulty REPL context.

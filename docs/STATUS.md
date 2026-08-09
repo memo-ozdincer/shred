@@ -151,4 +151,8 @@ branches from the same initialized REPL environment; only the module-level
 certificate store persists. The original and cached modes record individual
 verdicts, CPU, wall time, memory, timeouts, process resets, and cache events.
 Implementation and unit verification are complete; authentic D026 execution
-is the next milestone, so no prevalence or aggregate speedup is yet claimed.
+found a missing namespace-open in the REPL context. D026 step `19352896.105`
+was cancelled after the partial paired check exposed massive cached-verdict
+disagreement and zero events. Its raw outputs are quarantined and excluded
+(D-024). The corrected run is D027; no prevalence or aggregate speedup is yet
+claimed.

@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 from lean_prefix.certificate_prevalence import (
+    CERTIFICATE_CONTEXT,
     select_certificate_prevalence_theorems,
     summarize_certificate_prevalence,
     wrap_final_tactic,
@@ -13,6 +14,10 @@ from lean_prefix.certificate_prevalence import (
 
 
 class CertificatePrevalenceTests(unittest.TestCase):
+    def test_repl_context_imports_and_opens_the_certificate_tactic(self):
+        self.assertIn("import LeanPrefix.AutomaticCertificate", CERTIFICATE_CONTEXT)
+        self.assertIn("open LeanPrefix.AutomaticCertificate", CERTIFICATE_CONTEXT)
+
     def test_final_native_tactic_is_wrapped_without_heuristic_splitting(self):
         proof = "by\n  ring_nf\n  nlinarith"
         wrapped = wrap_final_tactic(
