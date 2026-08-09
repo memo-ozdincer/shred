@@ -110,11 +110,20 @@ the version-one executor.
 
 ## Exact next actions
 
-1. Freeze an automatic certificate-key contract and a broader prevalence
-   sample. Measure full batch CPU including lookup, storage, checking, misses,
-   and fallback before designing a production cache.
-2. Hand-audit automatic hits and misses, including local-context permutations,
+1. Run the frozen D026 automatic prevalence selection and paired measurement:
+   128 deterministic representative theorems plus 32 separately labeled
+   enriched theorems.
+2. Consolidate only complete theorem artifact/report pairs and require exact
+   paired verdict accounting.
+3. Hand-audit automatic hits and misses, including local-context permutations,
    typeclass state, and large-certificate fallback behavior.
+4. Apply D-023's gate before building a production cache: zero representative
+   verdict disagreements and at least 15% representative end-to-end CPU saving.
+
+The implementation is `lean/LeanPrefix/AutomaticCertificate.lean`; its Lean
+exercise is `lean/LeanPrefix/AutomaticCertificateTest.lean`. Selection,
+read-only input preparation, paired theorem execution, and strict consolidation
+are in `src/lean_prefix/certificate_prevalence.py` and exposed through the CLI.
 
 D020 was stopped after eight theorem reports. Persistent `allTactics`
 `ProofSnapshot` data caused cumulative memory growth (roughly 45 GiB in one

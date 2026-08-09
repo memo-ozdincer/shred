@@ -77,6 +77,13 @@ auditable context/target key, measure safe hits on a broader frozen sample, and
 include lookup, storage, checking, misses, and fallbacks in end-to-end CPU.
 General state-DAG implementation remains unauthorized.
 
+D-023 now freezes and implements the automatic closing-certificate identity
+and paired prevalence runner. Its next gate is a 128-theorem deterministic
+sample plus a separately reported 32-theorem enriched diagnostic. Production
+implementation requires zero paired verdict disagreements and at least 15%
+representative end-to-end CPU saving; otherwise the mechanism is stopped or
+redirected. The enriched stratum cannot satisfy the gate by itself.
+
 ## Phase 3 — Reference baseline
 
 Status: stopped by the Phase 2 gate.

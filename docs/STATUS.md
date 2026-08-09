@@ -135,3 +135,20 @@ The two passes establish semantic and per-hit cost feasibility, not prevalence
 or aggregate speedup. D-022 advances only to exact automatic keying and a
 broader frozen hit-rate/cost measurement. The probe fails closed on context,
 type, or ordinary-Lean resource-limit failure.
+
+## Automatic prevalence implementation
+
+D-023 freezes the executable key and measurement contract. The automatic key
+contains the pinned environment identity, source-location-free exact tactic
+syntax, and the elaborated target abstracted over ordered user-visible locals.
+Hashes only select buckets; exact structural equality, inferred proof type,
+definitional equality, and ordinary Lean checking are still required. Every
+miss or rejection executes the original tactic.
+
+The paired runner preserves all 32 proposals for 128 deterministically sampled
+theorems and 32 separately labeled high-opportunity theorems. Each proposal
+branches from the same initialized REPL environment; only the module-level
+certificate store persists. The original and cached modes record individual
+verdicts, CPU, wall time, memory, timeouts, process resets, and cache events.
+Implementation and unit verification are complete; authentic D026 execution
+is the next milestone, so no prevalence or aggregate speedup is yet claimed.

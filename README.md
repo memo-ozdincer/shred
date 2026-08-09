@@ -84,6 +84,12 @@ establish feasibility, not corpus-wide prevalence or aggregate speedup. The
 next gate is automatic exact keying and a broader frozen hit-rate/cost
 measurement (D-022).
 
+The automatic, fail-closed key and paired prevalence runner are now implemented
+under D-023. The key includes exact structural tactic syntax as well as the
+abstracted elaborated context/target, because goal-only reuse could change a
+failing proposal into a successful one. Production remains gated on the frozen
+representative measurement; the separate enriched stratum is exploratory only.
+
 ## Quick start
 
 ```bash

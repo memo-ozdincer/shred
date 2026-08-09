@@ -12,6 +12,13 @@ from lean_prefix.certificate_probe import (
     CertificateProbeError,
     summarize_certificate_probe,
 )
+from lean_prefix.certificate_prevalence import (
+    CertificatePrevalenceError,
+    prepare_certificate_prevalence_inputs,
+    run_certificate_prevalence_theorem,
+    select_certificate_prevalence_theorems,
+    summarize_certificate_prevalence,
+)
 from lean_prefix.native import NativeExtractionError, extract_and_analyze
 from lean_prefix.opportunity_summary import (
     OpportunitySummaryError,
@@ -120,6 +127,43 @@ def _parser() -> argparse.ArgumentParser:
     )
     certificate_summary.add_argument("--profiler-log", type=Path, required=True)
     certificate_summary.add_argument("--output", type=Path, required=True)
+    certificate_select = commands.add_parser(
+        "select-certificate-prevalence",
+        help="freeze representative and enriched certificate theorem strata",
+    )
+    certificate_select.add_argument("--replay-artifact", type=Path, action="append", required=True)
+    certificate_select.add_argument("--representative-count", type=int, default=128)
+    certificate_select.add_argument("--enriched-count", type=int, default=32)
+    certificate_select.add_argument("--output", type=Path, required=True)
+    certificate_prepare = commands.add_parser(
+        "prepare-certificate-prevalence",
+        help="materialize the selected read-only proposal inputs",
+    )
+    certificate_prepare.add_argument("--manifest", type=Path, required=True)
+    certificate_prepare.add_argument("--source-root", type=Path)
+    certificate_prepare.add_argument("--native-artifact", type=Path, required=True)
+    certificate_prepare.add_argument("--selection", type=Path, required=True)
+    certificate_prepare.add_argument("--artifact", type=Path, required=True)
+    certificate_prepare.add_argument("--output", type=Path, required=True)
+    certificate_run = commands.add_parser(
+        "run-certificate-prevalence-theorem",
+        help="run paired original/cached verification for one frozen theorem",
+    )
+    certificate_run.add_argument("--input-artifact", type=Path, required=True)
+    certificate_run.add_argument("--theorem", required=True)
+    certificate_run.add_argument("--lean-workspace", type=Path, required=True)
+    certificate_run.add_argument("--artifact", type=Path, required=True)
+    certificate_run.add_argument("--output", type=Path, required=True)
+    certificate_run.add_argument("--timeout-seconds", type=float, default=300.0)
+    certificate_run.add_argument("--memory-limit-gib", type=float, default=48.0)
+    certificate_run.add_argument("--repl-executable", type=Path)
+    certificate_consolidate = commands.add_parser(
+        "summarize-certificate-prevalence",
+        help="validate and aggregate paired certificate theorem runs",
+    )
+    certificate_consolidate.add_argument("--artifact", type=Path, action="append", required=True)
+    certificate_consolidate.add_argument("--report", type=Path, action="append", required=True)
+    certificate_consolidate.add_argument("--output", type=Path, required=True)
     return parser
 
 
@@ -267,6 +311,57 @@ def main(argv: list[str] | None = None) -> int:
             args.output.write_text(rendered, encoding="utf-8")
             sys.stdout.write(rendered)
             return 0
+        if args.command == "select-certificate-prevalence":
+            report = select_certificate_prevalence_theorems(
+                args.replay_artifact,
+                representative_count=args.representative_count,
+                enriched_count=args.enriched_count,
+                project_root=Path.cwd(),
+            )
+            report["command"] = shlex.join(["lean-prefix", *raw_argv])
+            rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(rendered, encoding="utf-8")
+            sys.stdout.write(rendered)
+            return 0
+        if args.command == "prepare-certificate-prevalence":
+            report = prepare_certificate_prevalence_inputs(
+                args.manifest,
+                args.native_artifact,
+                args.selection,
+                args.artifact,
+                source_root=args.source_root,
+            )
+            report["command"] = shlex.join(["lean-prefix", *raw_argv])
+            rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(rendered, encoding="utf-8")
+            sys.stdout.write(rendered)
+            return 0
+        if args.command == "run-certificate-prevalence-theorem":
+            report = run_certificate_prevalence_theorem(
+                args.input_artifact,
+                args.artifact,
+                theorem_name=args.theorem,
+                lean_workspace=args.lean_workspace,
+                timeout_seconds=args.timeout_seconds,
+                memory_limit_bytes=int(args.memory_limit_gib * 1024**3),
+                repl_executable=args.repl_executable,
+            )
+            report["command"] = shlex.join(["lean-prefix", *raw_argv])
+            rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(rendered, encoding="utf-8")
+            sys.stdout.write(rendered)
+            return 0
+        if args.command == "summarize-certificate-prevalence":
+            report = summarize_certificate_prevalence(args.artifact, args.report)
+            report["command"] = shlex.join(["lean-prefix", *raw_argv])
+            rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(rendered, encoding="utf-8")
+            sys.stdout.write(rendered)
+            return 0
     except (
         AuditError,
         NativeExtractionError,
@@ -274,6 +369,7 @@ def main(argv: list[str] | None = None) -> int:
         ProfileSummaryError,
         OpportunitySummaryError,
         CertificateProbeError,
+        CertificatePrevalenceError,
         ReplError,
         ReviewSelectionError,
         StateCensusError,

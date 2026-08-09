@@ -591,3 +591,50 @@ and how much end-to-end batch CPU it saves after keying, storage, checking,
 misses, and fallbacks. Large raw proof expressions that exceed ordinary Lean's
 limits remain fallback; a named auxiliary declaration is a separate future
 design. Arbitrary non-closing state transitions remain out of scope.
+
+## D-023 — Freeze the automatic closing-certificate prevalence contract
+
+Date: 2026-08-09
+
+Status: accepted before implementation
+
+Decision: key a closing certificate by (1) a pinned Lean/Mathlib/base-context
+fingerprint, (2) the exact structural syntax of the closing tactic with source
+locations and trivia removed, and (3) the fully elaborated goal abstracted over
+the ordered non-implementation-detail local context. Retain binder information.
+Instantiate assigned metavariables and reject keys or certificates containing
+unresolved metavariables, universe metavariables, or free variables. Hashes are
+indexes only: every candidate hit must pass exact structural key equality,
+local-count agreement, inferred-type checking, definitional equality with the
+current target, and ordinary Lean checking of the completed declaration.
+
+The tactic identity is part of the key because replacing a failing tactic with
+a proof found by a different tactic would change the registered proposal's
+verdict. A miss, unsupported context, rejected certificate, resource-limit
+failure, or process reset executes the original tactic unchanged. Cache hits,
+misses, captures, rejected captures, rejected applications, resets, time, and
+verdicts must remain explicit.
+
+Measure two frozen strata: a deterministic hash sample of 128 C0 theorems for
+an unweighted prevalence diagnostic, and 32 non-overlapping theorems selected
+by the largest repeated-final-edge D019 CPU opportunity for mechanism discovery.
+The latter is enriched and cannot estimate corpus prevalence. For every chosen
+theorem, compare a warm persistent REPL running the original proposals with a
+separate persistent REPL running the wrapped closing tactics from the same base
+environment and in the same proposal order. Preserve all 32 registered
+proposals, including incorrect, unsupported, failed, and timed-out attempts.
+
+Reason: pretty goals are not executable identities, and a goal-only cache can
+change an incorrect proposal into a correct one. Exact tactic syntax plus the
+abstracted elaborated context/target is the smallest auditable identity that
+tests the supported D024 mechanism without introducing tactic invention or
+state-DAG semantics. REPL requests all branch from the same initialized
+environment while the module-level certificate store persists, permitting
+cross-proposal reuse without allowing earlier candidate declarations to alter
+later tactic search.
+
+Consequence: this is a post-gate successor diagnostic, not a revival or
+reinterpretation of the failed exact-prefix claim. No production cache is
+authorized until the representative stratum has zero verdict disagreements,
+automatic hits survive hand audit, and measured end-to-end savings remain
+material after all overhead and fallback work.
