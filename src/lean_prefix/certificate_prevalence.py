@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 import platform
 import re
+import statistics
 import time
 from typing import Any, Iterable, Iterator
 
@@ -33,6 +34,7 @@ CERTIFICATE_CONTEXT = C0_BASE_CONTEXT.replace(
     1,
 )
 _EVENT = re.compile(r"LEAN_PREFIX_CERT event=(?P<event>[a-z_]+)(?: (?P<fields>.*))?")
+CACHE_EXCLUDED_SYNTAX = frozenset({"Lean.Parser.Tactic.tacticRfl"})
 
 
 def _sha256(path: Path) -> str:
@@ -267,7 +269,11 @@ def _run_mode(
         for row in rows:
             proof = str(row["proof"])
             instrumented = False
-            if cached and row["native_eligible"]:
+            exclusion: str | None = None
+            final_kind = str(row["units"][-1].get("syntaxKind", "")) if row["units"] else ""
+            if cached and final_kind in CACHE_EXCLUDED_SYNTAX:
+                exclusion = "registered_rfl_resource_and_cost_fallback"
+            elif cached and row["native_eligible"]:
                 replacement = wrap_final_tactic(proof, list(row["units"]))
                 if replacement is not None:
                     proof = replacement
@@ -276,6 +282,7 @@ def _run_mode(
             code = "failed to parse" if declaration is None else declaration
             result_record: dict[str, Any] = {
                 "instrumented": instrumented,
+                "instrumentation_exclusion": exclusion,
                 "complete": False,
                 "timed_out": False,
                 "process_error": None,
@@ -406,7 +413,7 @@ def run_certificate_prevalence_theorem(
 
 
 def summarize_certificate_prevalence(
-    artifact_paths: list[Path], report_paths: list[Path]
+    artifact_paths: list[Path], report_paths: list[Path], selection_path: Path | None = None
 ) -> dict[str, Any]:
     if not artifact_paths or not report_paths:
         raise CertificatePrevalenceError("artifacts and reports are required")
@@ -415,6 +422,20 @@ def summarize_certificate_prevalence(
     actual = {_sha256(path) for path in artifact_paths}
     if reported != actual or len(reported) != len(report_paths):
         raise CertificatePrevalenceError("theorem reports do not match artifacts exactly")
+    project_revisions = {
+        json.dumps(report["revisions"]["project_git"], sort_keys=True)
+        for report in reports
+    }
+    lean_revisions = {
+        json.dumps(report["revisions"]["lean_workspace_git"], sort_keys=True)
+        for report in reports
+    }
+    configurations = {
+        json.dumps(report["configuration"], sort_keys=True)
+        for report in reports
+    }
+    if len(project_revisions) != 1 or len(lean_revisions) != 1 or len(configurations) != 1:
+        raise CertificatePrevalenceError("theorem reports mix revisions or configurations")
     records = list(_records(artifact_paths))
     identities = [str(record["proposal_id"]) for record in records]
     if len(identities) != len(set(identities)):
@@ -422,6 +443,21 @@ def summarize_certificate_prevalence(
     by_stratum: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for record in records:
         by_stratum[str(record["stratum"])].append(record)
+
+    def distribution(values: list[float]) -> dict[str, Any]:
+        ordered = sorted(values)
+        def quantile(probability: float) -> float:
+            return ordered[round((len(ordered) - 1) * probability)]
+        return {
+            "count": len(ordered),
+            "sum": sum(ordered),
+            "mean": statistics.fmean(ordered),
+            "median": statistics.median(ordered),
+            "p90": quantile(0.90),
+            "p95": quantile(0.95),
+            "p99": quantile(0.99),
+            "maximum": ordered[-1],
+        }
 
     def aggregate(items: list[dict[str, Any]]) -> dict[str, Any]:
         events = Counter(
@@ -437,6 +473,9 @@ def summarize_certificate_prevalence(
         baseline_cpu = sum(float(item["baseline"]["cpu_seconds"] or 0.0) for item in items)
         cached_cpu = sum(float(item["cached"]["cpu_seconds"] or 0.0) for item in items)
         instrumented = sum(bool(item["cached"]["instrumented"]) for item in items)
+        baseline_values = [float(item["baseline"]["cpu_seconds"] or 0.0) for item in items]
+        cached_values = [float(item["cached"]["cpu_seconds"] or 0.0) for item in items]
+        saved_values = [base - cache for base, cache in zip(baseline_values, cached_values)]
         return {
             "proposals": len(items),
             "theorems": len({item["theorem_name"] for item in items}),
@@ -454,21 +493,62 @@ def summarize_certificate_prevalence(
             "cached_timeouts": sum(bool(item["cached"]["timed_out"]) for item in items),
             "baseline_process_errors": sum(item["baseline"]["process_error"] is not None for item in items),
             "cached_process_errors": sum(item["cached"]["process_error"] is not None for item in items),
+            "baseline_cpu_distribution": distribution(baseline_values),
+            "cached_cpu_distribution": distribution(cached_values),
+            "paired_cpu_saved_distribution": distribution(saved_values),
         }
 
     aggregates = {name: aggregate(items) for name, items in sorted(by_stratum.items())}
     representative = aggregates.get("representative")
     if representative is None:
         raise CertificatePrevalenceError("representative stratum is missing")
+    completeness: dict[str, Any] | None = None
+    if selection_path is not None:
+        selection = json.loads(selection_path.read_text(encoding="utf-8"))
+        expected = {
+            name: {str(item["theorem_name"]) for item in selection[name]}
+            for name in ("representative", "enriched")
+        }
+        actual = {
+            name: {str(item["theorem_name"]) for item in items}
+            for name, items in by_stratum.items()
+        }
+        completeness = {
+            name: {
+                "expected_theorems": len(expected[name]),
+                "completed_theorems": len(actual.get(name, set())),
+                "expected_proposals": 32 * len(expected[name]),
+                "completed_proposals": len(by_stratum.get(name, [])),
+                "missing_theorems": sorted(expected[name] - actual.get(name, set())),
+                "unexpected_theorems": sorted(actual.get(name, set()) - expected[name]),
+            }
+            for name in ("representative", "enriched")
+        }
+    representative_complete = (
+        completeness is None
+        or not completeness["representative"]["missing_theorems"]
+        and not completeness["representative"]["unexpected_theorems"]
+        and completeness["representative"]["completed_proposals"]
+        == completeness["representative"]["expected_proposals"]
+    )
     decision = (
         "stop_or_redirect"
-        if representative["verdict_disagreements"]
+        if not representative_complete
+        or representative["verdict_disagreements"]
         or representative["paired_cpu_saved_fraction"] < 0.15
         else "advance_minimal_production_cache"
     )
-    return {
+    report: dict[str, Any] = {
         "analysis": "closing-certificate-prevalence-summary-v1",
-        "status": "diagnostic",
+        "status": (
+            "complete"
+            if completeness is None or all(
+                not value["missing_theorems"] and not value["unexpected_theorems"]
+                and value["completed_proposals"] == value["expected_proposals"]
+                for value in completeness.values()
+            )
+            else "complete-representative-incomplete-enriched"
+        ),
         "decision_gate": {
             "minimum_representative_cpu_saved_fraction": 0.15,
             "requires_zero_verdict_disagreements": True,
@@ -476,8 +556,24 @@ def summarize_certificate_prevalence(
         },
         "strata": aggregates,
         "counts": {"artifacts": len(artifact_paths), "reports": len(report_paths), "proposals": len(records)},
+        "provenance": {
+            "theorem_project_git": json.loads(next(iter(project_revisions))),
+            "lean_workspace_git": json.loads(next(iter(lean_revisions))),
+            "configuration": json.loads(next(iter(configurations)),),
+            "summary_project_git": _git_state(Path.cwd()),
+            "hardware": sorted({str(report["hardware"]["hostname"]) for report in reports}),
+            "maximum_worker_wall_seconds": max(float(report["timing"]["worker_wall_seconds"]) for report in reports),
+            "sum_worker_wall_seconds": sum(float(report["timing"]["worker_wall_seconds"]) for report in reports),
+        },
         "inputs": {
             "artifact_sha256": {str(path): _sha256(path) for path in artifact_paths},
             "report_sha256": {str(path): _sha256(path) for path in report_paths},
         },
     }
+    if completeness is not None:
+        report["completeness"] = completeness
+        report["inputs"]["selection"] = {
+            "path": str(selection_path),
+            "sha256": _sha256(selection_path),
+        }
+    return report

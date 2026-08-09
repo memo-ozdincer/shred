@@ -98,7 +98,16 @@ class CertificatePrevalenceTests(unittest.TestCase):
                 }) + "\n")
             digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
             report = root / "report.json"
-            report.write_text(json.dumps({"artifact": {"sha256": digest}}), encoding="utf-8")
+            report.write_text(json.dumps({
+                "artifact": {"sha256": digest},
+                "configuration": {"timeout_seconds": 1},
+                "hardware": {"hostname": "test"},
+                "timing": {"worker_wall_seconds": 1},
+                "revisions": {
+                    "project_git": {"commit": "test", "dirty": False},
+                    "lean_workspace_git": {"commit": "test", "dirty": False},
+                },
+            }), encoding="utf-8")
             summary = summarize_certificate_prevalence([artifact], [report])
         self.assertEqual(summary["decision_gate"]["outcome"], "stop_or_redirect")
         self.assertEqual(

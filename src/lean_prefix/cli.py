@@ -163,6 +163,7 @@ def _parser() -> argparse.ArgumentParser:
     )
     certificate_consolidate.add_argument("--artifact", type=Path, action="append", required=True)
     certificate_consolidate.add_argument("--report", type=Path, action="append", required=True)
+    certificate_consolidate.add_argument("--selection", type=Path)
     certificate_consolidate.add_argument("--output", type=Path, required=True)
     return parser
 
@@ -355,7 +356,9 @@ def main(argv: list[str] | None = None) -> int:
             sys.stdout.write(rendered)
             return 0
         if args.command == "summarize-certificate-prevalence":
-            report = summarize_certificate_prevalence(args.artifact, args.report)
+            report = summarize_certificate_prevalence(
+                args.artifact, args.report, args.selection
+            )
             report["command"] = shlex.join(["lean-prefix", *raw_argv])
             rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
             args.output.parent.mkdir(parents=True, exist_ok=True)
