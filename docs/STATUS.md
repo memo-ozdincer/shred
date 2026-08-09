@@ -169,3 +169,10 @@ splicing error: continuation lines in a native `·` block were over-indented.
 It was cancelled and quarantined with one correct-to-incorrect disagreement
 (D-026). The transformer now preserves relative indentation and adds exactly
 two nesting spaces. D029 is the only eligible prevalence run.
+
+D029 completed the representative stratum with 4,096/4,096 agreement and 4.54%
+paired CPU saving, below the 15% gate. Its enriched audit found two large targets
+where key construction itself exceeded default `maxRecDepth` before fallback.
+D-027 makes key construction transactional and restores the original tactic on
+every exception. D029 remains authoritative representative evidence but is not
+a complete two-stratum run; D030 is the final clean consolidation candidate.

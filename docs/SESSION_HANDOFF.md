@@ -143,6 +143,14 @@ caused by over-indenting continuation lines of a native structured `·` tactic
 when nesting it under the wrapper. D-026 fixes the splice and adds a regression.
 The next clean run name is `certificate_d029`; consolidate only D029.
 
+D029 step `19352896.115` completed all 128 representative theorems with
+4,096/4,096 agreement and 4.54% CPU saving, decisively below the 15% gate. It
+was stopped during the enriched tail after theorem 67057 exposed two
+`maxRecDepth` failures during optional key construction. D-027 now saves and
+restores tactic state around key construction and falls back on every exception.
+D029 remains valid representative evidence but is not a complete two-stratum
+run. The final clean run name is `certificate_d030`.
+
 D020 was stopped after eight theorem reports. Persistent `allTactics`
 `ProofSnapshot` data caused cumulative memory growth (roughly 45 GiB in one
 worker under a 48 GiB cap), and theorem 80508 recorded four process errors.

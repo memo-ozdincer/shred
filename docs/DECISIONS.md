@@ -716,3 +716,29 @@ cached mode was not. This is a source-splicing error, not certificate evidence.
 Consequence: D028 timings and prevalence are diagnostic-only. D029 alone may be
 consolidated. The corrected transformer changes no tactic text or relative
 structure; it only introduces the two spaces required by the wrapper nesting.
+
+## D-027 — Make automatic key construction transactional
+
+Date: 2026-08-09
+
+Status: accepted during D029 enriched audit
+
+Decision: surround automatic key construction with a saved tactic state. Any
+exception, including unchanged Lean resource limits, restores that state,
+records `uncacheable reason=key_error`, and executes the original tactic. D029's
+complete 128-theorem representative stratum remains valid evidence because it
+has 4,096/4,096 paired agreement. D029 is not a complete registered run because
+the enriched theorem 67057 has two key-construction failures; stop the final
+worker and rerun cleanly as D030.
+
+Reason: D029 candidates 19 and 21 of theorem 67057 succeed independently, but
+abstracting their large elaborated target for the key exceeds default
+`maxRecDepth`. The exception occurred before lookup or telemetry and caused two
+correct-to-incorrect cached verdicts. There was no cache hit. Key construction
+is optional optimization work and therefore must never prevent the original
+tactic from running.
+
+Consequence: normal multi-goal exclusions and exceptional key failures are
+separate explicit fallback reasons. Default `maxRecDepth` remains unchanged.
+D030 must show exact paired agreement in both strata before any complete report
+is accepted.

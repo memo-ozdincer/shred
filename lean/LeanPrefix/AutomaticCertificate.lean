@@ -137,8 +137,20 @@ elab_rules : tactic
   lastEvents.set #[]
   let keyStart ← IO.monoNanosNow
   let tactic := syntaxIdentity inner.raw
-  let keyResult ← makeKey tactic
+  let saved ← saveState
+  let keyAttempt ← try
+    pure (some (← makeKey tactic))
+  catch _ =>
+    restoreState saved
+    pure none
   let keyFinish ← IO.monoNanosNow
+  let some keyResult := keyAttempt
+    | emit "uncacheable" #[
+        ("reason", "key_error"),
+        ("key_ns", toString (elapsedNanos keyStart keyFinish))
+      ]
+      evalTactic inner
+      return
   let some (key, locals) := keyResult
     | emit "uncacheable" #[("reason", "nonclosed_context")]
       evalTactic inner
