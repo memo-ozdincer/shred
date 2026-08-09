@@ -124,6 +124,13 @@ versus 0.738 s (27.1x), respectively. The raw `eqRefl` expression has a 9.1 ms
 application tactic frame but the target declaration exceeds unchanged default
 `maxRecDepth`; it is a failed hit, not a speedup.
 
+The clean D025 rerun from commit `7424ace` completed with ordinary Lean exit
+code zero in 128.511 wall seconds. It measured 325.2x and 27.1x for the same two
+pairs. Its authoritative aggregate is `reports/c0_certificate_probe.json`,
+SHA-256 `4a77f798236c236f874aa4e237f77c2ead835ba6d31445380d6cdc85ced72fa1`;
+the ignored raw profiler log has SHA-256
+`3342feac1cc3164fce80534ffd6503c61c8def3b332e3991ee5b74762fc465b9`.
+
 The two passes establish semantic and per-hit cost feasibility, not prevalence
 or aggregate speedup. D-022 advances only to exact automatic keying and a
 broader frozen hit-rate/cost measurement. The probe fails closed on context,

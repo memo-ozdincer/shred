@@ -110,13 +110,11 @@ the version-one executor.
 
 ## Exact next actions
 
-1. Commit and push the D024 certificate probe, parser/tests, D-022, and status
-   updates under Memo Ozdincer's identity.
-2. From that clean commit, generate and check in the D024 aggregate report from
-   `reports/private/certificate_d024/stderr.log`.
-3. Freeze an automatic certificate-key contract and a broader prevalence
+1. Freeze an automatic certificate-key contract and a broader prevalence
    sample. Measure full batch CPU including lookup, storage, checking, misses,
    and fallback before designing a production cache.
+2. Hand-audit automatic hits and misses, including local-context permutations,
+   typeclass state, and large-certificate fallback behavior.
 
 D020 was stopped after eight theorem reports. Persistent `allTactics`
 `ProofSnapshot` data caused cumulative memory growth (roughly 45 GiB in one
@@ -141,7 +139,16 @@ generation-plus-check to application-plus-check. The raw `eqRefl` target failed
 unchanged default `maxRecDepth`, so the step correctly exited nonzero and that
 pair is not a hit. The raw logs are under
 `reports/private/certificate_d024/`; D023 is a preserved launcher failure from
-unavailable `/usr/bin/time`. D025 is the clean registered two-pair rerun.
+unavailable `/usr/bin/time`. D025 step `19352896.104` is the clean registered
+two-pair rerun from commit `7424ace`; it completed with exit code zero in
+128.511 wall seconds. The tracked aggregate is
+`reports/c0_certificate_probe.json`, SHA-256
+`4a77f798236c236f874aa4e237f77c2ead835ba6d31445380d6cdc85ced72fa1`.
+Its ignored raw stderr profile is
+`reports/private/certificate_d025/stderr.log`, SHA-256
+`3342feac1cc3164fce80534ffd6503c61c8def3b332e3991ee5b74762fc465b9`;
+stdout is empty. D025 measures 325.2x for `nlinarith` and 27.1x for
+`positivity`, generation-plus-check to application-plus-check.
 
 Raw proposal-level traces and the native artifact are Git-ignored and live on
 `/scratch`; aggregate reports and documentation belong in Git. A shard is

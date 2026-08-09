@@ -1,0 +1,56 @@
+{
+  "analysis": "closing-certificate-feasibility-d024-v1",
+  "benchmarks": [
+    {
+      "application_seconds": 0.00227,
+      "applied_plus_check_seconds": 0.07567,
+      "capture_overhead_seconds": 0.00117,
+      "generated_plus_check_seconds": 24.606720000000003,
+      "generated_to_applied_plus_check_ratio": 325.18461741773496,
+      "generator_label": "tactic execution of nlinarith",
+      "generator_seconds": 24.6,
+      "generator_to_application_ratio": 10837.004405286345,
+      "name": "81687-nlinarith",
+      "source_candidate_index": 0,
+      "source_typecheck_seconds": 0.00672,
+      "target_candidate_index": 15,
+      "target_typecheck_seconds": 0.0734,
+      "theorem_name": "lean_workbook_plus_81687"
+    },
+    {
+      "application_seconds": 0.020300000000000002,
+      "applied_plus_check_seconds": 0.7403,
+      "capture_overhead_seconds": 0.022,
+      "generated_plus_check_seconds": 20.026,
+      "generated_to_applied_plus_check_ratio": 27.051195461299475,
+      "generator_label": "tactic execution of Mathlib.Tactic.Positivity.positivity",
+      "generator_seconds": 19.3,
+      "generator_to_application_ratio": 950.7389162561576,
+      "name": "24316-positivity",
+      "source_candidate_index": 10,
+      "source_typecheck_seconds": 0.726,
+      "target_candidate_index": 2,
+      "target_typecheck_seconds": 0.72,
+      "theorem_name": "lean_workbook_plus_24316"
+    }
+  ],
+  "command": "lean-prefix summarize-certificate-probe --profiler-log reports/private/certificate_d025/stderr.log --output reports/c0_certificate_probe.json",
+  "inputs": {
+    "profiler_log": "reports/private/certificate_d025/stderr.log",
+    "profiler_log_sha256": "3342feac1cc3164fce80534ffd6503c61c8def3b332e3991ee5b74762fc465b9"
+  },
+  "mechanism": "abstract a closing tactic's assigned proof over user-visible locals, instantiate it in an exactly matched target context, require definitional type equality, and let ordinary Lean check the target declaration",
+  "process_timing": {
+    "system_seconds": 1.597,
+    "user_seconds": 119.086,
+    "wall_seconds": 128.511
+  },
+  "revisions": {
+    "project_git": {
+      "commit": "7424ace2189e7d35db1b507454ef61ea5142b948",
+      "dirty": false
+    }
+  },
+  "status": "diagnostic-feasibility",
+  "warning": "Two hand-selected convergent pairs establish semantic and per-hit cost feasibility; they do not estimate corpus-wide hit rate or speedup. A separately preserved rfl case fails closed at Lean's unchanged maximum recursion depth and is not included as a hit."
+}
