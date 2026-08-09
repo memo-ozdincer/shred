@@ -19,14 +19,14 @@ class CertificatePrevalenceTests(unittest.TestCase):
         self.assertIn("open LeanPrefix.AutomaticCertificate", CERTIFICATE_CONTEXT)
 
     def test_final_native_tactic_is_wrapped_without_heuristic_splitting(self):
-        proof = "by\n  ring_nf\n  nlinarith"
+        proof = "by\n  ring_nf\n  nlinarith\n```"
         wrapped = wrap_final_tactic(
             proof,
             [{"startByte": 15, "stopByte": 24, "text": "nlinarith"}],
         )
         self.assertEqual(
             wrapped,
-            "by\n  ring_nf\n  reuse_closing in\n    nlinarith",
+            "by\n  ring_nf\n  reuse_closing in\n    nlinarith\n```",
         )
 
     def test_selection_strata_are_deterministic_and_disjoint(self):

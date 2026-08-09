@@ -656,8 +656,11 @@ Reason: a partial paired consolidation after 158 theorem reports showed 2,469
 representative verdict disagreements, near-zero cached CPU, and zero cache
 events. The module was imported, but its namespaced tactic syntax was not
 opened in the generated REPL context, so instrumented proofs failed immediately
-as unknown tactics. This is an instrumentation failure, not evidence about
-certificate prevalence or speed.
+as unknown tactics. The subsequent smoke also exposed that the first source
+transformer returned the native Lean proof body without restoring the untouched
+closing Markdown fence, causing C0 parsing to fail before tactic execution.
+Both are instrumentation failures, not evidence about certificate prevalence
+or speed. The transformer now preserves the complete suffix byte-for-byte.
 
 Consequence: D026 is diagnostic-only and must never be merged with D027. The
 failure demonstrates why partial verdict consolidation is mandatory during

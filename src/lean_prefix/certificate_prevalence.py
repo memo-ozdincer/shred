@@ -195,7 +195,8 @@ def prepare_certificate_prevalence_inputs(
 def wrap_final_tactic(proof: str, units: list[dict[str, Any]]) -> str | None:
     if not units:
         return None
-    source = proof_body(proof).encode("utf-8")
+    body = proof_body(proof)
+    source = body.encode("utf-8")
     unit = units[-1]
     start = int(unit["startByte"])
     stop = int(unit["stopByte"])
@@ -210,7 +211,8 @@ def wrap_final_tactic(proof: str, units: list[dict[str, Any]]) -> str | None:
         raise CertificatePrevalenceError("final tactic does not begin after indentation")
     nested = indentation + b"  "
     wrapped = b"reuse_closing in\n" + nested + tactic.replace(b"\n", b"\n" + nested)
-    return (source[:start] + wrapped + source[stop:]).decode("utf-8")
+    transformed_body = (source[:start] + wrapped + source[stop:]).decode("utf-8")
+    return transformed_body + proof[len(body):]
 
 
 def _events(response: dict[str, Any]) -> list[dict[str, Any]]:
@@ -304,6 +306,11 @@ def _run_mode(
                         if value is not None
                     ) if result.peak_rss_kib is not None else None,
                     "events": events,
+                    "error_messages": [
+                        str(message.get("data", ""))[:4000]
+                        for message in result.response.get("messages", [])
+                        if message.get("severity") == "error"
+                    ],
                     "telemetry_query_cpu_seconds": query_cpu,
                     "telemetry_query_wall_seconds": query_wall,
                 })
