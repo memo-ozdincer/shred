@@ -85,7 +85,7 @@ def ordered_tactic_alignment(
 
 
 def select_edge_opportunity_theorems(
-    artifact_paths: list[Path], *, limit: int
+    artifact_paths: list[Path], *, limit: int, project_root: Path | None = None
 ) -> dict[str, Any]:
     if limit < 1:
         raise StateCensusError("selection limit must be positive")
@@ -113,7 +113,7 @@ def select_edge_opportunity_theorems(
         ],
         "inputs": {str(path): _sha256_file(path) for path in artifact_paths},
         "revisions": {
-            "project_git": _git_state(artifact_paths[0].resolve().parents[2]),
+            "project_git": _git_state((project_root or Path.cwd()).resolve()),
         },
     }
 

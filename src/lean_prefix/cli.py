@@ -200,6 +200,7 @@ def main(argv: list[str] | None = None) -> int:
                 gate_fraction=args.gate_fraction,
                 bootstrap_samples=args.bootstrap_samples,
                 bootstrap_seed=args.bootstrap_seed,
+                project_root=Path.cwd(),
             )
             report["command"] = shlex.join(["lean-prefix", *raw_argv])
             rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
@@ -208,7 +209,9 @@ def main(argv: list[str] | None = None) -> int:
             sys.stdout.write(rendered)
             return 0
         if args.command == "select-state-census":
-            report = select_edge_opportunity_theorems(args.artifact, limit=args.limit)
+            report = select_edge_opportunity_theorems(
+                args.artifact, limit=args.limit, project_root=Path.cwd()
+            )
             report["command"] = shlex.join(["lean-prefix", *raw_argv])
             rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
             args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -92,6 +92,7 @@ def summarize_alternative_opportunities(
     gate_fraction: float = 0.15,
     bootstrap_samples: int = 10_000,
     bootstrap_seed: int = 42,
+    project_root: Path | None = None,
 ) -> dict[str, Any]:
     """Decompose measured costs without weakening the registered gate."""
     if not artifact_paths:
@@ -229,7 +230,7 @@ def summarize_alternative_opportunities(
             "expected_proposals": expected_proposals,
         },
         "revisions": {
-            "project_git": _git_state(native_artifact_path.resolve().parent.parent),
+            "project_git": _git_state((project_root or Path.cwd()).resolve()),
         },
         "counts": {
             "proposals": len(seen),
