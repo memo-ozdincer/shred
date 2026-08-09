@@ -110,17 +110,25 @@ the version-one executor.
 
 ## Exact next actions
 
-1. Commit and push the D019 diagnostic decomposition, D-017/D-018, and the
-   alternative-analysis/state-census code under Memo Ozdincer's identity.
-2. From that clean commit, run the ten theorems frozen in
-   `reports/c0_visible_state_selection.json` as independent authentic
-   `allTactics` captures on c126.
-3. Consolidate their 320 proposals against D019 costs. Require exact current
+1. Commit and push D-019 and the per-proposal REPL isolation fix under Memo
+   Ozdincer's identity.
+2. Run D021 for the ten theorems frozen in
+   `reports/c0_visible_state_selection.json`, using fresh Lean processes for
+   every proposal and new `state_census_d021` output directories. Never merge
+   the partial D020 outputs; they are diagnostic-only.
+3. Consolidate D021's 320 proposals against D019 costs. Require exact current
    verdict agreement and fail closed on ambiguous tactic alignment.
 4. Hand-read reconvergent high-cost groups. If exact visible states retain
    little incremental opportunity beyond prefixes, stop. If they retain a
    large opportunity, review whether full Lean state can be fingerprinted and
    reused without the D-013 reconstruction bug before defining any new claim.
+
+D020 was stopped after eight theorem reports. Persistent `allTactics`
+`ProofSnapshot` data caused cumulative memory growth (roughly 45 GiB in one
+worker under a 48 GiB cap), and theorem 80508 recorded four process errors.
+D-019 therefore requires a fresh REPL process per proposal. The Slurm step was
+cancelled, but allocation `19352896` on c126 remains running and must not be
+cancelled. Use only D021 for the registered state-census aggregate.
 
 Raw proposal-level traces and the native artifact are Git-ignored and live on
 `/scratch`; aggregate reports and documentation belong in Git. A shard is

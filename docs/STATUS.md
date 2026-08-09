@@ -85,3 +85,10 @@ edges within a theorem while ignoring state yields an unsafe 18.385%–20.685%
 upper bound. A top-ten authentic visible-state census is the next bounded test
 of whether divergent proofs actually reconverge before the same tactic
 (D-018). Pretty goals are not full state and cannot become cache keys.
+
+The first state-capture attempt, D020, was stopped after eight of ten theorem
+reports because persistent `allTactics` snapshots accumulated across proposals.
+One worker reached roughly 45 GiB RSS under its 48 GiB cap, and theorem 80508
+had four process errors. Per D-019, those partial outputs are quarantined as
+diagnostic-only. D021 restarts Lean for every proposal; only D021 may be
+consolidated into the visible-state report.

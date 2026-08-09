@@ -145,22 +145,26 @@ def capture_visible_states(
     client = LeanRepl(lean_workspace, **options)
     selected = aligned = fallbacks = timeouts = errors = completed = 0
     try:
-        client.start()
-        initialization = client.initialize(C0_BASE_CONTEXT)
-        if any(
-            message.get("severity") == "error"
-            for message in initialization.response.get("messages", [])
-        ):
-            raise StateCensusError("failed to initialize pinned Lean environment")
-        env = initialization.response.get("env")
-        if not isinstance(env, int):
-            raise StateCensusError("initialization returned no environment")
         with deterministic_gzip_text(output_artifact_path) as output:
             for proposal, native in iter_joined_records(
                 manifest_path, native_artifact_path, source_root
             ):
                 if proposal.theorem_name != theorem_name:
                     continue
+                # allTactics records ProofSnapshots in the REPL state.  A
+                # fresh process per proposal prevents retained metadata from
+                # changing later candidates' memory limit or failure mode.
+                client.close()
+                client.start()
+                initialization = client.initialize(C0_BASE_CONTEXT)
+                if any(
+                    message.get("severity") == "error"
+                    for message in initialization.response.get("messages", [])
+                ):
+                    raise StateCensusError("failed to initialize pinned Lean environment")
+                env = initialization.response.get("env")
+                if not isinstance(env, int):
+                    raise StateCensusError("initialization returned no environment")
                 selected += 1
                 record: dict[str, Any] = {
                     "proposal_id": proposal.proposal_id,
@@ -240,12 +244,6 @@ def capture_visible_states(
                         "reason": "authentic state capture timed out",
                     }
                     fallbacks += 1
-                    client.close()
-                    client.start()
-                    initialization = client.initialize(C0_BASE_CONTEXT)
-                    env = initialization.response.get("env")
-                    if not isinstance(env, int):
-                        raise StateCensusError("restart returned no environment")
                 except ReplError as error:
                     errors += 1
                     record["full"] = {"error": str(error)}
@@ -254,12 +252,6 @@ def capture_visible_states(
                         "reason": "authentic state capture process failure",
                     }
                     fallbacks += 1
-                    client.close()
-                    client.start()
-                    initialization = client.initialize(C0_BASE_CONTEXT)
-                    env = initialization.response.get("env")
-                    if not isinstance(env, int):
-                        raise StateCensusError("restart returned no environment")
                 output.write(json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n")
     finally:
         client.close()
@@ -281,6 +273,7 @@ def capture_visible_states(
             "timeout_seconds": timeout_seconds,
             "memory_limit_bytes": memory_limit_bytes,
             "all_tactics": True,
+            "restart_every_proposals": 1,
         },
         "inputs": {
             "manifest_sha256": _sha256_file(manifest_path),

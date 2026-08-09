@@ -462,3 +462,27 @@ justify caching or a speed claim. Only a large retained opportunity would
 justify designing a full-state fingerprint. A small retained opportunity ends
 the semantic-state direction without a larger rerun. This diagnostic does not
 retroactively alter the original repository claim or gate.
+
+## D-019 — Isolate every `allTactics` capture process
+
+Date: 2026-08-09
+
+Status: accepted after interrupted D020
+
+Decision: start a fresh Lean REPL process and recreate the unchanged C0 base
+environment before every selected proposal. Preserve the partial D020 outputs
+as diagnostic evidence, but never merge them into the registered aggregate.
+Only the isolated D021 rerun is eligible for the visible-state census.
+
+Reason: `allTactics` retains internal `ProofSnapshot` data in the REPL state.
+During D020 that retained metadata accumulated across proposals: one worker
+reached roughly 45 GiB RSS under its 48 GiB limit, another reached roughly
+19 GiB, and theorem 80508 recorded four process errors. Those failures reflect
+the diagnostic harness's lifetime, not a property of the frozen proposals.
+Starting a new process does not alter the declaration or state metadata being
+captured, and the census does not use initialization time as proof cost.
+
+Consequence: every D021 report records `restart_every_proposals: 1`. The rerun
+must preserve D019's current-verdict agreement and report all timeouts and
+process failures explicitly. D020 remains diagnostic-only and cannot be
+silently repaired, resumed, or consolidated with D021.
