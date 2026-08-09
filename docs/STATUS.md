@@ -107,3 +107,9 @@ increment, but two expensive `rfl` groups supply 6.132 of those points. D-021
 therefore gates any successor on measuring the actual cost of reapplying a
 kernel-checked closing certificate; full state-DAG implementation is not
 authorized.
+
+The authoritative aggregate is `reports/c0_visible_state_summary.json`,
+SHA-256 `2358fb685a77ed65c9058e341fdd65695719f12399ccbaa0371c0ea624c4fbdb`.
+Its summary code is clean commit `610befa`; its capture provenance is clean
+commit `9ddac5f`. The corresponding hand audit is
+`reports/c0_visible_state_review.md`.

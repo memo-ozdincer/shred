@@ -110,15 +110,9 @@ the version-one executor.
 
 ## Exact next actions
 
-1. Commit and push the provenance-checked D021 summarizer and D-020/D-021 under
-   Memo Ozdincer's identity.
-2. From that clean commit, generate `reports/c0_visible_state_summary.json`
-   from all ten D021 artifacts, all ten D021 capture reports, and all 128 D019
-   replay artifacts.
-3. Check in a concise hand review of the highest incremental groups, including
-   the two expensive `rfl` groups and the convergent `positivity`, `ring_nf`,
-   and `nlinarith` paths.
-4. Design the D-021 closing-certificate application benchmark. Do not build a
+1. Commit and push `reports/c0_visible_state_summary.json`, its hand review,
+   and the final status/handoff update under Memo Ozdincer's identity.
+2. Design the D-021 closing-certificate application benchmark. Do not build a
    general state-DAG or semantic cache unless actual ordinary-Lean application
    cost remains materially below regenerating the closing tactic.
 
@@ -132,6 +126,12 @@ with D019. D022 retried theorem 80508 at 120 GiB and reproduced the same four
 process exits, so they are deterministic instrumentation failures rather than
 memory-cap failures. D022 is excluded from the aggregate. Allocation `19352896`
 on c126 remains running and must not be cancelled.
+
+The authoritative D021 aggregate is
+`reports/c0_visible_state_summary.json`, SHA-256
+`2358fb685a77ed65c9058e341fdd65695719f12399ccbaa0371c0ea624c4fbdb`.
+It records clean summary commit `610befa` and clean capture commit `9ddac5f`.
+The hand audit is `reports/c0_visible_state_review.md`.
 
 Raw proposal-level traces and the native artifact are Git-ignored and live on
 `/scratch`; aggregate reports and documentation belong in Git. A shard is
