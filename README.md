@@ -75,6 +75,15 @@ certificate can be reapplied and checked by ordinary Lean materially faster
 than regenerating the tactic result. No proof-state-DAG or semantic cache is
 currently claimed or authorized.
 
+The first bounded closing-certificate probe passes on two authentic convergent
+pairs. Ordinary Lean accepts the transferred proofs, with measured
+generation-plus-check to application-plus-check ratios of 325.6x for
+`nlinarith` and 27.1x for `positivity`. A third raw `eqRefl` certificate exceeds
+unchanged default `maxRecDepth` and fails closed. These selected per-hit results
+establish feasibility, not corpus-wide prevalence or aggregate speedup. The
+next gate is automatic exact keying and a broader frozen hit-rate/cost
+measurement (D-022).
+
 ## Quick start
 
 ```bash

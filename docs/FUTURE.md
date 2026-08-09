@@ -50,14 +50,39 @@ Hand review shows different model-generated preambles washing out before the
 same `positivity`, `ring_nf`, `nlinarith`, or `rfl` call. This keeps the
 successor hypothesis alive, but does not make pretty goals safe cache keys.
 
-The narrowest next experiment is a closing-certificate cache (D-021): reuse a
-generated proof only when the goal and local context match exactly, then let
-ordinary Lean check it. The apparent closing opportunity is dominated by two
-very expensive `rfl` groups, where definitional equality and kernel reduction
-may remain expensive even with a cached term. Measure that cost before building
-a general library. Arbitrary state transformations, alpha-normalized context
-matching, and kernel-level normalization memoization remain separate future
-ideas, not inferred features of the current repository.
+The narrow closing-certificate experiment passes for authentic `nlinarith` and
+`positivity` pairs (D-022). The reduction-heavy raw `eqRefl` expression reaches
+a cheap application tactic frame but its target declaration exceeds unchanged
+default `maxRecDepth`, so it remains fallback. The next uncertainty for the
+supported cases is safe hit prevalence. Arbitrary state transformations and
+alpha-normalized context matching remain separate future ideas.
+
+## Ranked alternatives after D024
+
+The closing-certificate cache is now the leading successor. Continue exploring
+these adjacent directions without merging them into the next experiment:
+
+1. **Named reduction certificates or kernel memoization.** D024 shows a large
+   repeated reduction/checking cost and also shows that inlining the raw proof
+   can exceed `maxRecDepth`. A named auxiliary declaration may keep target
+   checking shallow; changing trusted kernel caches is much higher risk.
+2. **Non-closing transition certificates.** Reusing `ring_nf` transformations
+   could capture more reconvergence, but mapping resulting subgoals and proof
+   state is substantially harder than transferring a closing proof.
+3. **Exact whole-proof memoization.** Its measured 6.041% upper bound is too
+   small as a standalone paper, but it is a simple production fast path beside
+   certificate reuse.
+4. **Straggler-aware scheduling.** The slowest 0.1% consume 36.265% of D019 CPU.
+   Continuous admission can improve wall time, but does not remove work and is
+   an established systems technique.
+5. **Tactic-specific native or GPU acceleration.** Potentially useful for
+   arithmetic certificate generation, but broader and currently less directly
+   supported by this corpus than certificate reuse.
+
+Lean's existing incremental `checkpoint` tactic cache is architectural prior
+art, not the same mechanism: it reuses the same metavariable and source
+position during editing, whereas D024 transfers a generalized proof between
+separate proposal elaborations after different histories.
 
 An item moves into scope only through a recorded decision after the primary
 method is measured and understood.

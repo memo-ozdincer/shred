@@ -113,3 +113,18 @@ SHA-256 `2358fb685a77ed65c9058e341fdd65695719f12399ccbaa0371c0ea624c4fbdb`.
 Its summary code is clean commit `610befa`; its capture provenance is clean
 commit `9ddac5f`. The corresponding hand audit is
 `reports/c0_visible_state_review.md`.
+
+## Closing-certificate feasibility
+
+D024 tests two authentic passing pairs and one authentic fail-closed case, all
+hand-audited. Ordinary Lean accepts the transferred `nlinarith` and `positivity`
+certificates. Generation-plus-check
+versus application-plus-check is 24.107 s versus 0.0740 s (325.6x) and 20.024 s
+versus 0.738 s (27.1x), respectively. The raw `eqRefl` expression has a 9.1 ms
+application tactic frame but the target declaration exceeds unchanged default
+`maxRecDepth`; it is a failed hit, not a speedup.
+
+The two passes establish semantic and per-hit cost feasibility, not prevalence
+or aggregate speedup. D-022 advances only to exact automatic keying and a
+broader frozen hit-rate/cost measurement. The probe fails closed on context,
+type, or ordinary-Lean resource-limit failure.

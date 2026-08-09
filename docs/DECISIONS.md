@@ -543,3 +543,51 @@ Consequence: no general semantic cache is in scope yet. A successor survives
 only if ordinary Lean accepts the transplanted certificate and the measured
 end-to-end saving remains material after kernel checking. The initial project
 and failed exact-prefix gate remain unchanged.
+
+## D-022 — Advance certificate reuse to a prevalence gate
+
+Date: 2026-08-09
+
+Status: accepted after authentic D024 feasibility probe
+
+Decision: preserve the two passing manual-key closing-certificate pairs as
+evidence that cross-proposal reuse can be semantically and computationally
+feasible. Preserve the `rfl` pair as a fail-closed negative case. Advance only
+the supported mechanism to automatic-key and prevalence measurement.
+
+Reason: D024 tests three hand-audited D021 cases whose different tactic histories
+reach the same printed goal: two valid transfers and one fail-closed negative
+case. The source tactic's assigned proof is abstracted
+over non-implementation-detail locals, instantiated in the target context,
+checked for definitional type equality, assigned to the target goal, and then
+checked by ordinary Lean as part of the target declaration.
+
+The authentic profiler results are:
+
+- theorem 81687: `nlinarith` generation plus source checking takes 24.107 s;
+  certificate application plus target checking takes 0.0740 s (325.6x);
+- theorem 24316: `positivity` generation plus source checking takes 20.024 s;
+  application plus target checking takes 0.738 s (27.1x);
+- theorem 41132: `eqRefl` generation takes 88.8 s and source checking takes
+  95.7 s. The application tactic frame takes 9.1 ms, but the target declaration
+  fails under Lean's unchanged default `maxRecDepth`. It is not a valid hit and
+  no speedup is claimed.
+
+The first probe failed on synthetic examples because hidden recursive
+implementation-detail locals were abstracted into the certificate. Filtering
+those locals fixed the test; target context-size and proof-type mismatches still
+fail closed. This reproduces D-013's warning and is part of the evidence, not an
+implementation detail to hide.
+
+Lean's built-in incremental `checkpoint` cache is relevant prior art and an
+architectural guide, but it keys a snapshot by the same metavariable identifier
+and source position. D024 instead reuses a generalized proof expression across
+different theorem elaborations reached by different tactic histories. The
+distinction must remain explicit in any novelty claim.
+
+Consequence: the next registered question is how often a safe automatic key
+hits supported closing certificates outside the deliberately enriched top ten,
+and how much end-to-end batch CPU it saves after keying, storage, checking,
+misses, and fallbacks. Large raw proof expressions that exceed ordinary Lean's
+limits remain fallback; a named auxiliary declaration is a separate future
+design. Arbitrary non-closing state transitions remain out of scope.

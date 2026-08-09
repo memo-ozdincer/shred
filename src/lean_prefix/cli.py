@@ -8,6 +8,10 @@ import sys
 
 from lean_prefix.audit import AuditError, audit_manifest
 from lean_prefix.analysis import analyze_exact
+from lean_prefix.certificate_probe import (
+    CertificateProbeError,
+    summarize_certificate_probe,
+)
 from lean_prefix.native import NativeExtractionError, extract_and_analyze
 from lean_prefix.opportunity_summary import (
     OpportunitySummaryError,
@@ -110,6 +114,12 @@ def _parser() -> argparse.ArgumentParser:
     state_summary.add_argument("--state-report", type=Path, action="append")
     state_summary.add_argument("--replay-artifact", type=Path, action="append", required=True)
     state_summary.add_argument("--output", type=Path, required=True)
+    certificate_summary = commands.add_parser(
+        "summarize-certificate-probe",
+        help="summarize the registered closing-certificate feasibility profile",
+    )
+    certificate_summary.add_argument("--profiler-log", type=Path, required=True)
+    certificate_summary.add_argument("--output", type=Path, required=True)
     return parser
 
 
@@ -247,12 +257,23 @@ def main(argv: list[str] | None = None) -> int:
             args.output.write_text(rendered, encoding="utf-8")
             sys.stdout.write(rendered)
             return 0
+        if args.command == "summarize-certificate-probe":
+            report = summarize_certificate_probe(
+                args.profiler_log, project_root=Path.cwd()
+            )
+            report["command"] = shlex.join(["lean-prefix", *raw_argv])
+            rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(rendered, encoding="utf-8")
+            sys.stdout.write(rendered)
+            return 0
     except (
         AuditError,
         NativeExtractionError,
         ReplayProfileError,
         ProfileSummaryError,
         OpportunitySummaryError,
+        CertificateProbeError,
         ReplError,
         ReviewSelectionError,
         StateCensusError,

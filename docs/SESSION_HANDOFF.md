@@ -110,11 +110,13 @@ the version-one executor.
 
 ## Exact next actions
 
-1. Commit and push `reports/c0_visible_state_summary.json`, its hand review,
-   and the final status/handoff update under Memo Ozdincer's identity.
-2. Design the D-021 closing-certificate application benchmark. Do not build a
-   general state-DAG or semantic cache unless actual ordinary-Lean application
-   cost remains materially below regenerating the closing tactic.
+1. Commit and push the D024 certificate probe, parser/tests, D-022, and status
+   updates under Memo Ozdincer's identity.
+2. From that clean commit, generate and check in the D024 aggregate report from
+   `reports/private/certificate_d024/stderr.log`.
+3. Freeze an automatic certificate-key contract and a broader prevalence
+   sample. Measure full batch CPU including lookup, storage, checking, misses,
+   and fallback before designing a production cache.
 
 D020 was stopped after eight theorem reports. Persistent `allTactics`
 `ProofSnapshot` data caused cumulative memory growth (roughly 45 GiB in one
@@ -132,6 +134,14 @@ The authoritative D021 aggregate is
 `2358fb685a77ed65c9058e341fdd65695719f12399ccbaa0371c0ea624c4fbdb`.
 It records clean summary commit `610befa` and clean capture commit `9ddac5f`.
 The hand audit is `reports/c0_visible_state_review.md`.
+
+D024 step `19352896.103` ran for 312.947 wall seconds. Ordinary Lean accepted
+the transferred `nlinarith` and `positivity` certificates at 325.6x and 27.1x
+generation-plus-check to application-plus-check. The raw `eqRefl` target failed
+unchanged default `maxRecDepth`, so the step correctly exited nonzero and that
+pair is not a hit. The raw logs are under
+`reports/private/certificate_d024/`; D023 is a preserved launcher failure from
+unavailable `/usr/bin/time`. D025 is the clean registered two-pair rerun.
 
 Raw proposal-level traces and the native artifact are Git-ignored and live on
 `/scratch`; aggregate reports and documentation belong in Git. A shard is

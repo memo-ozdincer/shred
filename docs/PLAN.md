@@ -69,6 +69,14 @@ not a semantic-state engine: D-021 permits only an exact closing-certificate
 application benchmark on hand-audited groups. It must measure ordinary Lean's
 full elaboration and kernel-check cost and fail closed on unmatched contexts.
 
+D024 passes that bounded application benchmark on two authentic pairs, at
+27.1x and 325.6x generation-plus-check to application-plus-check (D-022). A
+third raw `eqRefl` certificate fails unchanged `maxRecDepth`. The successor's
+next gate is prevalence: define an automatic,
+auditable context/target key, measure safe hits on a broader frozen sample, and
+include lookup, storage, checking, misses, and fallbacks in end-to-end CPU.
+General state-DAG implementation remains unauthorized.
+
 ## Phase 3 — Reference baseline
 
 Status: stopped by the Phase 2 gate.
