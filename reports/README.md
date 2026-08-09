@@ -41,3 +41,9 @@ lean-prefix select-review \
   --artifact artifacts/c0_native_units.jsonl.gz \
   --output reports/c0_review_sample.json
 ```
+
+The final automatic closing-certificate prevalence evidence is checked in as
+`c0_certificate_prevalence_d030.json`; its hand audit is
+`c0_certificate_prevalence_review.md`. The representative stratum is complete
+and verdict-preserving, and its 3.2405% CPU saving fails the frozen 15% gate.
+The enriched stratum is explicitly incomplete and diagnostic only.

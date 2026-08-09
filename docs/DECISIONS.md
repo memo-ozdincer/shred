@@ -742,3 +742,32 @@ Consequence: normal multi-goal exclusions and exceptional key failures are
 separate explicit fallback reasons. Default `maxRecDepth` remains unchanged.
 D030 must show exact paired agreement in both strata before any complete report
 is accepted.
+
+## D-028 — Stop the general cache and exclude `rfl` from future instrumentation
+
+Date: 2026-08-09
+
+Status: accepted after complete representative D030 consolidation
+
+Decision: stop the general automatic closing-certificate cache at the D-023
+production gate. Preserve the prototype and evidence, but do not implement a
+production cache or claim general acceleration. Exclude native
+`Lean.Parser.Tactic.tacticRfl` before wrapping in any follow-on run. Preserve
+named/shallow expensive-tail certificates as a separate future experiment.
+
+Reason: D030 accounts for all 4,096 frozen representative proposals with exact
+paired verdict agreement. It measures 921 safe hits (22.85% of instrumented
+final tactics) but only 3.24% end-to-end CPU saving, versus the registered 15%
+gate. D029 independently measured 4.54%; variance does not approach the gate.
+Representative savings are concentrated in `nlinarith` (44.85 seconds across
+170 hits), while many cheap hits are neutral. The enriched subset shows large
+selected wins but is intentionally biased. Two wrapped `rfl` proofs in theorem
+67057 fail before tactic telemetry at default `maxRecDepth`, and theorem 41132
+is the already established huge-inline-expression negative case.
+
+Consequence: no amount of cheap-hit filtering can turn the measured 48.37
+seconds into the roughly 224 seconds required by the representative gate.
+Future work may target expensive tactic families or named shallow certificates,
+but must state a tail/family-specific claim and run a new gate. D030's enriched
+subset is explicitly incomplete by theorem 41132 and retains two disagreements;
+it is diagnostic only and cannot support a correctness or speed claim.

@@ -86,3 +86,19 @@ separate proposal elaborations after different histories.
 
 An item moves into scope only through a recorded decision after the primary
 method is measured and understood.
+
+## Priority after D030
+
+D030 closes the general automatic-certificate question negatively: 22.85% of
+representative proposals hit, yet total paired CPU fell only 3.2405%. Most hits
+are too cheap to matter. The enriched diagnostic nevertheless identifies a
+small expensive tail where transferring a previously checked closing proof can
+save tens or hundreds of seconds.
+
+The highest-leverage successor is therefore not broader semantic grouping. It
+is a deliberately narrow, cost-aware design that stores certificates behind
+named shallow declarations and admits only tactic families and targets shown
+to dominate runtime. It must pre-register its selection rule, count misses and
+fallbacks, exclude raw `rfl` wrappers unless ordinary Lean validates them under
+unchanged limits, and earn its own representative end-to-end gate. Until that
+design exists, it remains a future add rather than production scope.

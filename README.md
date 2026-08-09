@@ -104,3 +104,15 @@ lean-prefix analyze-exact --manifest data/c0.manifest.json
 The complete C0 corpus is included as four deterministic gzip shards under
 `data/c0/proofs/`. The auditor streams them without extraction and verifies
 both their repository hashes and the original uncompressed source hashes.
+
+## Final certificate result
+
+The frozen automatic closing-certificate measurement is complete. D030
+preserved 4,096/4,096 representative paired verdicts, but the 921 cache hits
+reduced total paired CPU by only 3.2405%, below the preregistered 15% gate. The
+general cache is therefore stopped rather than promoted to production.
+
+The enriched diagnostic shows that a much narrower cache aimed at named,
+shallow certificates for expensive closing-tactic tails may still be
+worthwhile. That is a future, separately gated project—not a positive result
+for the general mechanism.

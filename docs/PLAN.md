@@ -127,3 +127,15 @@ Status: stopped by the Phase 2 gate.
 - Structured metrics and trace export.
 - Containers and pinned toolchain installation.
 - Compatibility adapter for one real rollout pipeline.
+
+## Final gate resolution
+
+D030 preserved all 4,096 representative paired verdicts but saved only
+3.2405% CPU, versus the required 15%. The general automatic cache is therefore
+stopped. No additional broad replay, reference-baseline work, trie executor,
+or production hardening is planned.
+
+Any successor must begin as a separately gated proposal. The best-supported
+candidate is a narrow, cost-aware cache of named, shallow certificates for
+known expensive closing-tactic families; the enriched D030 stratum is useful
+for forming that hypothesis but cannot serve as representative evidence.

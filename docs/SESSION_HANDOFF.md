@@ -77,9 +77,10 @@ This validates the correction but is intentionally not a performance sample.
 - node: `c126.nibi.sharcnet`;
 - resources: 192 CPUs and `766000M` RAM;
 - scheduled end: 2026-08-09 16:00:53 Eastern;
-- allocation state: running; do not cancel it;
+- allocation state at final consolidation: ending naturally; no work depends on it;
 - D019 step `19352896.76`: completed in 3:06:50;
-- allocation remains running and must not be cancelled.
+- D030 step `19352896.119`: stopped after 159/160 selected theorems once the
+  representative gate was resolved; the allocation may expire normally.
 
 Step `19352896.63` completed the six-worker D017 breadth gate in 20.2
 minutes. All 14,496 full verdicts and all 12,758 profile-eligible verdicts
@@ -110,15 +111,16 @@ the version-one executor.
 
 ## Exact next actions
 
-1. Run the frozen D026 automatic prevalence selection and paired measurement:
-   128 deterministic representative theorems plus 32 separately labeled
-   enriched theorems.
-2. Consolidate only complete theorem artifact/report pairs and require exact
-   paired verdict accounting.
-3. Hand-audit automatic hits and misses, including local-context permutations,
-   typeclass state, and large-certificate fallback behavior.
-4. Apply D-023's gate before building a production cache: zero representative
-   verdict disagreements and at least 15% representative end-to-end CPU saving.
+1. Do not rerun the broad automatic-certificate prevalence experiment: D030
+   resolves its registered gate.
+2. Treat the general automatic cache as stopped. It preserved all 4,096
+   representative paired verdicts but saved 3.2405% CPU, below the required
+   15%.
+3. If work continues, write a new bounded decision and preflight for the
+   narrower named/shallow, cost-aware expensive-tail certificate idea. Do not
+   silently turn D030's enriched diagnostic into representative evidence.
+4. Preserve D030 raw artifacts on scratch and the tracked aggregate and hand
+   review in Git. No compute allocation is required for the current handoff.
 
 The implementation is `lean/LeanPrefix/AutomaticCertificate.lean`; its Lean
 exercise is `lean/LeanPrefix/AutomaticCertificateTest.lean`. Selection,
@@ -151,6 +153,17 @@ restores tactic state around key construction and falls back on every exception.
 D029 remains valid representative evidence but is not a complete two-stratum
 run. The final clean run name is `certificate_d030`.
 
+D030 step `19352896.119` is the final consolidation run. Its representative
+stratum is complete: 128/128 theorems, 4,096/4,096 proposals, 4,096 verdict
+agreements, 921 hits, and 3.2405% paired CPU saving. This fails D-023's 15%
+production-value gate, so the general cache is stopped. The enriched stratum
+is explicitly incomplete (31/32 theorems, missing `lean_workbook_plus_41132`)
+and diagnostic only; two deeply nested `rfl` wrappers disagree. The tracked
+aggregate is `reports/c0_certificate_prevalence_d030.json`, SHA-256
+`efe23e5c17b4ab60cdc972f08bcf2cbf42a36c0deb9b3c26191c679c6a32a2a1`;
+the audit is `reports/c0_certificate_prevalence_review.md`. D030 used clean
+measurement commit `90e074b`; consolidation code was clean commit `657648e`.
+
 D020 was stopped after eight theorem reports. Persistent `allTactics`
 `ProofSnapshot` data caused cumulative memory growth (roughly 45 GiB in one
 worker under a 48 GiB cap), and theorem 80508 recorded four process errors.
@@ -160,7 +173,7 @@ fallback, two timeouts, six process exits, and 312/312 current-verdict agreement
 with D019. D022 retried theorem 80508 at 120 GiB and reproduced the same four
 process exits, so they are deterministic instrumentation failures rather than
 memory-cap failures. D022 is excluded from the aggregate. Allocation `19352896`
-on c126 remains running and must not be cancelled.
+on c126 supplied the measurements and has no remaining required work.
 
 The authoritative D021 aggregate is
 `reports/c0_visible_state_summary.json`, SHA-256

@@ -176,3 +176,26 @@ where key construction itself exceeded default `maxRecDepth` before fallback.
 D-027 makes key construction transactional and restores the original tactic on
 every exception. D029 remains authoritative representative evidence but is not
 a complete two-stratum run; D030 is the final clean consolidation candidate.
+
+## Final automatic-certificate decision
+
+D030 completes the frozen representative measurement. All 128 representative
+theorems and all 4,096 paired proposals are present, with 4,096/4,096 verdict
+agreement and no disagreements. The automatic cache recorded 921 hits
+(22.85%), but reduced paired CPU from 1,492.629 s to only 1,444.260 s: a
+48.369 s or 3.2405% saving. This is far below the preregistered 15% production
+gate, so the general automatic closing-certificate cache is stopped.
+
+The enriched diagnostic completed 31/32 theorems and 992/1,024 proposals. It
+showed 19.90% selected CPU saving, but is not representative and contains two
+verdict disagreements from deeply nested final `rfl` wrappers. It cannot
+satisfy the gate. Post-D030 instrumentation excludes source-level `rfl` from
+cache attempts; that change is defensive and is not included in the measured
+D030 result.
+
+The authoritative aggregate is
+`reports/c0_certificate_prevalence_d030.json`, with SHA-256
+`efe23e5c17b4ab60cdc972f08bcf2cbf42a36c0deb9b3c26191c679c6a32a2a1`.
+The hand audit is `reports/c0_certificate_prevalence_review.md`. The clean
+measurement commit was `90e074b`; the clean summary-code commit was `657648e`.
+No further broad replay or production cache implementation is authorized.
