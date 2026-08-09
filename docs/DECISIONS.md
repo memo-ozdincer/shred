@@ -370,3 +370,31 @@ The final breadth rerun and complete census start only from clean committed
 implementations. The
 15% threshold, proof workload, verifier, parser, and profiler method remain
 unchanged.
+
+## D-016 — Missing or ambiguous profile alignment is explicit fallback
+
+Date: 2026-08-09
+
+Status: accepted after the first clean ambiguity-safe breadth attempt
+
+Decision: if the in-process profiler has no unique ordered alignment to a
+nonempty frozen tactic sequence and the theorem root itself is valid, mark the
+entire proposal as an explicit independent-verification fallback. Do not label
+its syntactic units `unreachable_after_completion` or
+`unreachable_after_failure`. Invalid theorem roots remain separately classified
+under D-009.
+
+Reason: the first clean ambiguity-safe breadth attempt correctly assigned zero
+cost to ambiguous profiler frames, but the root-validity probe then supplied a
+proof-state ID that was accidentally treated as evidence of a successful
+profile alignment. This could not inflate savings or alter a verdict, but it
+misstated eligibility and reachability. A five-proposal regression containing
+four known ambiguous valid roots and one invalid root now reports 4 explicit
+fallbacks, 1 invalid-root proposal, 0 profiled units, 5/5 complete-verdict
+agreement, and no error or timeout. Its artifact is
+`artifacts/replay_targeted_d018_alignment_fix.jsonl.gz`, SHA-256
+`63660e8d81f6832255de3db607712b684279e0bb5d4f6924cf1b8b06c646065c`.
+
+Consequence: the interrupted `replay_d018_breadth` directory is diagnostic and
+must not be consolidated. Repeat the same six shards as
+`replay_d018_breadth_v2` from the clean fix commit before D019.

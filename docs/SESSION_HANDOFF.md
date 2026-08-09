@@ -78,7 +78,7 @@ This validates the correction but is intentionally not a performance sample.
 - resources: 192 CPUs and `766000M` RAM;
 - scheduled end: 2026-08-09 16:00:53 Eastern;
 - allocation state: running; do not cancel it;
-- next run name: `replay_d018_breadth`; final census name: `replay_d019`.
+- next run name: `replay_d018_breadth_v2`; final census name: `replay_d019`.
 
 Step `19352896.63` completed the six-worker D017 breadth gate in 20.2
 minutes. All 14,496 full verdicts and all 12,758 profile-eligible verdicts
@@ -99,7 +99,7 @@ cost estimate is diagnostic and must not be represented as final-code output.
 
 1. Commit and push the implementation, decisions, status, and aggregate report
    under `Memo Ozdincer <73766315+memo-ozdincer@users.noreply.github.com>`.
-2. Rerun shards 7, 46, 53, 62, 78, and 93 as `replay_d018_breadth`
+2. Rerun shards 7, 46, 53, 62, 78, and 93 as `replay_d018_breadth_v2`
    from that clean commit and require the same completeness/verdict conditions.
 3. Commit its aggregate, then launch the full 128-shard `replay_d019` census
    with 32 workers from the resulting clean commit. Resume by missing report;
@@ -120,3 +120,9 @@ Raw proposal-level traces and the native artifact are Git-ignored and live on
 complete only when both its gzip artifact and JSON report exist. A partial gzip
 without a report may be safely overwritten with the same deterministic shard
 command.
+
+The interrupted `replay_d018_breadth` attempt is diagnostic only. It discovered
+that no-alignment valid roots were conservatively zero-cost but mislabeled as
+eligible/unreachable. D-016 fixes this, and a five-proposal regression verifies
+four explicit fallbacks plus one distinct invalid root. Do not consolidate or
+resume that directory; use `replay_d018_breadth_v2`.

@@ -5,6 +5,7 @@ from lean_prefix.profile import (
     c0_verifier_declaration,
     in_process_reached_steps,
     lean_complete,
+    profile_alignment_outcome,
     theorem_root_code,
     theorem_root_outcome,
     unsupported_profile_syntax,
@@ -87,6 +88,21 @@ class ReplayProfileTests(unittest.TestCase):
             "tactic execution of Lean.Parser.Tactic.exact took 3ms",
         ])
         self.assertEqual(in_process_reached_steps(units, stderr), [])
+
+    def test_missing_alignment_at_valid_root_is_explicit_fallback(self):
+        self.assertEqual(profile_alignment_outcome([], 17, None), "fallback")
+
+    def test_missing_alignment_at_invalid_root_is_not_profiled(self):
+        self.assertEqual(
+            profile_alignment_outcome([], None, {"reason": "lean_rejected_theorem_root"}),
+            "invalid_root",
+        )
+
+    def test_present_alignment_does_not_require_root_probe(self):
+        self.assertEqual(
+            profile_alignment_outcome([{"seconds": 0.1}], None, None),
+            "aligned",
+        )
 
     def test_root_placeholder_starts_on_a_new_indented_line(self):
         self.assertEqual(

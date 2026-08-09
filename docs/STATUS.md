@@ -53,9 +53,10 @@ and there are no timeout or process failures. The aggregate and hand review are
 `reports/c0_replay_breadth_d017.json` and
 `reports/c0_replay_breadth_d017_review.md`.
 
-Its conservative opportunity estimate is 6.463%, with a theorem-bootstrap interval of
-5.519%–7.501%. That is below the frozen 15% threshold, but these six shards are
-an operational breadth set rather than the registered complete sample. It is a
+Its conservative opportunity estimate is 6.463%, with a theorem-bootstrap
+interval of 5.519%–7.501%. That is below the frozen 15% threshold, but these six
+shards are an operational breadth set rather than the registered complete
+sample. It is a
 strong warning, not the final gate decision. D017 started before the final rule
 that rejects ambiguous duplicate profiler-frame alignments. That rule can only
 remove opportunity, but it changes eligibility, so D017 is diagnostic rather
@@ -63,8 +64,13 @@ than the final breadth artifact.
 
 ## Next milestone
 
-Commit the exact implementation, rerun the same six shards as
-`replay_d018_breadth` from that clean commit, then launch the complete 128-shard
+The first clean ambiguity-safe attempt exposed and then verified a narrow
+accounting fix: a missing unique alignment at a valid root must be explicit
+fallback, not an eligible proof with invented unreachable tails. Its targeted
+regression passes 5/5 with four fallbacks and one invalid root (D-016).
+
+Commit the fix, rerun the same six shards as `replay_d018_breadth_v2` from that
+clean commit, then launch the complete 128-shard
 `replay_d019` census with 32 workers while allocation `19352896` remains. Only
 the complete, representative 308,960-proposal report may decide the frozen 15%
 gate.

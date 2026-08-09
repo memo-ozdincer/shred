@@ -26,11 +26,11 @@ is available.
 
 The deterministic breadth set is shards 7, 46, 53, 62, 78, and 93 (14,496
 proposals total). Run it from the clean final-profiler commit under run name
-`replay_d018_breadth`. Its durable paths are:
+`replay_d018_breadth_v2`. Its durable paths are:
 
 ```text
-artifacts/replay_d018_breadth/shard-INDEX-of-128.jsonl.gz
-reports/private/replay_d018_breadth/shard-INDEX-of-128.json
+artifacts/replay_d018_breadth_v2/shard-INDEX-of-128.jsonl.gz
+reports/private/replay_d018_breadth_v2/shard-INDEX-of-128.json
 ```
 
 Consolidate only after all six reports exist:
@@ -38,12 +38,12 @@ Consolidate only after all six reports exist:
 ```bash
 args=()
 for index in 7 46 53 62 78 93; do
-  args+=(--artifact "artifacts/replay_d018_breadth/shard-${index}-of-128.jsonl.gz")
+  args+=(--artifact "artifacts/replay_d018_breadth_v2/shard-${index}-of-128.jsonl.gz")
 done
 .venv/bin/lean-prefix summarize-replay "${args[@]}" \
   --expected-proposals 14496 \
   --gate-fraction 0.15 \
-  --output reports/private/replay_d018_breadth_summary.json
+  --output reports/private/replay_d018_breadth_v2_summary.json
 ```
 
 This breadth result is a semantic and operational gate, not the registered

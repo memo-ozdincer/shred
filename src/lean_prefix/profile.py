@@ -184,6 +184,21 @@ def in_process_reached_steps(
     return reached
 
 
+def profile_alignment_outcome(
+    profiled_steps: Sequence[dict[str, Any]],
+    root_state: int | None,
+    root_failure: dict[str, Any] | None,
+) -> str:
+    """Classify an in-process alignment without inventing reached work."""
+    if profiled_steps:
+        return "aligned"
+    if root_state is not None:
+        return "fallback"
+    if root_failure is not None:
+        return "invalid_root"
+    raise ReplayProfileError("profile alignment has neither a root state nor a root failure")
+
+
 def theorem_root_outcome(
     theorem: str, response: dict[str, Any]
 ) -> tuple[int | None, dict[str, Any] | None]:
@@ -643,18 +658,24 @@ def profile_replay_shard(
                         )
                         continue
 
-                    if current_state is None:
-                        if unavailable is None:
+                    alignment_outcome = profile_alignment_outcome(
+                        profiled_steps, current_state, unavailable
+                    )
+                    if alignment_outcome != "aligned":
+                        if alignment_outcome == "fallback":
                             replay_fallback += 1
                             replay_fallback_units += len(units)
                             record["replay_fallback_reason"] = (
-                                "no deterministic top-level alignment in the in-process profile"
+                                "no unique deterministic top-level alignment in the "
+                                "in-process profile"
                             )
                             record["profile"] = {
                                 "supported": False,
                                 "not_attempted_reason": record["replay_fallback_reason"],
                             }
                         else:
+                            assert alignment_outcome == "invalid_root"
+                            assert unavailable is not None
                             root_unavailable += 1
                             invalid_root_units += len(units)
                             for depth, (edge, unit) in enumerate(
