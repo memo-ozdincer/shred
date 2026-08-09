@@ -618,6 +618,7 @@ def summarize_visible_state_census(
         "reconvergent_savings_by_syntax_kind": by_kind.most_common(),
         "top_reconvergent_groups": top_groups[:20],
         "capture_provenance": capture,
+        "revisions": {"summary_project_git": _git_state(Path.cwd().resolve())},
         "inputs": {
             "state_artifacts": {
                 str(path): _sha256_file(path) for path in state_artifact_paths
