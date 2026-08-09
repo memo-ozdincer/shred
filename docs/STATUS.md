@@ -62,23 +62,26 @@ that rejects ambiguous duplicate profiler-frame alignments. That rule can only
 remove opportunity, but it changes eligibility, so D017 is diagnostic rather
 than the final breadth artifact.
 
-## Next milestone
+## Complete D019 gate
 
-The first clean ambiguity-safe attempt exposed and then verified a narrow
-accounting fix: a missing unique alignment at a valid root must be explicit
-fallback, not an eligible proof with invented unreachable tails. Its targeted
-regression passes 5/5 with four fallbacks and one invalid root (D-016). The
-clean D018-v2 rerun then passed all semantic and accounting checks: 14,496 full
-verdicts agree, all 11,841 eligible profile verdicts agree, 2,425 fallbacks are
-explicit, and all 29,011 profiled units have CPU telemetry. Its conservative
-opportunity is 5.911% (bootstrap interval 4.964%–6.959%).
+D019 completed all 308,960 proposals in 3:06:50 with 32 workers. It reports
+168,032 current Lean acceptances, 140,784 rejections, 124 accounted timeouts,
+20 process deaths, and three historical C0-label disagreements. The profiler
+itself caused zero verdict disagreement across 253,772 eligible proposals and
+634,646 attributed reached units.
 
-Commit the final breadth aggregate, then launch the complete 128-shard
-`replay_d019` census with 32 workers while allocation `19352896` remains. Only
-the complete, representative 308,960-proposal report may decide the frozen 15%
-gate.
+The registered summarizer refused a claim, as required. The diagnostic-only
+decomposition estimates 3.762% exact rooted-prefix opportunity with a
+3.401%–4.159% theorem-bootstrap interval. Missing CPU from 20 process deaths
+makes that fraction an upper estimate. The 15% gate fails decisively, so the
+version-one executor path is stopped (D-017).
 
-If the gate passes, Phase 3 begins with a frozen warm independent-execution
-baseline and then the smallest exact prefix-trie executor. If it fails, publish
-the characterization and stop the version-one executor path; do not weaken
-exactness or tune the threshold after seeing the answer.
+## Bounded successor check
+
+Exact completed-proof memoization reaches only 6.041% under the conservative
+worst-observed representative. The slowest 0.1% of proposals consume 36.265%
+of measured CPU, and timeouts alone consume 24.181%. Grouping identical tactic
+edges within a theorem while ignoring state yields an unsafe 18.385%–20.685%
+upper bound. A top-ten authentic visible-state census is the next bounded test
+of whether divergent proofs actually reconverge before the same tactic
+(D-018). Pretty goals are not full state and cannot become cache keys.

@@ -17,7 +17,7 @@ theorem root
 └── norm_num
 ```
 
-The project asks one question:
+The project asked one question:
 
 > Given exactly the same complete proof attempts, can exact shared-prefix
 > execution return exactly the same Lean verdicts with materially less work?
@@ -36,10 +36,13 @@ proposals from a frozen DeepSeek-Prover C0 rollout. Checked-in analyses measure:
 
 These are **measured syntax-level opportunity counts**, not a speedup claim.
 Cheap, expensive, and never-reached tactics are weighted equally. The corrected
-cost profiler measures an unchanged complete-proof baseline and uses Lean's
-in-process C profiler for conservative reached-prefix attribution. Its targeted
-semantic regression passes; the representative complete C0 cost census remains
-the next evidence-producing run.
+cost profiler measured an unchanged complete-proof baseline and used Lean's
+in-process C profiler for conservative reached-prefix attribution. The complete
+308,960-proposal census estimates only 3.762% exact-prefix opportunity
+(bootstrap 3.401%–4.159%), far below the frozen 15% gate. The strict summarizer
+also correctly refuses a claim because of three historical C0-label
+disagreements and 20 process deaths. The version-one executor is therefore
+stopped rather than implemented.
 
 ## Scientific boundary
 
@@ -63,13 +66,12 @@ See:
 
 ## Repository status
 
-Phase 1 characterization is complete. Phase 2's initial reconstructed-state
-profiler was rejected after a complete diagnostic census showed that hidden
-Lean elaborator context can change replay behavior. The corrected profiler
-keeps the complete-proof verdict authoritative and collects conservative
-in-process tactic telemetry without resubmitting tactics. Its deterministic
-breadth gate has exact verdict agreement; no execution-engine speedup is
-claimed.
+Phase 1 characterization and the complete Phase 2 census are finished. No
+execution-engine speedup is claimed, and Phases 3–6 are stopped by the failed
+gate. A bounded post-gate diagnostic now asks whether visibly identical Lean
+states reached by different prefixes retain enough opportunity to justify a
+separate proof-state-DAG project. Pretty-printed goals are explicitly not
+treated as full state or executable cache keys.
 
 ## Quick start
 

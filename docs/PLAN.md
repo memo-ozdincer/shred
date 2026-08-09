@@ -31,8 +31,7 @@ of whitespace removal or heuristic line grouping.
 
 ## Phase 2 — Cost-weighted oracle
 
-Status: corrected implementation, mismatch-family regression, and six-shard
-breadth gate complete; full-corpus measurement next.
+Status: complete; the registered gate failed and the executor path stopped.
 
 - Preserve an unchanged complete-proof request as the verdict and CPU baseline.
 - Collect per-tactic exclusive timing in the same declaration with Lean's
@@ -53,7 +52,15 @@ Decision D-005. Earlier reconstructed-state estimates are diagnostic only and
 are superseded by D-013 and D-014. Only the corrected complete-corpus result is
 the registered gate result.
 
+D019 covers all 308,960 proposals. Its strict summary is invalidated by three
+historical-label disagreements and 20 process deaths, while its
+diagnostic-only exact-prefix estimate is 3.762% (bootstrap 3.401%–4.159%).
+Missing failure CPU can only lower the true fraction. D-017 therefore stops
+the plan here; Phases 3–6 are not authorized for the version-one mechanism.
+
 ## Phase 3 — Reference baseline
+
+Status: stopped by the Phase 2 gate.
 
 - Build a warm, persistent, independently executing Lean baseline.
 - Freeze its API, environment, resource limits, and telemetry schema.
@@ -62,6 +69,8 @@ the registered gate result.
 Gate: baseline correctness and variance are understood.
 
 ## Phase 4 — Minimal prefix-trie executor
+
+Status: stopped by the Phase 2 gate.
 
 - Construct a trie from Lean-native tactic units.
 - Execute each eligible unique edge once.
@@ -73,6 +82,8 @@ Gate: correctness, isolation, timeout, cancellation, and accounting tests pass.
 
 ## Phase 5 — Primary evaluation
 
+Status: stopped by the Phase 2 gate.
+
 - Compare identical ordered proposals on identical hardware.
 - Report verdict agreement before speed.
 - Report wall time, CPU time, throughput, peak memory, and tail latency.
@@ -82,6 +93,8 @@ Gate: correctness, isolation, timeout, cancellation, and accounting tests pass.
 Gate: make only claims supported by the registered comparison.
 
 ## Phase 6 — Production hardening
+
+Status: stopped by the Phase 2 gate.
 
 - Stable Python and batch interfaces.
 - Crash recovery and bounded caches.

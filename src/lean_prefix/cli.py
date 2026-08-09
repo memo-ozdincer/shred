@@ -9,10 +9,20 @@ import sys
 from lean_prefix.audit import AuditError, audit_manifest
 from lean_prefix.analysis import analyze_exact
 from lean_prefix.native import NativeExtractionError, extract_and_analyze
+from lean_prefix.opportunity_summary import (
+    OpportunitySummaryError,
+    summarize_alternative_opportunities,
+)
 from lean_prefix.profile import ReplayProfileError, profile_replay_shard
 from lean_prefix.profile_summary import ProfileSummaryError, summarize_replay_profiles
 from lean_prefix.repl import ReplError
 from lean_prefix.review import ReviewSelectionError, select_review_sample
+from lean_prefix.state_census import (
+    StateCensusError,
+    capture_visible_states,
+    select_edge_opportunity_theorems,
+    summarize_visible_state_census,
+)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -63,6 +73,42 @@ def _parser() -> argparse.ArgumentParser:
     summary.add_argument("--bootstrap-samples", type=int, default=10_000)
     summary.add_argument("--bootstrap-seed", type=int, default=42)
     summary.add_argument("--output", type=Path, required=True)
+    opportunities = commands.add_parser(
+        "summarize-opportunities",
+        help="diagnose broader reuse and tail opportunities without weakening the gate",
+    )
+    opportunities.add_argument("--artifact", type=Path, action="append", required=True)
+    opportunities.add_argument("--native-artifact", type=Path, required=True)
+    opportunities.add_argument("--expected-proposals", type=int)
+    opportunities.add_argument("--gate-fraction", type=float, default=0.15)
+    opportunities.add_argument("--bootstrap-samples", type=int, default=10_000)
+    opportunities.add_argument("--bootstrap-seed", type=int, default=42)
+    opportunities.add_argument("--output", type=Path, required=True)
+    state_select = commands.add_parser(
+        "select-state-census", help="select high-opportunity theorems for state diagnostics"
+    )
+    state_select.add_argument("--artifact", type=Path, action="append", required=True)
+    state_select.add_argument("--limit", type=int, default=10)
+    state_select.add_argument("--output", type=Path, required=True)
+    state_capture = commands.add_parser(
+        "capture-state-census", help="capture authentic visible pre-tactic goals"
+    )
+    state_capture.add_argument("--manifest", type=Path, required=True)
+    state_capture.add_argument("--source-root", type=Path)
+    state_capture.add_argument("--native-artifact", type=Path, required=True)
+    state_capture.add_argument("--lean-workspace", type=Path, required=True)
+    state_capture.add_argument("--theorem", required=True)
+    state_capture.add_argument("--artifact", type=Path, required=True)
+    state_capture.add_argument("--output", type=Path, required=True)
+    state_capture.add_argument("--timeout-seconds", type=float, default=300.0)
+    state_capture.add_argument("--memory-limit-gib", type=float, default=48.0)
+    state_capture.add_argument("--repl-executable", type=Path)
+    state_summary = commands.add_parser(
+        "summarize-state-census", help="score visible-state reconvergence diagnostics"
+    )
+    state_summary.add_argument("--state-artifact", type=Path, action="append", required=True)
+    state_summary.add_argument("--replay-artifact", type=Path, action="append", required=True)
+    state_summary.add_argument("--output", type=Path, required=True)
     return parser
 
 
@@ -146,13 +192,66 @@ def main(argv: list[str] | None = None) -> int:
             args.output.write_text(rendered, encoding="utf-8")
             sys.stdout.write(rendered)
             return 0
+        if args.command == "summarize-opportunities":
+            report = summarize_alternative_opportunities(
+                args.artifact,
+                args.native_artifact,
+                expected_proposals=args.expected_proposals,
+                gate_fraction=args.gate_fraction,
+                bootstrap_samples=args.bootstrap_samples,
+                bootstrap_seed=args.bootstrap_seed,
+            )
+            report["command"] = shlex.join(["lean-prefix", *raw_argv])
+            rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(rendered, encoding="utf-8")
+            sys.stdout.write(rendered)
+            return 0
+        if args.command == "select-state-census":
+            report = select_edge_opportunity_theorems(args.artifact, limit=args.limit)
+            report["command"] = shlex.join(["lean-prefix", *raw_argv])
+            rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(rendered, encoding="utf-8")
+            sys.stdout.write(rendered)
+            return 0
+        if args.command == "capture-state-census":
+            report = capture_visible_states(
+                args.manifest,
+                args.native_artifact,
+                args.artifact,
+                theorem_name=args.theorem,
+                lean_workspace=args.lean_workspace,
+                source_root=args.source_root,
+                timeout_seconds=args.timeout_seconds,
+                memory_limit_bytes=int(args.memory_limit_gib * 1024**3),
+                repl_executable=args.repl_executable,
+            )
+            report["command"] = shlex.join(["lean-prefix", *raw_argv])
+            rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(rendered, encoding="utf-8")
+            sys.stdout.write(rendered)
+            return 0
+        if args.command == "summarize-state-census":
+            report = summarize_visible_state_census(
+                args.state_artifact, args.replay_artifact
+            )
+            report["command"] = shlex.join(["lean-prefix", *raw_argv])
+            rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(rendered, encoding="utf-8")
+            sys.stdout.write(rendered)
+            return 0
     except (
         AuditError,
         NativeExtractionError,
         ReplayProfileError,
         ProfileSummaryError,
+        OpportunitySummaryError,
         ReplError,
         ReviewSelectionError,
+        StateCensusError,
         OSError,
     ) as error:
         print(f"error: {error}", file=sys.stderr)

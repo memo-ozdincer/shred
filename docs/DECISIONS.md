@@ -409,3 +409,56 @@ opportunity is 5.911% with a theorem-bootstrap 95% interval of
 This passes the semantic and accounting gate for D019; it remains an
 operational breadth set and therefore does not replace the registered complete
 gate decision.
+
+## D-017 — Stop the version-one executor after the complete census
+
+Date: 2026-08-09
+
+Status: accepted; primary gate failed
+
+Decision: do not build the exact rooted-prefix executor. Preserve D019 and its
+diagnostic decomposition, explicitly report the invalidating records, and stop
+the version-one path rather than lowering the frozen 15% threshold.
+
+Reason: D019 completed all 128 shards and all 308,960 proposals in 3:06:50.
+The profiler-enabled copies caused zero verdict disagreement, but the ordinary
+baseline found three historical C0-false labels that Lean now accepts and 20
+process deaths without CPU telemetry. The registered summarizer therefore
+correctly refused a performance claim. Even the diagnostic calculation, whose
+missing failure cost can only inflate the fraction, estimates only 3.762%
+exact-prefix opportunity (theorem-bootstrap interval 3.401%–4.159%). This is
+far below 15%. There were also 124 accounted timeouts and 50,774 explicit
+fallback proposals.
+
+Consequence: `reports/c0_opportunity_decomposition.json` is diagnostic, not a
+successful primary result. Phase 3 does not start. The failed gate and raw D019
+artifacts remain reproducible evidence rather than being repaired into a more
+favorable comparison.
+
+## D-018 — Test state convergence only as a post-gate diagnostic
+
+Date: 2026-08-09
+
+Status: accepted for a bounded top-ten census
+
+Decision: after preserving D-017, test one possible successor hypothesis:
+different exact prefixes may reconverge to the same visible pre-tactic goal.
+Select the ten theorems with the largest exact-edge-within-theorem cost upper
+bound, capture authentic `allTactics` metadata during unchanged full
+elaboration, and group only identical theorem, visible goal, and exact tactic.
+This is deliberately selected for sensitivity and is not representative.
+
+Reason: exact completed-proof memoization saves only 6.041% under a
+worst-observed representative. Ignoring state and grouping the same exact
+tactic edge anywhere within a theorem gives an 18.385%–20.685% upper bound,
+while tactic-kind grouping gives 29.638%–34.938%. Those broader numbers are not
+executable: tactic behavior depends on full Lean state, and D-013 already
+proved that a pretty goal omits consequential hidden context. Authentic visible
+goals are the cheapest stricter filter before attempting full internal-state
+identity.
+
+Consequence: a visible-goal match remains an unsafe upper bound and cannot
+justify caching or a speed claim. Only a large retained opportunity would
+justify designing a full-state fingerprint. A small retained opportunity ends
+the semantic-state direction without a larger rerun. This diagnostic does not
+retroactively alter the original repository claim or gate.

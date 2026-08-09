@@ -78,7 +78,8 @@ This validates the correction but is intentionally not a performance sample.
 - resources: 192 CPUs and `766000M` RAM;
 - scheduled end: 2026-08-09 16:00:53 Eastern;
 - allocation state: running; do not cancel it;
-- next run name: `replay_d018_breadth_v2`; final census name: `replay_d019`.
+- D019 step `19352896.76`: completed in 3:06:50;
+- allocation remains running and must not be cancelled.
 
 Step `19352896.63` completed the six-worker D017 breadth gate in 20.2
 minutes. All 14,496 full verdicts and all 12,758 profile-eligible verdicts
@@ -95,23 +96,31 @@ the final fail-closed rule for ambiguous duplicate profiler frames was added.
 That rule cannot increase opportunity, but it changes eligibility, so D017's
 cost estimate is diagnostic and must not be represented as final-code output.
 
+## Complete D019 result
+
+D019 has 128 reports, 128 gzip artifacts, and exactly 308,960 proposals. It
+contains 168,032 current acceptances, 140,784 rejections, 124 timeouts, 20
+process deaths, three historical C0-label disagreements, and zero
+profiler-induced disagreements. The strict summarizer refuses a claim. The
+checked-in diagnostic decomposition is
+`reports/c0_opportunity_decomposition.json`, SHA-256
+`94e079420e4b4195a11c543e69653c1b843c5bacf10b0cfd292ebdb5a15c4ad1`.
+Its exact-prefix estimate is 3.762% (bootstrap 3.401%–4.159%), so D-017 stops
+the version-one executor.
+
 ## Exact next actions
 
-1. Commit and push the D018 decisions, status, aggregate, and review
-   under `Memo Ozdincer <73766315+memo-ozdincer@users.noreply.github.com>`.
-2. Launch the full 128-shard `replay_d019` census with 32 workers from the
-   resulting clean commit. Resume by missing report;
-   never overwrite a completed report casually.
-3. Monitor completed reports, aggregate/max RSS, available memory, errors,
-   timeouts, and throughput at 30 and 60 minutes.
-4. Consolidate exactly 308,960 proposal IDs. Only that representative result
-   decides the frozen 15% gate.
-
-If the complete gate passes, Phase 3 begins with a frozen warm independent
-baseline, followed by the smallest exact prefix-trie executor and verdict,
-attribution, isolation, fallback, timeout, and accounting tests. If it fails,
-write the characterization and stop the version-one executor path. Do not tune
-the threshold or weaken exactness after observing the result.
+1. Commit and push the D019 diagnostic decomposition, D-017/D-018, and the
+   alternative-analysis/state-census code under Memo Ozdincer's identity.
+2. From that clean commit, run the ten theorems frozen in
+   `reports/c0_visible_state_selection.json` as independent authentic
+   `allTactics` captures on c126.
+3. Consolidate their 320 proposals against D019 costs. Require exact current
+   verdict agreement and fail closed on ambiguous tactic alignment.
+4. Hand-read reconvergent high-cost groups. If exact visible states retain
+   little incremental opportunity beyond prefixes, stop. If they retain a
+   large opportunity, review whether full Lean state can be fingerprinted and
+   reused without the D-013 reconstruction bug before defining any new claim.
 
 Raw proposal-level traces and the native artifact are Git-ignored and live on
 `/scratch`; aggregate reports and documentation belong in Git. A shard is
@@ -132,4 +141,5 @@ missing CPU values, or missing/duplicate proposals. The conservative breadth
 estimate is 5.911% (bootstrap interval 4.964%–6.959%). Its report is
 `reports/c0_replay_breadth_d018.json`, SHA-256
 `ae242d29aedf989d0277ec6dde30d6b6869d1004086d43bb911fc8108f3cc628`.
-Commit this aggregate, then launch D019.
+It is retained as the clean operational precursor to the now-complete D019
+census.
