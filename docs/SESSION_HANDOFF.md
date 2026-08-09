@@ -97,16 +97,14 @@ cost estimate is diagnostic and must not be represented as final-code output.
 
 ## Exact next actions
 
-1. Commit and push the implementation, decisions, status, and aggregate report
+1. Commit and push the D018 decisions, status, aggregate, and review
    under `Memo Ozdincer <73766315+memo-ozdincer@users.noreply.github.com>`.
-2. Rerun shards 7, 46, 53, 62, 78, and 93 as `replay_d018_breadth_v2`
-   from that clean commit and require the same completeness/verdict conditions.
-3. Commit its aggregate, then launch the full 128-shard `replay_d019` census
-   with 32 workers from the resulting clean commit. Resume by missing report;
+2. Launch the full 128-shard `replay_d019` census with 32 workers from the
+   resulting clean commit. Resume by missing report;
    never overwrite a completed report casually.
-4. Monitor completed reports, aggregate/max RSS, available memory, errors,
+3. Monitor completed reports, aggregate/max RSS, available memory, errors,
    timeouts, and throughput at 30 and 60 minutes.
-5. Consolidate exactly 308,960 proposal IDs. Only that representative result
+4. Consolidate exactly 308,960 proposal IDs. Only that representative result
    decides the frozen 15% gate.
 
 If the complete gate passes, Phase 3 begins with a frozen warm independent
@@ -126,3 +124,12 @@ that no-alignment valid roots were conservatively zero-cost but mislabeled as
 eligible/unreachable. D-016 fixes this, and a five-proposal regression verifies
 four explicit fallbacks plus one distinct invalid root. Do not consolidate or
 resume that directory; use `replay_d018_breadth_v2`.
+
+The clean `replay_d018_breadth_v2` rerun is complete and passes: 14,496/14,496
+full verdicts and 11,841/11,841 profile-eligible verdicts agree; 2,425 fallbacks
+are explicit; 29,011 units are profiled; and there are no errors, timeouts,
+missing CPU values, or missing/duplicate proposals. The conservative breadth
+estimate is 5.911% (bootstrap interval 4.964%–6.959%). Its report is
+`reports/c0_replay_breadth_d018.json`, SHA-256
+`ae242d29aedf989d0277ec6dde30d6b6869d1004086d43bb911fc8108f3cc628`.
+Commit this aggregate, then launch D019.

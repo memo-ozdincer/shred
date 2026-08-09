@@ -398,3 +398,14 @@ agreement, and no error or timeout. Its artifact is
 Consequence: the interrupted `replay_d018_breadth` directory is diagnostic and
 must not be consolidated. Repeat the same six shards as
 `replay_d018_breadth_v2` from the clean fix commit before D019.
+
+The clean D018-v2 rerun subsequently completed all 14,496 proposals with
+14,496/14,496 full-verdict agreement, 11,841/11,841 profile-eligible verdict
+agreement, 2,425 explicit fallbacks, 29,011 profiled units, and no error,
+timeout, missing CPU, duplicate, or missing proposal. Its conservative
+opportunity is 5.911% with a theorem-bootstrap 95% interval of
+4.964%–6.959%. The report is `reports/c0_replay_breadth_d018.json`, SHA-256
+`ae242d29aedf989d0277ec6dde30d6b6869d1004086d43bb911fc8108f3cc628`.
+This passes the semantic and accounting gate for D019; it remains an
+operational breadth set and therefore does not replace the registered complete
+gate decision.

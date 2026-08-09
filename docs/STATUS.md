@@ -67,10 +67,13 @@ than the final breadth artifact.
 The first clean ambiguity-safe attempt exposed and then verified a narrow
 accounting fix: a missing unique alignment at a valid root must be explicit
 fallback, not an eligible proof with invented unreachable tails. Its targeted
-regression passes 5/5 with four fallbacks and one invalid root (D-016).
+regression passes 5/5 with four fallbacks and one invalid root (D-016). The
+clean D018-v2 rerun then passed all semantic and accounting checks: 14,496 full
+verdicts agree, all 11,841 eligible profile verdicts agree, 2,425 fallbacks are
+explicit, and all 29,011 profiled units have CPU telemetry. Its conservative
+opportunity is 5.911% (bootstrap interval 4.964%–6.959%).
 
-Commit the fix, rerun the same six shards as `replay_d018_breadth_v2` from that
-clean commit, then launch the complete 128-shard
+Commit the final breadth aggregate, then launch the complete 128-shard
 `replay_d019` census with 32 workers while allocation `19352896` remains. Only
 the complete, representative 308,960-proposal report may decide the frozen 15%
 gate.
