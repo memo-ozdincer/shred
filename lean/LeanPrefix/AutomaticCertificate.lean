@@ -65,6 +65,8 @@ def emit (event : String) (fields : Array (String × String) := #[]) : TacticM U
 
 def makeKey (tactic : String) : TacticM (Option (Key × Array Expr)) :=
   withMainContext do
+    if (← getGoals).length != 1 then
+      return none
     let goal ← getMainGoal
     let declaration ← goal.getDecl
     let locals := userLocals declaration.lctx

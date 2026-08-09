@@ -156,3 +156,10 @@ was cancelled after the partial paired check exposed massive cached-verdict
 disagreement and zero events. Its raw outputs are quarantined and excluded
 (D-024). The corrected run is D027; no prevalence or aggregate speedup is yet
 claimed.
+
+D027 then validated real automatic hits but exposed an over-broad multi-goal
+case: a certificate for the main goal cannot replace a tactic that also closes
+sibling goals. Its partial run had 36 correct-to-incorrect disagreements and
+was cancelled and quarantined (D-025). The key now requires exactly one
+outstanding goal; multi-goal states execute unchanged as explicit uncacheable
+fallbacks. D028 is the corrected registered run.

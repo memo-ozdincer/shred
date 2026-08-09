@@ -666,3 +666,30 @@ Consequence: D026 is diagnostic-only and must never be merged with D027. The
 failure demonstrates why partial verdict consolidation is mandatory during
 long performance runs. The frozen theorem selection and prepared inputs remain
 valid because neither depends on the faulty REPL context.
+
+## D-025 — Restrict certificates to a single outstanding goal
+
+Date: 2026-08-09
+
+Status: accepted during D027 partial audit
+
+Decision: require exactly one outstanding goal before constructing an
+automatic certificate key. If sibling goals exist, emit `uncacheable`, execute
+the original tactic unchanged, and never capture or apply a certificate. Cancel
+D027 step `19352896.111`, quarantine D027 raw outputs, and rerun under D028 only
+after a multi-goal regression and the authentic smoke pass.
+
+Reason: the corrected D027 partial result contained 36 original/cached verdict
+disagreements, all correct-to-incorrect and none timeout-related. Thirty-five
+were reported hits. Hand inspection showed that the original final tactic had
+closed the main goal plus one or more sibling goals, while the cached D024-style
+certificate assigned only the main goal. Lean correctly rejected the remaining
+siblings. The one other disagreement was a miss/capture in the same unsupported
+multi-goal family. This is not a key collision or kernel unsoundness; it is an
+over-broad application of a single-goal certificate mechanism.
+
+Consequence: D027 is diagnostic-only. Supporting multi-goal tactics would need
+an explicit vector of goal identities, assignments, ordering, and isolation
+tests and is outside the current minimal mechanism. D028 measures only the
+single-goal mechanism already supported by D024; multi-goal work remains fully
+accounted fallback CPU.

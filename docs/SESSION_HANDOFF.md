@@ -131,6 +131,13 @@ so cached proofs failed as unknown tactics. D-024 quarantines all D026 raw
 outputs. The context now explicitly opens `LeanPrefix.AutomaticCertificate`;
 the corrected run must use `certificate_d027` and must not consolidate D026.
 
+D027 step `19352896.111` is also quarantined. A partial audit found 36
+correct-to-incorrect disagreements because a main-goal certificate was applied
+where the original final tactic closed sibling goals too. D-025 now requires
+exactly one outstanding goal; multi-goal states are uncacheable fallbacks. The
+next clean run name is `certificate_d028`; never consolidate D026 or D027 with
+it.
+
 D020 was stopped after eight theorem reports. Persistent `allTactics`
 `ProofSnapshot` data caused cumulative memory growth (roughly 45 GiB in one
 worker under a 48 GiB cap), and theorem 80508 recorded four process errors.

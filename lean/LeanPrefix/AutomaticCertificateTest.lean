@@ -30,3 +30,8 @@ example {α : Type} [Inhabited α] (x : α) : Nonempty α := by
 
 example {α : Type} (x : α) : Nonempty α := by
   reuse_closing in exact ⟨x⟩
+
+/- A tactic that closes sibling goals is executed unchanged and never cached. -/
+example : True ∧ True := by
+  constructor
+  reuse_closing in all_goals trivial
