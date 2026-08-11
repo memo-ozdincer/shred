@@ -1,10 +1,10 @@
 # Session Handoff
 
-Last updated: 2026-08-09 Eastern
+Last updated: 2026-08-11 Eastern
 
-This is the authoritative operational handoff for Lean Prefix (working project
-name: Shred). The repository is `/scratch/memoozd/rl/lean-prefix`; the private
-remote is `memo-ozdincer/lean-prefix`, branch `main`.
+This is the authoritative operational handoff for SHRED. The repository is
+`/scratch/memoozd/rl/lean-prefix`; the private remote is
+`memo-ozdincer/shred`, branch `main`.
 
 ## Claim and boundary
 

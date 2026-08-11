@@ -37,7 +37,7 @@ from lean_prefix.state_census import (
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="lean-prefix")
+    parser = argparse.ArgumentParser(prog="shred")
     commands = parser.add_subparsers(dest="command", required=True)
     audit = commands.add_parser("audit", help="verify an immutable rollout manifest")
     audit.add_argument("--manifest", type=Path, required=True)

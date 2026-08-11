@@ -5,13 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "lean-prefix"
 version = "0.1.0"
-description = "Exact shared-prefix execution for batches of complete Lean proofs"
+description = "SHRED: repeated-work elimination for batched Lean proof verification"
 requires-python = ">=3.11"
 dependencies = []
 
 [project.scripts]
+shred = "lean_prefix.cli:main"
 lean-prefix = "lean_prefix.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-

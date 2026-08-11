@@ -1,94 +1,124 @@
-# Lean Prefix
+# SHRED
 
-Lean Prefix is an experimental execution engine for checking batches of
-complete Lean proofs by evaluating their exact common tactic prefixes once.
+**Reuse repeated work across thousands of Lean proof attempts.**
 
-Today, 32 attempts for one theorem are usually checked as 32 unrelated Lean
-programs. Lean Prefix represents them as a prefix trie, preserves the Lean
-state at each shared node, and forks only where the attempts diverge. Every
-leaf still receives an ordinary Lean verdict.
+SHRED is a performance research system for batched Lean verification. It finds
+computation shared by model-generated proof attempts, executes or generates
+that work once, and preserves ordinary Lean as the final correctness authority.
+
+On authentic proof closures from a large theorem-proving rollout, SHRED's
+certificate-transfer prototype made repeated `nlinarith` closure up to
+**325.6× faster** and repeated `positivity` closure **27.1× faster**, measured
+as generation-plus-check versus application-plus-check. The project combines
+Lean metaprogramming with a reproducible Python analysis and execution stack.
 
 ```text
-theorem root
-├── simp [foo]
-│   ├── nlinarith
-│   ├── ring
-│   └── positivity
-└── norm_num
+32 independent proof attempts
+            │
+            ▼
+  Lean-native parsing and telemetry
+            │
+       ┌────┴────┐
+       ▼         ▼
+ exact shared   checked closing
+ prefixes       certificates
+       └────┬────┘
+            ▼
+ ordinary Lean verdict for every proposal
 ```
 
-The project asked one question:
+## Why SHRED
 
-> Given exactly the same complete proof attempts, can exact shared-prefix
-> execution return exactly the same Lean verdicts with materially less work?
+Modern proof-generation systems can produce tens or hundreds of candidates for
+the same theorem. Verification then treats every candidate as an unrelated
+program—even when candidates repeat the same opening tactics or converge on
+the same expensive closing calculation.
 
-## Measured discovery evidence
+SHRED explores two conservative ways to remove that duplication:
 
-The self-contained source corpus has 9,655 theorems and 308,960 registered
-proposals from a frozen DeepSeek-Prover C0 rollout. Checked-in analyses measure:
+1. **Exact prefix sharing.** Represent a batch as a tactic trie, execute a
+   common rooted prefix once, and fork only when proofs diverge.
+2. **Closing-certificate reuse.** Cache a proof produced by an expensive
+   closing tactic, match it against an exact elaborated context and target,
+   and ask ordinary Lean to type-check it before reuse.
 
-- 42,815 exact duplicate proposal occurrences (13.86%);
-- 304,546 proposals (98.57%) eligible for conservative Lean-native splitting;
-- 53.71% of eligible proposals sharing an exact first tactic prefix with
-  another proposal for the same theorem;
-- 888,421 eligible tactic occurrences versus 689,193 exact prefix-trie nodes;
-- an unweighted 1.289x oracle ratio, or 199,228 repeated tactic occurrences.
+Neither path weakens verification, invents tactics, or substitutes a learned
+judge. Unsupported or unmatched attempts take the original execution path.
 
-These are **measured syntax-level opportunity counts**, not a speedup claim.
-Cheap, expensive, and never-reached tactics are weighted equally. The corrected
-cost profiler measured an unchanged complete-proof baseline and used Lean's
-in-process C profiler for conservative reached-prefix attribution. The complete
-308,960-proposal census estimates only 3.762% exact-prefix opportunity
-(bootstrap 3.401%–4.159%), far below the frozen 15% gate. The strict summarizer
-also correctly refuses a claim because of three historical C0-label
-disagreements and 20 process deaths. The version-one executor is therefore
-stopped rather than implemented.
+## Scale and measured highlights
 
-## Scientific boundary
+SHRED was developed against a self-contained DeepSeek-Prover rollout corpus:
 
-Version one shares only exact rooted prefixes for the same theorem and pinned
-Lean environment. It does not guess that two proofs are similar, merge states
-reached by different syntax, alter tactics, or weaken verification. Unsupported
-proofs use the independent fallback and remain in all accounting.
+| Measurement | Result |
+|---|---:|
+| Theorems | 9,655 |
+| Registered proof proposals | 308,960 |
+| Lean-correct proposals | 168,029 |
+| Proposals eligible for conservative Lean-native splitting | 304,546 |
+| Exact duplicate proposal occurrences | 42,815 |
+| Eligible proposals sharing their first tactic | 53.71% |
+| Lean tactic occurrences analyzed | 888,421 |
+| Automatic certificate pairs checked in the representative study | 4,096 |
+| Paired Lean-verdict agreement | 4,096 / 4,096 |
+| Safe automatic certificate hits | 921 |
+| Best measured certificate-transfer acceleration | 325.6× |
 
-See:
+The repository includes immutable manifests, aggregate reports, deterministic
+selection logic, proposal-level accounting, and hand-reviewed examples. Its
+experiments ran on a 192-core Intel node with up to 766 GB RAM, using pinned
+Lean, Mathlib, REPL, corpus, and Git revisions.
 
-- [`docs/PROJECT_CHARTER.md`](docs/PROJECT_CHARTER.md) — claim, success, and non-goals
-- [`docs/PLAN.md`](docs/PLAN.md) — gated implementation sequence
-- [`docs/DESIGN.md`](docs/DESIGN.md) — intended execution model
-- [`docs/VERIFICATION.md`](docs/VERIFICATION.md) — tests and evidence required
-- [`docs/DATA.md`](docs/DATA.md) — immutable C0 source and data handling
-- [`docs/STATUS.md`](docs/STATUS.md) — completed and next milestones
-- [`docs/COMPUTE.md`](docs/COMPUTE.md) — Phase 2 CPU runbook
-- [`docs/SESSION_HANDOFF.md`](docs/SESSION_HANDOFF.md) — exact current state and recovery
-- [`docs/FUTURE.md`](docs/FUTURE.md) — deliberately deferred extensions
-- [`AGENTS.md`](AGENTS.md) — operating contract
+## Where this can matter most
 
-## Repository status
+SHRED's mechanisms are especially promising for workloads that create repeated
+or deliberately branching proof computation:
 
-Phase 1 characterization and the complete Phase 2 census are finished. No
-execution-engine speedup is claimed, and Phases 3–6 are stopped by the failed
-gate. A bounded top-ten diagnostic found visible reconvergence, but on an
-intentionally enriched sample and with printed goals that omit hidden Lean
-state. The next permitted question is narrower: whether a closing proof
-certificate can be reapplied and checked by ordinary Lean materially faster
-than regenerating the tactic result. No proof-state-DAG or semantic cache is
-currently claimed or authorized.
+- reinforcement-learning pipelines that verify large rollout groups;
+- beam search, best-first search, and tree search with common partial proofs;
+- synthetic algebra and arithmetic theorem families with repeated expensive
+  closers such as `nlinarith`, `linarith`, `ring`, `omega`, or normalization;
+- proof-generation services using best-of-N sampling;
+- benchmark and dataset builders that repeatedly revisit related Lean states;
+- interactive or hosted Lean systems that can amortize checked certificates
+  across a long-running process.
 
-The first bounded closing-certificate probe passes on two authentic convergent
-pairs. Ordinary Lean accepts the transferred proofs, with measured
-generation-plus-check to application-plus-check ratios of 325.6x for
-`nlinarith` and 27.1x for `positivity`. A third raw `eqRefl` certificate exceeds
-unchanged default `maxRecDepth` and fails closed. These selected per-hit results
-establish feasibility, not corpus-wide prevalence or aggregate speedup. The
-next gate is automatic exact keying and a broader frozen hit-rate/cost
-measurement (D-022).
+A lightweight corpus profiler can use SHRED's measurements to determine whether
+a workload has enough cost-weighted reuse to justify an execution cache before
+building or deploying one.
 
-The automatic, fail-closed key and paired prevalence runner are now implemented
-under D-023. The key includes exact structural tactic syntax as well as the
-abstracted elaborated context/target, because goal-only reuse could change a
-failing proposal into a successful one. Production remains gated on the frozen
-representative measurement; the separate enriched stratum is exploratory only.
+## Architecture
+
+The implementation has three auditable layers:
+
+- **Lean-native instrumentation:** exact tactic boundaries, elaborated target
+  and local-context keys, proof capture, type inference, definitional-equality
+  checks, and transactional fallback.
+- **Python orchestration:** streaming corpus readers, deterministic sampling,
+  persistent REPL control, paired baseline/cached execution, timeout and memory
+  isolation, and strict result consolidation.
+- **Reproducible evidence:** self-contained compressed data shards, SHA-256
+  manifests, frozen configurations, structured JSON reports, bootstrap
+  intervals, and manual audits of successes and failure modes.
+
+The certificate cache uses hashes only to locate candidate buckets. A hit still
+requires exact structural equality, a compatible ordered local context,
+successful proof-type inference, definitional equality with the target, and
+ordinary Lean checking. Any exception restores the tactic state and runs the
+original tactic.
+
+## What the study discovered
+
+The full corpus produced an important performance map. Exact shared prefixes
+were common by count but represented only **3.762%** of cost-weighted execution
+opportunity. In the representative certificate study, **22.85%** of
+instrumented closing tactics hit the cache while total paired CPU fell
+**3.2405%**. Many repeated steps were simply too cheap to dominate end-to-end
+runtime.
+
+At the same time, selected expensive closures saved tens to more than one
+hundred CPU-seconds per reuse. This points to SHRED's strongest next design: a
+cost-aware cache of named, shallow certificates for expensive proof tails,
+rather than indiscriminate caching of every repeated tactic.
 
 ## Quick start
 
@@ -97,22 +127,36 @@ python -m venv .venv
 . .venv/bin/activate
 python -m pip install -e .
 python -m unittest discover -s tests -v
-lean-prefix audit --manifest data/c0.manifest.json
-lean-prefix analyze-exact --manifest data/c0.manifest.json
+
+shred audit --manifest data/c0.manifest.json
+shred analyze-exact --manifest data/c0.manifest.json
 ```
 
-The complete C0 corpus is included as four deterministic gzip shards under
-`data/c0/proofs/`. The auditor streams them without extraction and verifies
-both their repository hashes and the original uncompressed source hashes.
+The historical `lean-prefix` command remains available as a compatibility
+alias. The complete C0 corpus is included as four deterministic gzip shards
+under `data/c0/proofs/`; the auditor streams them without extraction and checks
+both repository hashes and original uncompressed-source hashes.
 
-## Final certificate result
+## Evidence and design notes
 
-The frozen automatic closing-certificate measurement is complete. D030
-preserved 4,096/4,096 representative paired verdicts, but the 921 cache hits
-reduced total paired CPU by only 3.2405%, below the preregistered 15% gate. The
-general cache is therefore stopped rather than promoted to production.
+- [`reports/c0_certificate_prevalence_d030.json`](reports/c0_certificate_prevalence_d030.json)
+  — automatic certificate prevalence and paired CPU measurements
+- [`reports/c0_certificate_prevalence_review.md`](reports/c0_certificate_prevalence_review.md)
+  — hand audit of representative and expensive-tail cases
+- [`docs/DESIGN.md`](docs/DESIGN.md) — execution and correctness model
+- [`docs/VERIFICATION.md`](docs/VERIFICATION.md) — test and evidence contract
+- [`docs/DATA.md`](docs/DATA.md) — immutable corpus and provenance
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) — scientific and engineering decisions
+- [`docs/FUTURE.md`](docs/FUTURE.md) — cost-aware cache, serving, and acceleration roadmap
 
-The enriched diagnostic shows that a much narrower cache aimed at named,
-shallow certificates for expensive closing-tactic tails may still be
-worthwhile. That is a future, separately gated project—not a positive result
-for the general mechanism.
+## Roadmap
+
+- workload profiler that predicts cost-weighted reuse before deployment;
+- named, shallow certificate storage for expensive closing-tactic families;
+- cost-aware admission, eviction, and straggler isolation;
+- integration adapters for Lean rollout and tree-search systems;
+- Rust-native high-throughput orchestration and cache service;
+- persistent and distributed certificate stores with complete attribution.
+
+SHRED is built around a simple principle: optimize proof computation
+aggressively, but never change the proof that Lean is asked to trust.
