@@ -1,5 +1,19 @@
 # Project Status
 
+## Productization milestone
+
+SHRED now exposes a public `shred` Python namespace and a single `shred
+profile` workflow. The command preserves the existing conservative audit,
+Lean-native extraction, replay, fallback, accounting, and summary semantics,
+but packages them behind one bounded screening/full-workload interface. The
+historical `lean_prefix` module and `lean-prefix` command remain compatibility
+surfaces.
+
+The profiler reports a screening result by default and refuses to turn a
+sample into deployment evidence. Full-workload results apply the registered
+cost-weighted gate and direct below-gate workloads toward bounded expensive
+closing-tactic analysis rather than enabling broad certificate caching.
+
 Last updated: 2026-08-09
 
 ## Established

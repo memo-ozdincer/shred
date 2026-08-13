@@ -6,7 +6,7 @@ from collections import Counter
 import gzip
 import hashlib
 import json
-from itertools import zip_longest
+from itertools import islice, zip_longest
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -38,10 +38,19 @@ def _artifact_records(path: Path) -> Iterator[dict[str, Any]]:
 
 
 def iter_joined_records(
-    manifest_path: Path, artifact_path: Path, source_root: Path | None
+    manifest_path: Path,
+    artifact_path: Path,
+    source_root: Path | None,
+    *,
+    limit: int | None = None,
 ) -> Iterator[tuple[Proposal, dict[str, Any]]]:
+    if limit is not None and limit < 0:
+        raise ReviewSelectionError("join limit must be non-negative")
     corpus = iter_proposals(manifest_path, source_root)
     artifact = _artifact_records(artifact_path)
+    if limit is not None:
+        corpus = islice(corpus, limit)
+        artifact = islice(artifact, limit)
     sentinel = object()
     for proposal, record in zip_longest(corpus, artifact, fillvalue=sentinel):
         if proposal is sentinel or record is sentinel:

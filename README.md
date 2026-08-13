@@ -2,6 +2,11 @@
 
 **Reuse repeated work across thousands of Lean proof attempts.**
 
+SHRED is an installable Python package, Lean instrumentation suite, and
+evidence-backed workload profiler. It tells you whether a proof workload has
+enough cost-weighted repetition to justify caching before you modify a
+verifier.
+
 SHRED is a performance research system for batched Lean verification. It finds
 computation shared by model-generated proof attempts, executes or generates
 that work once, and preserves ordinary Lean as the final correctness authority.
@@ -44,6 +49,74 @@ SHRED explores two conservative ways to remove that duplication:
 
 Neither path weakens verification, invents tactics, or substitutes a learned
 judge. Unsupported or unmatched attempts take the original execution path.
+
+## Plug-and-play workflow
+
+### 1. Diagnose your corpus
+
+SHRED expects JSONL or JSONL.gz rollout records containing `theorem_name`,
+`proof`, and `correct`. Register the files without copying or rewriting them:
+
+```bash
+shred init \
+  --input /data/rollouts.jsonl.gz \
+  --samples-per-theorem 32 \
+  --output workload.manifest.json
+```
+
+Start with the bounded screening profile. It audits hashes and counts, extracts
+Lean-native tactic boundaries, replays unchanged proofs, measures reached CPU
+cost, and writes one recommendation:
+
+```bash
+shred profile \
+  --manifest workload.manifest.json \
+  --lean-workspace /path/to/mathlib4 \
+  --output-dir shred-profile
+
+cat shred-profile/profile.json
+```
+
+The default examines at most 256 proposals and always labels its recommendation
+`screening_only`. If the signal is promising, repeat on a representative
+immutable workload with `--full`. SHRED counts unsupported syntax, timeouts,
+errors, and fallbacks instead of silently dropping them.
+
+### 2. Act on the diagnosis
+
+The report deliberately produces one of three full-workload decisions:
+
+| Decision | Action |
+|---|---|
+| `prefix_reuse_candidate` | Benchmark an exact prefix executor against warm independent verification before deployment. |
+| `do_not_deploy_exact_prefix_reuse` | Do not build prefix caching for this workload; inspect expensive closing-tactic tails. |
+| `inconclusive` | Resolve attribution, timeout, fallback, or verdict-agreement failures first. |
+
+### 3. Reuse expensive closing certificates
+
+When profiling identifies repeated expensive closing tactics, add the SHRED
+Lean package and wrap only those tactics:
+
+```toml
+# lakefile.toml
+[[require]]
+name = "shred"
+path = "../shred/lean"
+```
+
+```lean
+import SHRED
+
+open LeanPrefix.AutomaticCertificate
+
+example (x : Real) (h : x = 3) : x ^ 2 = 9 := by
+  reuse_closing in nlinarith
+```
+
+Cache hits remain ordinary Lean proofs. SHRED requires an exact environment,
+tactic, elaborated target, and ordered local context; then it infers the reused
+proof's type and checks definitional equality with the current goal. A miss or
+exception restores state and runs `nlinarith` unchanged.
 
 ## Scale and measured highlights
 
@@ -120,7 +193,7 @@ hundred CPU-seconds per reuse. This points to SHRED's strongest next design: a
 cost-aware cache of named, shallow certificates for expensive proof tails,
 rather than indiscriminate caching of every repeated tactic.
 
-## Quick start
+## Development and bundled evidence
 
 ```bash
 python -m venv .venv
@@ -130,6 +203,20 @@ python -m unittest discover -s tests -v
 
 shred audit --manifest data/c0.manifest.json
 shred analyze-exact --manifest data/c0.manifest.json
+```
+
+The same workflow is available as a typed Python API:
+
+```python
+from pathlib import Path
+from shred import ProfileConfig, profile_workload
+
+result = profile_workload(ProfileConfig(
+    manifest=Path("data/c0.manifest.json"),
+    lean_workspace=Path("/path/to/mathlib4"),
+    output_dir=Path("artifacts/my-workload-profile"),
+))
+print(result.report["recommendation"])
 ```
 
 The historical `lean-prefix` command remains available as a compatibility
@@ -151,7 +238,7 @@ both repository hashes and original uncompressed-source hashes.
 
 ## Roadmap
 
-- workload profiler that predicts cost-weighted reuse before deployment;
+- adapters for additional Lean rollout formats;
 - named, shallow certificate storage for expensive closing-tactic families;
 - cost-aware admission, eviction, and straggler isolation;
 - integration adapters for Lean rollout and tree-search systems;

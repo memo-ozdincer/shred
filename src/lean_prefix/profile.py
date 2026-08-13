@@ -382,7 +382,7 @@ def profile_replay_shard(
     try:
         with deterministic_gzip_text(output_artifact_path) as output:
             for proposal, native in iter_joined_records(
-                manifest_path, native_artifact_path, source_root
+                manifest_path, native_artifact_path, source_root, limit=limit
             ):
                 if proposal.theorem_name != previous_theorem:
                     theorem_index += 1

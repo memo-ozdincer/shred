@@ -1,6 +1,34 @@
 # Pinned Lean Component
 
-The extractor uses the exact Lean and Mathlib revisions from the C0 verifier:
+## Use SHRED in a Lean project
+
+Add the local SHRED Lean package to your `lakefile.toml`:
+
+```toml
+[[require]]
+name = "shred"
+path = "../shred/lean"
+```
+
+Then wrap only expensive closing tactics identified by a representative SHRED
+profile:
+
+```lean
+import SHRED
+
+open LeanPrefix.AutomaticCertificate
+
+example (x : Real) (h : x = 3) : x ^ 2 = 9 := by
+  reuse_closing in nlinarith
+```
+
+On a miss, `reuse_closing` runs the original tactic and captures its proof. On
+an exact hit, it applies and type-checks that proof. Key construction or
+application failure restores the tactic state and runs the original tactic.
+Do not wrap every tactic indiscriminately; the representative study found that
+broad automatic caching did not clear its end-to-end performance gate.
+
+The research extractor uses the exact Lean and Mathlib revisions from the C0 verifier:
 
 - Lean: `leanprover/lean4:v4.9.0-rc1`
 - Mathlib fork: `xinhjBrant/mathlib4`

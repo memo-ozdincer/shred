@@ -34,11 +34,44 @@ from lean_prefix.state_census import (
     select_edge_opportunity_theorems,
     summarize_visible_state_census,
 )
+from shred.profiler import ProfileConfig, ShredProfileError, profile_workload
+from shred.manifest import ManifestError, create_manifest
 
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="shred")
     commands = parser.add_subparsers(dest="command", required=True)
+    initialize = commands.add_parser(
+        "init", help="register immutable JSONL rollout files as a SHRED workload"
+    )
+    initialize.add_argument("--input", type=Path, action="append", required=True)
+    initialize.add_argument("--output", type=Path, required=True)
+    initialize.add_argument("--samples-per-theorem", type=int, required=True)
+    initialize.add_argument("--name")
+    initialize.add_argument("--force", action="store_true")
+    profile = commands.add_parser(
+        "profile",
+        help="profile a Lean rollout workload and recommend whether SHRED is worthwhile",
+    )
+    profile.add_argument("--manifest", type=Path, required=True)
+    profile.add_argument("--lean-workspace", type=Path, required=True)
+    profile.add_argument("--output-dir", type=Path, required=True)
+    profile.add_argument("--source-root", type=Path)
+    profile.add_argument("--native-artifact", type=Path)
+    profile.add_argument(
+        "--extractor", type=Path, default=Path("lean/LeanPrefix/Extract.lean")
+    )
+    profile.add_argument("--repl-executable", type=Path)
+    scope = profile.add_mutually_exclusive_group()
+    scope.add_argument("--limit", type=int, default=256)
+    scope.add_argument("--full", action="store_true")
+    profile.add_argument("--gate-fraction", type=float, default=0.15)
+    profile.add_argument("--timeout-seconds", type=float, default=300.0)
+    profile.add_argument("--memory-limit-gib", type=float, default=48.0)
+    profile.add_argument("--restart-every", type=int, default=128)
+    profile.add_argument("--bootstrap-samples", type=int, default=10_000)
+    profile.add_argument("--bootstrap-seed", type=int, default=42)
+    profile.add_argument("--force", action="store_true")
     audit = commands.add_parser("audit", help="verify an immutable rollout manifest")
     audit.add_argument("--manifest", type=Path, required=True)
     audit.add_argument("--source-root", type=Path)
@@ -172,6 +205,36 @@ def main(argv: list[str] | None = None) -> int:
     raw_argv = list(sys.argv[1:] if argv is None else argv)
     args = _parser().parse_args(raw_argv)
     try:
+        if args.command == "init":
+            report = create_manifest(
+                args.input,
+                args.output,
+                samples_per_theorem=args.samples_per_theorem,
+                name=args.name,
+                force=args.force,
+            )
+            sys.stdout.write(json.dumps(report, indent=2, sort_keys=True) + "\n")
+            return 0
+        if args.command == "profile":
+            result = profile_workload(ProfileConfig(
+                manifest=args.manifest,
+                lean_workspace=args.lean_workspace,
+                output_dir=args.output_dir,
+                source_root=args.source_root,
+                native_artifact=args.native_artifact,
+                extractor=args.extractor,
+                repl_executable=args.repl_executable,
+                limit=None if args.full else args.limit,
+                gate_fraction=args.gate_fraction,
+                timeout_seconds=args.timeout_seconds,
+                memory_limit_gib=args.memory_limit_gib,
+                restart_every=args.restart_every,
+                bootstrap_samples=args.bootstrap_samples,
+                bootstrap_seed=args.bootstrap_seed,
+                force=args.force,
+            ))
+            sys.stdout.write(json.dumps(result.report, indent=2, sort_keys=True) + "\n")
+            return 0
         if args.command == "audit":
             report = audit_manifest(args.manifest, args.source_root)
             rendered = json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n"
@@ -376,6 +439,8 @@ def main(argv: list[str] | None = None) -> int:
         ReplError,
         ReviewSelectionError,
         StateCensusError,
+        ShredProfileError,
+        ManifestError,
         OSError,
     ) as error:
         print(f"error: {error}", file=sys.stderr)

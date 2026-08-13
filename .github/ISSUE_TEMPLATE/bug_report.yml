@@ -1,0 +1,39 @@
+name: Bug report
+description: Report a reproducible SHRED correctness or tooling problem
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Do not attach private proof corpora, credentials, or cluster logs.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproducer
+      description: Include the command and the smallest non-sensitive input.
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: SHRED commit/version, Lean, Mathlib, Python, and operating system.
+    validations:
+      required: true
+  - type: dropdown
+    id: verdict
+    attributes:
+      label: Does this involve a verdict disagreement?
+      options:
+        - "Yes"
+        - "No"
+        - "Unknown"
+    validations:
+      required: true

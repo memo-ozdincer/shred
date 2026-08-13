@@ -3,15 +3,34 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "lean-prefix"
-version = "0.1.0"
-description = "SHRED: repeated-work elimination for batched Lean proof verification"
+name = "shred-lean"
+version = "0.2.0"
+description = "Profile and eliminate repeated work in batched Lean verification"
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
+keywords = ["lean", "theorem-proving", "verification", "profiling", "proof-assistants"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+  "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+dev = ["build>=1.2"]
 
 [project.scripts]
-shred = "lean_prefix.cli:main"
+shred = "shred.cli:main"
 lean-prefix = "lean_prefix.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+shred = ["py.typed"]
