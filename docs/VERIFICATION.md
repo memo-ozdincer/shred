@@ -1,13 +1,13 @@
 # Verification Strategy
 
-## Layer 1 — Corpus and accounting
+## Layer 1 - Corpus and accounting
 
 - Source checksums match the frozen manifest.
 - Registered and physical proposal counts are distinct and exact.
 - Padding selection is deterministic and reproduced.
 - Every proposal retains a stable source identity.
 
-## Layer 2 — Parser and trie
+## Layer 2 - Parser and trie
 
 - Lean-native units reconstruct the original proof without semantic rewriting.
 - Comments, whitespace, nested `by`, bullets, combinators, and malformed outputs
@@ -15,7 +15,7 @@
 - Trie node counts match hand-constructed synthetic examples.
 - Input ordering does not change the set of unique nodes or proposal verdicts.
 
-## Layer 3 — State isolation
+## Layer 3 - State isolation
 
 - Sibling branches cannot observe each other's metavariable assignments.
 - Failure, exception, timeout, and cancellation do not corrupt the parent.
@@ -37,14 +37,14 @@ Before the executor exists, the cost profiler must additionally prove:
 - profiler overhead is reported separately from the baseline and opportunity;
 - shard consolidation rejects duplicate or missing proposal IDs.
 
-## Layer 4 — Verdict equivalence
+## Layer 4 - Verdict equivalence
 
 - Independently check every comparison input with the frozen reference runner.
 - Compare accept, reject, error, and timeout under the registered policy.
 - Treat any unexpected acceptance disagreement as a release blocker.
 - Preserve and hand-inspect every disagreement artifact.
 
-## Layer 5 — Performance
+## Layer 5 - Performance
 
 - Warm both systems before timing.
 - Use identical hardware, concurrency, inputs, ordering, and limits.

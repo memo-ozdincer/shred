@@ -3,7 +3,7 @@
 Each phase produces an auditable artifact and ends with a decision. Later phases
 do not begin merely because the implementation is interesting.
 
-## Phase 0 — Corpus integrity
+## Phase 0 - Corpus integrity
 
 Status: complete.
 
@@ -15,7 +15,7 @@ Status: complete.
 
 Gate: exact agreement with the authoritative C0 validation.
 
-## Phase 1 — Exact-reuse characterization
+## Phase 1 - Exact-reuse characterization
 
 Status: complete. See `reports/c0_exact_analysis.json`,
 `reports/c0_native_prefix.json`, and `reports/c0_hand_review.md`.
@@ -29,7 +29,7 @@ Status: complete. See `reports/c0_exact_analysis.json`,
 Gate: the measured reuse must be real under Lean-native parsing, not an artifact
 of whitespace removal or heuristic line grouping.
 
-## Phase 2 — Cost-weighted oracle
+## Phase 2 - Cost-weighted oracle
 
 Status: complete; the registered gate failed and the executor path stopped.
 
@@ -84,7 +84,7 @@ implementation requires zero paired verdict disagreements and at least 15%
 representative end-to-end CPU saving; otherwise the mechanism is stopped or
 redirected. The enriched stratum cannot satisfy the gate by itself.
 
-## Phase 3 — Reference baseline
+## Phase 3 - Reference baseline
 
 Status: stopped by the Phase 2 gate.
 
@@ -94,7 +94,7 @@ Status: stopped by the Phase 2 gate.
 
 Gate: baseline correctness and variance are understood.
 
-## Phase 4 — Minimal prefix-trie executor
+## Phase 4 - Minimal prefix-trie executor
 
 Status: stopped by the Phase 2 gate.
 
@@ -106,7 +106,7 @@ Status: stopped by the Phase 2 gate.
 
 Gate: correctness, isolation, timeout, cancellation, and accounting tests pass.
 
-## Phase 5 — Primary evaluation
+## Phase 5 - Primary evaluation
 
 Status: stopped by the Phase 2 gate.
 
@@ -118,7 +118,7 @@ Status: stopped by the Phase 2 gate.
 
 Gate: make only claims supported by the registered comparison.
 
-## Phase 6 — Production hardening
+## Phase 6 - Production hardening
 
 Status: stopped by the Phase 2 gate.
 

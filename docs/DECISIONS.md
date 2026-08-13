@@ -1,6 +1,6 @@
 # Decision Log
 
-## D-001 — Exact rooted prefixes define version-one reuse
+## D-001 - Exact rooted prefixes define version-one reuse
 
 Date: 2026-08-08
 
@@ -17,7 +17,7 @@ second scientific mechanism.
 Consequence: some reusable computation will be missed deliberately. Broader
 state merging remains in `FUTURE.md`.
 
-## D-002 — C0 is discovery data, not a final performance test
+## D-002 - C0 is discovery data, not a final performance test
 
 Date: 2026-08-08
 
@@ -30,7 +30,7 @@ primary held-out performance evaluation.
 Reason: designing and evaluating entirely on the same 308,960 proposals would
 overstate generality and invite workload-specific optimization.
 
-## D-003 — Use the C0 Lean/Mathlib environment as the syntax authority
+## D-003 - Use the C0 Lean/Mathlib environment as the syntax authority
 
 Date: 2026-08-08
 
@@ -48,7 +48,7 @@ strict, deterministic, and auditable.
 Consequence: formatting-equivalent prefixes are intentionally not shared.
 Normalization is deferred until it can be proved semantics-preserving.
 
-## D-004 — Conservative fallback for unsafe or unsupported roots
+## D-004 - Conservative fallback for unsafe or unsupported roots
 
 Date: 2026-08-08
 
@@ -66,7 +66,7 @@ engine remains small.
 Consequence: 4,414 C0 proposals (1.43%) fall back under this rule, including
 some Lean-correct proposals. They remain in workload and compute accounting.
 
-## D-005 — Pre-registered cost-opportunity gate
+## D-005 - Pre-registered cost-opportunity gate
 
 Date: 2026-08-08
 
@@ -85,7 +85,7 @@ proofs can fail before later parsed units execute.
 Consequence: if the gate fails, publish the characterization and stop the
 version-one engine rather than broadening equality after seeing the result.
 
-## D-006 — Replay reached root tactics from pinned REPL snapshots
+## D-006 - Replay reached root tactics from pinned REPL snapshots
 
 Date: 2026-08-08
 
@@ -108,7 +108,7 @@ Consequence: units after the first failed or timed-out unit are labeled
 `unreachable_after_failure`. A complete-proof/sequential disagreement, missing
 root snapshot, timeout, or missing replay blocks the gate.
 
-## D-007 — Keep the upstream REPL protocol unchanged
+## D-007 - Keep the upstream REPL protocol unchanged
 
 Date: 2026-08-08
 
@@ -131,7 +131,7 @@ The requirement that the REPL executable itself remain byte-for-byte upstream
 is superseded by D-010 after authentic replay showed that upstream proof
 snapshots omit context required to preserve the C0 execution policy.
 
-## D-008 — Use measured occupancy on standard-memory CPU nodes
+## D-008 - Use measured occupancy on standard-memory CPU nodes
 
 Date: 2026-08-08
 
@@ -152,7 +152,7 @@ concurrency if available memory falls below 100 GiB or the scheduler reports
 memory pressure. This operational decision changes parallelism only, not the
 proof workload, verifier, timeouts, or scientific gate.
 
-## D-009 — Invalid theorem roots have zero reached tactic work
+## D-009 - Invalid theorem roots have zero reached tactic work
 
 Date: 2026-08-08
 
@@ -177,7 +177,7 @@ counted, conservatively reduce the measured opportunity fraction through the
 full-verification denominator, and cannot create cache savings. The rule does
 not make an invalid proof pass and does not exclude any proposal.
 
-## D-010 — Patch only the proof-snapshot execution adapter
+## D-010 - Patch only the proof-snapshot execution adapter
 
 Date: 2026-08-08
 
@@ -209,7 +209,7 @@ for replay-eligible proposals, and two explicit structural fallbacks. The six
 previously completed shards must be rerun before the full measurement resumes;
 their earlier telemetry is diagnostic only.
 
-## D-011 — Root errors dominate snapshots; unsafe telemetry is omitted
+## D-011 - Root errors dominate snapshots; unsafe telemetry is omitted
 
 Date: 2026-08-08
 
@@ -237,7 +237,7 @@ telemetry but have `heartbeats: null`; aggregate reports count
 before a full-corpus launch. It subsequently passed with zero full or sequential
 disagreements across 14,496 proposals and no missing CPU telemetry.
 
-## D-012 — Preserve C0 fenced parsing and stop at proof completion
+## D-012 - Preserve C0 fenced parsing and stop at proof completion
 
 Date: 2026-08-08
 
@@ -263,7 +263,7 @@ proposal accounting but cannot create prefix savings. Early-completion tails
 are separately counted and excluded from reached-prefix cost. This correction
 does not alter proof text, Lean, Mathlib, or the acceptance rule.
 
-## D-013 — Reject reconstructed proof-state replay as cost evidence
+## D-013 - Reject reconstructed proof-state replay as cost evidence
 
 Date: 2026-08-09
 
@@ -289,7 +289,7 @@ Phase 2 must measure tactics during an unchanged complete declaration. Phase 3
 still requires its own exact verdict-equivalence tests; Phase 2 telemetry is not
 permission to assume that arbitrary state reconstruction is equivalent.
 
-## D-014 — Use Lean's in-process C profiler as a conservative cost oracle
+## D-014 - Use Lean's in-process C profiler as a conservative cost oracle
 
 Date: 2026-08-09
 
@@ -336,7 +336,7 @@ standalone replay. The targeted mismatch set validates semantics but is not a
 representative performance sample. A deterministic six-shard breadth gate must
 pass before the complete census is launched.
 
-## D-015 — Use 32 workers and a 48 GiB safety ceiling for the final census
+## D-015 - Use 32 workers and a 48 GiB safety ceiling for the final census
 
 Date: 2026-08-09
 
@@ -371,7 +371,7 @@ implementations. The
 15% threshold, proof workload, verifier, parser, and profiler method remain
 unchanged.
 
-## D-016 — Missing or ambiguous profile alignment is explicit fallback
+## D-016 - Missing or ambiguous profile alignment is explicit fallback
 
 Date: 2026-08-09
 
@@ -410,7 +410,7 @@ This passes the semantic and accounting gate for D019; it remains an
 operational breadth set and therefore does not replace the registered complete
 gate decision.
 
-## D-017 — Stop the version-one executor after the complete census
+## D-017 - Stop the version-one executor after the complete census
 
 Date: 2026-08-09
 
@@ -435,7 +435,7 @@ successful primary result. Phase 3 does not start. The failed gate and raw D019
 artifacts remain reproducible evidence rather than being repaired into a more
 favorable comparison.
 
-## D-018 — Test state convergence only as a post-gate diagnostic
+## D-018 - Test state convergence only as a post-gate diagnostic
 
 Date: 2026-08-09
 
@@ -463,7 +463,7 @@ justify designing a full-state fingerprint. A small retained opportunity ends
 the semantic-state direction without a larger rerun. This diagnostic does not
 retroactively alter the original repository claim or gate.
 
-## D-019 — Isolate every `allTactics` capture process
+## D-019 - Isolate every `allTactics` capture process
 
 Date: 2026-08-09
 
@@ -487,7 +487,7 @@ must preserve D019's current-verdict agreement and report all timeouts and
 process failures explicitly. D020 remains diagnostic-only and cannot be
 silently repaired, resumed, or consolidated with D021.
 
-## D-020 — Preserve D021 as a bounded upper-bound diagnostic
+## D-020 - Preserve D021 as a bounded upper-bound diagnostic
 
 Date: 2026-08-09
 
@@ -517,7 +517,7 @@ Consequence: the bounded census supports hand-reading and one narrower
 feasibility test, not a state-DAG implementation or general performance claim.
 The six process exits and two timeouts contribute zero state opportunity.
 
-## D-021 — Gate any successor on exact closing-certificate application
+## D-021 - Gate any successor on exact closing-certificate application
 
 Date: 2026-08-09
 
@@ -544,7 +544,7 @@ only if ordinary Lean accepts the transplanted certificate and the measured
 end-to-end saving remains material after kernel checking. The initial project
 and failed exact-prefix gate remain unchanged.
 
-## D-022 — Advance certificate reuse to a prevalence gate
+## D-022 - Advance certificate reuse to a prevalence gate
 
 Date: 2026-08-09
 
@@ -592,7 +592,7 @@ misses, and fallbacks. Large raw proof expressions that exceed ordinary Lean's
 limits remain fallback; a named auxiliary declaration is a separate future
 design. Arbitrary non-closing state transitions remain out of scope.
 
-## D-023 — Freeze the automatic closing-certificate prevalence contract
+## D-023 - Freeze the automatic closing-certificate prevalence contract
 
 Date: 2026-08-09
 
@@ -639,7 +639,7 @@ authorized until the representative stratum has zero verdict disagreements,
 automatic hits survive hand audit, and measured end-to-end savings remain
 material after all overhead and fallback work.
 
-## D-024 — Quarantine the invalid D026 namespace run
+## D-024 - Quarantine the invalid D026 namespace run
 
 Date: 2026-08-09
 
@@ -667,7 +667,7 @@ failure demonstrates why partial verdict consolidation is mandatory during
 long performance runs. The frozen theorem selection and prepared inputs remain
 valid because neither depends on the faulty REPL context.
 
-## D-025 — Restrict certificates to a single outstanding goal
+## D-025 - Restrict certificates to a single outstanding goal
 
 Date: 2026-08-09
 
@@ -694,7 +694,7 @@ tests and is outside the current minimal mechanism. D028 measures only the
 single-goal mechanism already supported by D024; multi-goal work remains fully
 accounted fallback CPU.
 
-## D-026 — Preserve relative indentation when wrapping structured tactics
+## D-026 - Preserve relative indentation when wrapping structured tactics
 
 Date: 2026-08-09
 
@@ -717,7 +717,7 @@ Consequence: D028 timings and prevalence are diagnostic-only. D029 alone may be
 consolidated. The corrected transformer changes no tactic text or relative
 structure; it only introduces the two spaces required by the wrapper nesting.
 
-## D-027 — Make automatic key construction transactional
+## D-027 - Make automatic key construction transactional
 
 Date: 2026-08-09
 
@@ -743,7 +743,7 @@ separate explicit fallback reasons. Default `maxRecDepth` remains unchanged.
 D030 must show exact paired agreement in both strata before any complete report
 is accepted.
 
-## D-028 — Stop the general cache and exclude `rfl` from future instrumentation
+## D-028 - Stop the general cache and exclude `rfl` from future instrumentation
 
 Date: 2026-08-09
 

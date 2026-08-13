@@ -36,7 +36,7 @@ Lean metaprogramming with a reproducible Python analysis and execution stack.
 
 Modern proof-generation systems can produce tens or hundreds of candidates for
 the same theorem. Verification then treats every candidate as an unrelated
-program—even when candidates repeat the same opening tactics or converge on
+program-even when candidates repeat the same opening tactics or converge on
 the same expensive closing calculation.
 
 SHRED explores two conservative ways to remove that duplication:
@@ -227,14 +227,14 @@ both repository hashes and original uncompressed-source hashes.
 ## Evidence and design notes
 
 - [`reports/c0_certificate_prevalence_d030.json`](reports/c0_certificate_prevalence_d030.json)
-  — automatic certificate prevalence and paired CPU measurements
+  - automatic certificate prevalence and paired CPU measurements
 - [`reports/c0_certificate_prevalence_review.md`](reports/c0_certificate_prevalence_review.md)
-  — hand audit of representative and expensive-tail cases
-- [`docs/DESIGN.md`](docs/DESIGN.md) — execution and correctness model
-- [`docs/VERIFICATION.md`](docs/VERIFICATION.md) — test and evidence contract
-- [`docs/DATA.md`](docs/DATA.md) — immutable corpus and provenance
-- [`docs/DECISIONS.md`](docs/DECISIONS.md) — scientific and engineering decisions
-- [`docs/FUTURE.md`](docs/FUTURE.md) — cost-aware cache, serving, and acceleration roadmap
+  - hand audit of representative and expensive-tail cases
+- [`docs/DESIGN.md`](docs/DESIGN.md) - execution and correctness model
+- [`docs/VERIFICATION.md`](docs/VERIFICATION.md) - test and evidence contract
+- [`docs/DATA.md`](docs/DATA.md) - immutable corpus and provenance
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) - scientific and engineering decisions
+- [`docs/FUTURE.md`](docs/FUTURE.md) - cost-aware cache, serving, and acceleration roadmap
 
 ## Roadmap
 
