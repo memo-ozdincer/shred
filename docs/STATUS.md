@@ -230,9 +230,14 @@ Because exact-key compatibility, first captures, and distribution shift can
 only reduce retention, 1.84x is an upper-sensitivity hypothesis, not a
 conservative forecast or headline result.
 
-D-030 prohibits C1 Lean extraction, replay, paired execution, and cluster work
-until an existing-artifact-only analysis supports at least 1.5x under a
-conservative retention bound. That requires at least 36.690% of total CPU to be
-realized reuse, or 74.062% retention of the current upper signal. The exact next
-action is therefore compute-free compatibility and retention analysis, not a
-paired run.
+D-030 prohibited C1 Lean extraction, replay, paired execution, and cluster work
+until an existing-artifact-only analysis supported at least 1.5x under a
+conservative retention bound. That analysis is now complete. The 27 admitted
+theorems already covered by D030 saved 13.892% CPU across 864 paired proposals,
+equivalent to 1.161x, with 864/864 verdict agreement. Its theorem-bootstrap 95%
+interval is 7.759%--20.258%, entirely below the required 36.690%.
+
+D-031 therefore stops the C1 cohort without spending new verification compute.
+No C1 extraction, replay, paired benchmark, or cluster allocation is planned.
+The authoritative aggregate is `reports/c0_rl_retention_gate.json`; the hand
+review is `reports/c0_rl_retention_gate_review.md`.

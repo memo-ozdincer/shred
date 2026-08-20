@@ -865,3 +865,29 @@ established, stop this cohort or define a smaller pre-registered tier with a
 stronger prior-iteration signal; do not run C1 merely to resolve curiosity. If
 the theory gate passes, record a new decision with the exact estimated compute
 cost and expected value before allocating resources.
+
+## D-031 - Stop the C1 cohort after the retention gate fails
+
+Date: 2026-08-20
+
+Status: accepted; no new compute authorized
+
+Decision: stop the planned C1 arithmetic-closure extraction and paired
+benchmark. Do not allocate cluster resources for this cohort. Preserve the C1
+manifest and selection as a reproducible negative feasibility result.
+
+Reason: 27 D-029-admitted theorems already occur in the immutable D030 paired
+study, providing 864 proposals of exact automatic-certificate evidence at zero
+new verification cost. They saved 193.987 of 1,396.345 baseline CPU-seconds, or
+13.892%, equivalent to 1.161x CPU throughput, with 864/864 verdict agreement.
+The theorem-bootstrap 95% interval is 7.759%--20.258%. D-030 requires 36.690%
+realized reusable CPU for 1.5x throughput. Even the interval's upper bound is
+16.432 points below the gate, so the failure is decisive rather than
+inconclusive.
+
+Consequence: the 1.84x full-retention sensitivity point is not a planning
+forecast and must not be promoted. No C1 Lean-native extraction, REPL replay,
+paired run, or Slurm job should be performed for this mechanism. A future
+proposal may proceed only if it changes the mechanism materially and first
+supplies a new existing-evidence feasibility argument; selecting a still
+narrower positive tail from the same evidence does not qualify.

@@ -1,0 +1,76 @@
+{
+  "admission_upper_bound_on_overlap": {
+    "cross_run_saved_seconds_over_upper_bound": 0.26816170312380605,
+    "d019_baseline_cpu_seconds": 1422.9766230940002,
+    "d019_conservative_reusable_cpu_fraction": 0.508367316227289,
+    "d019_conservative_reusable_cpu_seconds": 723.3948069364675,
+    "warning": "The ratio compares separate D019 and D030 executions and is diagnostic; the paired D030 saved fraction is the authoritative retention evidence."
+  },
+  "analysis": "existing-artifact-rl-retention-gate-v1",
+  "command": "PYTHONPATH=src python -m lean_prefix.retention_gate | jq 'del(.overlap.per_theorem)'",
+  "configuration": {
+    "bootstrap_samples": 10000,
+    "bootstrap_seed": 42,
+    "conservative_application_acceleration": 27.051195461299475,
+    "minimum_throughput_multiplier": 1.5,
+    "overhead_fraction": 0.02
+  },
+  "evidence_label": "Measured",
+  "gate": {
+    "bootstrap_high_fraction": 0.20257758202077752,
+    "bootstrap_low_fraction": 0.07759007400532894,
+    "decision": "stop_no_new_c1_lean_or_cluster_compute",
+    "decisive_failure": true,
+    "minimum_throughput_multiplier": 1.5,
+    "observed_paired_cpu_saved_fraction": 0.13892472837947914,
+    "passes": false,
+    "required_realized_reusable_cpu_fraction": 0.36689637054052143
+  },
+  "inputs": {
+    "admission_opportunity": {
+      "path": "reports/c0_opportunity_decomposition.json",
+      "sha256": "92ef7b7e2edf3a2e6452d549596ee1624f958e8331f9dc172f96e96614009e64"
+    },
+    "certificate_probe": {
+      "path": "reports/c0_certificate_probe.json",
+      "sha256": "4a77f798236c236f874aa4e237f77c2ead835ba6d31445380d6cdc85ced72fa1"
+    },
+    "d019_and_d030_artifact_hashes_verified": true,
+    "d030_prevalence": {
+      "path": "reports/c0_certificate_prevalence_d030.json",
+      "sha256": "efe23e5c17b4ab60cdc972f08bcf2cbf42a36c0deb9b3c26191c679c6a32a2a1"
+    }
+  },
+  "overlap": {
+    "automatic_hits": 206,
+    "baseline_cpu_seconds": 1396.344522115,
+    "cached_cpu_seconds": 1202.357738656,
+    "cpu_equivalent_throughput_multiplier": 1.1613386575578073,
+    "event_counts": {
+      "capture": 555,
+      "hit": 206,
+      "miss": 622
+    },
+    "paired_cpu_saved_fraction": 0.13892472837947914,
+    "paired_cpu_saved_seconds": 193.98678345899998,
+    "positive_saving_theorems": 26,
+    "proposals": 864,
+    "theorem_bootstrap_95_percent": {
+      "high": 0.20257758202077752,
+      "low": 0.07759007400532894,
+      "median": 0.1432110694743248,
+      "samples": 10000,
+      "seed": 42
+    },
+    "theorems": 27,
+    "verdict_disagreements": 0
+  },
+  "provenance": {
+    "project_git": {
+      "commit": "8bbcefea2d834e103c71e539034c3135f481f758",
+      "dirty": false
+    }
+  },
+  "status": "complete-theory-gate-failed",
+  "warning": "No new Lean, REPL, or cluster execution was performed."
+}

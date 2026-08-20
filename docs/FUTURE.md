@@ -102,3 +102,18 @@ to dominate runtime. It must pre-register its selection rule, count misses and
 fallbacks, exclude raw `rfl` wrappers unless ordinary Lean validates them under
 unchanged limits, and earn its own representative end-to-end gate. Until that
 design exists, it remains a future add rather than production scope.
+
+## Resolution after D031
+
+D-029 instantiated the narrow idea as a 505-theorem arithmetic-RL cohort, but
+D-030 required existing evidence to justify its compute first. The 27 admitted
+theorems already covered by D030 saved only 13.892% paired CPU, with a
+theorem-bootstrap upper bound of 20.258%. That is decisively below the 36.690%
+reduction required for the 1.5x theory gate. D-031 stops the C1 run without new
+Lean or cluster work.
+
+Named shallow declarations might reduce application cost on successful hits,
+but they do not solve the observed exact-key miss and first-capture burden.
+They remain a future mechanism idea, not a pending experiment. Reopening them
+requires a materially new compute-free argument rather than a narrower
+post-hoc selection of positive D030 cases.

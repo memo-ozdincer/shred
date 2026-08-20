@@ -126,6 +126,18 @@ Only after this gate passes may a new decision authorize a bounded C1 run. That
 decision must state the expected CPU cost, expected saved CPU, stopping rule,
 and why the expected information or system value justifies the compute.
 
+## Theory gate result
+
+The gate failed without new compute. Twenty-seven admitted theorems overlap the
+existing D030 paired study, covering 864 proposals with exact automatic-cache
+events and 864/864 verdict agreement. They saved 13.892% CPU, or 1.161x
+CPU-equivalent throughput. The theorem-bootstrap 95% interval is
+7.759%--20.258%; its upper bound is far below the 36.690% required for 1.5x.
+
+D-031 therefore stops the C1 benchmark. The frozen C1 dataset remains useful as
+a documented RL workload, but no Lean extraction, replay, cluster allocation,
+or paired execution is justified for the current certificate mechanism.
+
 ## Eventual headline promotion gate
 
 The number becomes headline-grade only after one registered paired run meets
@@ -142,11 +154,12 @@ all of the following:
   per-theorem results are reported; and
 - the 128-theorem control is reported alongside the admitted cohort.
 
-Before the theory gate and paired run, acceptable wording is limited to:
+The failed theory gate means no performance projection should be headlined.
+Acceptable wording is limited to:
 
-> A frozen 16,160-proposal RL arithmetic-closure workload has a 49.5%
-> prior-iteration repeated-cost upper bound; existing-artifact analysis is
-> testing whether enough survives exact certificate matching to justify a run.
+> On 864 existing paired proposals from an RL arithmetic-closure cohort, SHRED
+> saved 13.9% CPU with exact verdict agreement; the result was too small to
+> justify a larger held-out run.
 
 After a passing run, the headline must use the actual result:
 

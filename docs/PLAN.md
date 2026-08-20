@@ -139,3 +139,10 @@ Any successor must begin as a separately gated proposal. The best-supported
 candidate is a narrow, cost-aware cache of named, shallow certificates for
 known expensive closing-tactic families; the enriched D030 stratum is useful
 for forming that hypothesis but cannot serve as representative evidence.
+
+D-029 and D-030 subsequently made that hypothesis concrete as an arithmetic-RL
+cohort and required an existing-artifact retention gate before any C1 compute.
+D-031 records the result: 864 already measured overlap proposals saved 13.892%
+CPU (bootstrap 7.759%--20.258%), decisively below the 36.690% reduction needed
+for 1.5x throughput. The C1 extraction and paired benchmark are stopped; no
+cluster allocation is authorized.

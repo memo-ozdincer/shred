@@ -1,6 +1,6 @@
 # Session Handoff
 
-Last updated: 2026-08-11 Eastern
+Last updated: 2026-08-20 Eastern
 
 This is the authoritative operational handoff for SHRED. The repository is
 `/scratch/memoozd/rl/lean-prefix`; the private remote is
@@ -111,16 +111,15 @@ the version-one executor.
 
 ## Exact next actions
 
-1. Do not rerun the broad automatic-certificate prevalence experiment: D030
-   resolves its registered gate.
-2. Treat the general automatic cache as stopped. It preserved all 4,096
-   representative paired verdicts but saved 3.2405% CPU, below the required
-   15%.
-3. If work continues, write a new bounded decision and preflight for the
-   narrower named/shallow, cost-aware expensive-tail certificate idea. Do not
-   silently turn D030's enriched diagnostic into representative evidence.
-4. Preserve D030 raw artifacts on scratch and the tracked aggregate and hand
-   review in Git. No compute allocation is required for the current handoff.
+1. Do not run C1 Lean-native extraction, replay, paired verification, or a
+   cluster job for the arithmetic-closure cohort. D-031 stops it.
+2. Preserve the C1 source manifest and D-029 selection as a reproducible
+   workload definition, not as performance evidence.
+3. Treat the existing-artifact retention report as the final decision evidence:
+   13.892% paired CPU saving, 1.161x throughput, bootstrap 7.759%--20.258%, and
+   864/864 verdict agreement across 27 admitted overlap theorems.
+4. Preserve D030 raw artifacts on scratch and the tracked aggregates and hand
+   reviews in Git. No compute allocation is required or justified.
 
 The implementation is `lean/LeanPrefix/AutomaticCertificate.lean`; its Lean
 exercise is `lean/LeanPrefix/AutomaticCertificateTest.lean`. Selection,

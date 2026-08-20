@@ -193,6 +193,12 @@ hundred CPU-seconds per reuse. This points to SHRED's strongest next design: a
 cost-aware cache of named, shallow certificates for expensive proof tails,
 rather than indiscriminate caching of every repeated tactic.
 
+A subsequent compute-free gate tested that narrower hypothesis on 864 already
+measured proposals from an arithmetic-heavy RL cohort. It saved 13.9% CPU
+(1.16x), and even its 20.3% bootstrap upper bound missed the 36.7% reduction
+required to justify a 1.5x held-out run. SHRED therefore stopped before spending
+compute on the frozen C1 workload.
+
 ## Development and bundled evidence
 
 ```bash
@@ -235,6 +241,8 @@ both repository hashes and original uncompressed-source hashes.
     no-compute feasibility gate
 - [`reports/c0_rl_arithmetic_closure_admission.json`](reports/c0_rl_arithmetic_closure_admission.json)
   - machine-readable cohort characteristics and upper-sensitivity projection
+- [`reports/c0_rl_retention_gate.json`](reports/c0_rl_retention_gate.json)
+  - compute-free paired-overlap result that stops the larger C1 run
 - [`docs/DESIGN.md`](docs/DESIGN.md) - execution and correctness model
 - [`docs/VERIFICATION.md`](docs/VERIFICATION.md) - test and evidence contract
 - [`docs/DATA.md`](docs/DATA.md) - immutable corpus and provenance
