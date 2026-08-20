@@ -1262,19 +1262,9 @@
   },
   "runtime": {
     "git": {
-      "commit": "b7c94870a3314fd7e2e05018fbad48a9244d81d2",
-      "dirty": true,
-      "status_porcelain": [
-        " M data/README.md",
-        " M docs/DECISIONS.md",
-        " M docs/STATUS.md",
-        " M reports/README.md",
-        "?? data/external-repair.manifest.json",
-        "?? reports/external_repair_structural_screen.json",
-        "?? reports/external_repair_structural_screen_review.md",
-        "?? src/lean_prefix/external_repair.py",
-        "?? tests/test_external_repair.py"
-      ]
+      "commit": "d6150c81f8d181c0b41d40132410e9ec7a62516f",
+      "dirty": false,
+      "status_porcelain": []
     },
     "logical_cpus": 32,
     "platform": "Linux-5.14.0-570.44.1.el9_6.x86_64-x86_64-Intel-R-_Xeon-R-_Platinum_8480+-with-glibc2.37",
