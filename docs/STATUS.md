@@ -14,7 +14,7 @@ sample into deployment evidence. Full-workload results apply the registered
 cost-weighted gate and direct below-gate workloads toward bounded expensive
 closing-tactic analysis rather than enabling broad certificate caching.
 
-Last updated: 2026-08-09
+Last updated: 2026-08-20
 
 ## Established
 
@@ -213,3 +213,26 @@ The authoritative aggregate is
 The hand audit is `reports/c0_certificate_prevalence_review.md`. The clean
 measurement commit was `90e074b`; the clean summary-code commit was `657648e`.
 No further broad replay or production cache implementation is authorized.
+
+## Held-out RL arithmetic-closure benchmark
+
+D-029 now defines the narrow successor workload without using cached timings.
+C0 independent telemetry admits 505 arithmetic theorem groups whose repeated
+exact final `nlinarith`, `linarith`, or `positivity` edges account
+conservatively for 49.539% of 8,223.101 baseline CPU-seconds. The evaluation
+input is already frozen: the corresponding 16,160 proposals in the completed
+C1 GRPO-default verifier stream. Its source manifest audits 308,960 registered
+proposals and the cohort contains 15,774 historically correct proposals.
+
+Combining the slower D025 transfer anchor with 2% overhead and 100% retention
+of that upper signal gives 45.7% less CPU or 1.84x CPU-equivalent throughput.
+Because exact-key compatibility, first captures, and distribution shift can
+only reduce retention, 1.84x is an upper-sensitivity hypothesis, not a
+conservative forecast or headline result.
+
+D-030 prohibits C1 Lean extraction, replay, paired execution, and cluster work
+until an existing-artifact-only analysis supports at least 1.5x under a
+conservative retention bound. That requires at least 36.690% of total CPU to be
+realized reuse, or 74.062% retention of the current upper signal. The exact next
+action is therefore compute-free compatibility and retention analysis, not a
+paired run.

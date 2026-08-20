@@ -41,3 +41,17 @@ There are 308,992 physically generated and verified records. The registered
 scientific sample retains the first 32 proposals for each of 9,655 theorems.
 One dataloader-padding group of 32 additional proposals is separately accounted
 for and excluded, producing 308,960 registered proposals.
+
+## Held-out C1 RL verifier stream
+
+The next SHRED evaluation source is the completed C1 GRPO-default verifier
+stream in the read-only sibling repository. `data/c1-rl.manifest.json`
+registers it without copying the 476 MiB JSONL into this repository. The source
+SHA-256 is
+`1db715569b8d1d8d7abf558bfd0c0c9b59779fd2ae7e959af0a31f0bb622d9f0`.
+It contains 9,655 theorem groups and 308,960 registered proposals, plus one
+separately accounted 32-proposal padding group.
+
+The RL arithmetic-closure evaluation retains all 32 C1 proposals for each of
+505 theorem names admitted solely from C0 independent telemetry. Its selection
+contract and digest are in `docs/RL_BENCHMARK.md`; source data remains read-only.

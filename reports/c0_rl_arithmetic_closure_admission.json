@@ -1,0 +1,87 @@
+{
+  "admission_rule": {
+    "allowed_final_syntax_kinds": [
+      "Mathlib.Tactic.Positivity.positivity",
+      "linarith",
+      "nlinarith"
+    ],
+    "expected_proposals_per_theorem": 32,
+    "minimum_baseline_cpu_seconds": 4.0,
+    "minimum_conservative_reusable_cpu_fraction": 0.4,
+    "minimum_repeated_final_edge_occurrences": 4,
+    "reusable_cost_rule": "sum(reached final-edge CPU) - max(reached final-edge CPU)"
+  },
+  "admitted": {
+    "baseline_cpu_seconds": 8223.100911342995,
+    "conservative_reusable_cpu_fraction": 0.49539028473600955,
+    "conservative_reusable_cpu_seconds": 4073.644301883146,
+    "next_rollout_proposals": 16160,
+    "theorem_names_sha256": "7a98690fd3ad2349d9f255b0fd27262265bb50b40fa133be172dddb910233628",
+    "theorems": 505
+  },
+  "analysis": "shred-rl-arithmetic-closure-admission-v1-summary",
+  "control": {
+    "next_rollout_proposals": 4096,
+    "seed": "shred-rl-arithmetic-closure-control-v1",
+    "theorem_names_sha256": "928f2feebbc51329673feffbf425515550225903e019c2e167833db7372f001b",
+    "theorems": 128
+  },
+  "evaluation_dataset": {
+    "admitted": {
+      "historical_correct": 15774,
+      "historical_correct_fraction": 0.9761138613861386,
+      "historical_proof_parse_failures": 4,
+      "historical_timeouts": 3,
+      "proposals": 16160,
+      "theorems": 505
+    },
+    "control": {
+      "historical_correct": 2814,
+      "historical_correct_fraction": 0.68701171875,
+      "historical_proof_parse_failures": 5,
+      "historical_timeouts": 1,
+      "proposals": 4096,
+      "theorems": 128
+    },
+    "evidence_label": "Observed",
+    "warning": "Historical source verdicts describe the frozen stream; paired ordinary Lean replay remains the evaluation authority."
+  },
+  "evidence_label": "Observed",
+  "inputs": {
+    "certificate_probe": {
+      "path": "reports/c0_certificate_probe.json",
+      "sha256": "4a77f798236c236f874aa4e237f77c2ead835ba6d31445380d6cdc85ced72fa1"
+    },
+    "evaluation_manifest": {
+      "path": "data/c1-rl.manifest.json",
+      "sha256": "a870877666dc121b44af10c604df35f551af871fb4307ba7cc482d1af0d36306"
+    },
+    "opportunity_manifest": {
+      "path": "reports/c0_opportunity_decomposition.json",
+      "sha256": "92ef7b7e2edf3a2e6452d549596ee1624f958e8331f9dc172f96e96614009e64"
+    },
+    "replay_artifacts_verified": true
+  },
+  "no_compute_theory_gate": {
+    "minimum_throughput_multiplier": 1.5,
+    "new_c1_lean_or_cluster_work_authorized": false,
+    "required_realized_reusable_cpu_fraction": 0.36689637054052143,
+    "required_retention_of_admission_signal": 0.7406208434952217,
+    "status": "not_yet_passed"
+  },
+  "projection": {
+    "conservative_application_acceleration": 27.051195461299475,
+    "evidence_label": "Hypothesis",
+    "interpretation": "upper_sensitivity_assuming_full_signal_retention",
+    "overhead_fraction": 0.02,
+    "projected_cpu_fraction": 0.5429227796697663,
+    "projected_cpu_reduction_fraction": 0.4570772203302337,
+    "projected_throughput_multiplier": 1.841882561288461
+  },
+  "source": {
+    "proposals": 308960,
+    "theorems": 9655
+  },
+  "status": "held-out-rollout-frozen-paired-evaluation-required",
+  "warning": "Admission uses independent C0 telemetry only. The projection is a hypothesis and cannot become a performance claim until the held-out C1 rollout passes paired correctness and end-to-end measurement."
+}

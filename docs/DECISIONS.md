@@ -771,3 +771,97 @@ Future work may target expensive tactic families or named shallow certificates,
 but must state a tail/family-specific claim and run a new gate. D030's enriched
 subset is explicitly incomplete by theorem 41132 and retains two disagreements;
 it is diagnostic only and cannot support a correctness or speed claim.
+
+## D-029 - Define a held-out RL arithmetic-closure benchmark
+
+Date: 2026-08-20
+
+Status: accepted before held-out evaluation
+
+Decision: define an RL deployment cohort using only unchanged independent
+execution and profiler data from the frozen C0 rollout. A theorem is admitted
+when all 32 proposals have process CPU, total independent verification costs at
+least four CPU-seconds, and at least four successful proposals repeat an exact
+final tactic edge whose Lean syntax kind is `nlinarith`, `linarith`, or
+`Mathlib.Tactic.Positivity.positivity`. For each repeated edge, its conservative
+reusable cost is the sum of its reached attributed CPU values minus the largest
+observed value. The theorem's total conservative reusable cost must be at least
+40% of all 32 proposals' unchanged full-verification CPU. No cached execution,
+correctness rate, or D030 saving participates in admission.
+
+This rule admits 505 C0 theorems. Their 16,160 proposals consumed 8,223.101
+independent CPU-seconds; the conservative repeated-final-edge signal is
+4,073.644 seconds, or 49.539%. These are observed admission characteristics
+from a reproducible calculation pending a clean committed rerun, not a cached
+speedup.
+
+The evaluation dataset, called the SHRED RL arithmetic-closure workload, is the
+already completed C1 GRPO-default verifier stream at repository commit
+`5ced4c3210381950d51048355fcbd95f50a6004a`. Its immutable source is
+`global_step_604.jsonl`, SHA-256
+`1db715569b8d1d8d7abf558bfd0c0c9b59779fd2ae7e959af0a31f0bb622d9f0`.
+The registered workload retains the first 32 C1 proposals in physical
+generation order for each of the 505 C0-admitted theorem statements, for
+exactly 16,160 proposals. Every correct, incorrect, unsupported, failed, and
+timed-out proposal remains in the evaluation. C0 determines admission only; no
+C0 proposal contributes an evaluation timing. The cohort was frozen without
+inspecting C1 certificate hits or cached timings.
+
+The companion control is the first 128 complete-CPU, non-admitted C0 theorems
+ranked by SHA-256 of
+`shred-rl-arithmetic-closure-control-v1\0<theorem_name>`. It contributes 4,096
+C1 proposals and is reported separately; it is not merged into the admitted
+workload's headline statistic.
+
+Reason: theorem proving RL repeatedly samples many complete candidates for the
+same training theorem and revisits curriculum theorems across policy updates.
+An earlier rollout can therefore act as a read-only admission window for the
+next verifier batch. This benchmark measures that actual use: decide from C0,
+then compare warm independent and certificate-assisted verification on the
+immutable C1 RL verifier stream. It does not claim that all Lean rollouts have
+this workload shape.
+
+Consequence: the cohort-calibrated 1.84x estimate assumes full retention of an
+upper-bound reuse signal and remains a hypothesis. D-030 must authorize any
+execution before this workload is replayed. If execution is eventually
+authorized, a headline result additionally requires one attributable verdict
+per proposal, zero acceptance disagreements, explicit miss/fallback/timeout/
+error accounting, and an identical-input paired benchmark against warm
+independent execution. A deterministically selected non-admitted control
+stratum must be reported alongside the admitted workload.
+
+## D-030 - Require a compute-free retention gate before C1 execution
+
+Date: 2026-08-20
+
+Status: accepted before any C1 SHRED execution
+
+Decision: do not launch Lean-native extraction, REPL replay, paired baseline/
+cache execution, Slurm work, or any other new C1 experiment for the RL
+arithmetic-closure workload. First use only already-existing C0 and D030
+artifacts to estimate how much of D-029's conservative repeated-final-edge CPU
+signal survives automatic certificate key compatibility, first-capture cost,
+misses, rejected applications, fallbacks, and observed overhead.
+
+The existing 49.539% signal is an upper bound on reusable CPU, not an expected
+realized fraction. With the slower measured 27.051x transfer ratio and 2% total
+overhead, 1.5x end-to-end throughput requires 36.690% of total baseline CPU to
+be realized reusable work. The theory gate therefore requires a conservative
+retention bound of at least 74.062% of the D-029 signal. The bound must be
+CPU-weighted, must not substitute tactic-head or textual similarity for an
+executable key match, and must account for the first generation/capture in each
+batch. Point estimates or selected positive examples cannot pass the gate.
+
+Reason: the previously quoted 1.84x sensitivity point uses a conservative
+application ratio but effectively assumes 100% retention of the admission
+upper bound. Existing general-cache evidence shows that frequent hits can still
+produce little end-to-end saving. Spending substantial verification compute is
+unjustified until existing evidence supports a material lower bound rather than
+an attractive ceiling.
+
+Consequence: 1.84x is not headline wording and no C1 run is currently
+authorized. If the compute-free lower bound is below 1.5x or cannot be
+established, stop this cohort or define a smaller pre-registered tier with a
+stronger prior-iteration signal; do not run C1 merely to resolve curiosity. If
+the theory gate passes, record a new decision with the exact estimated compute
+cost and expected value before allocating resources.

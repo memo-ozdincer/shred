@@ -1,0 +1,104 @@
+{
+  "analysis": "well-applicable-workload-projection-v1",
+  "claim_boundary": "Sensitivity calculation, not a measured corpus result or deployment claim. It assumes the stated share of independent-verification CPU is spent in repeated, eligible expensive closing tactics.",
+  "evidence_label": "Hypothesis",
+  "inputs": {
+    "prevalence": {
+      "path": "reports/c0_certificate_prevalence_d030.json",
+      "sha256": "efe23e5c17b4ab60cdc972f08bcf2cbf42a36c0deb9b3c26191c679c6a32a2a1"
+    },
+    "probe": {
+      "path": "reports/c0_certificate_probe.json",
+      "sha256": "4a77f798236c236f874aa4e237f77c2ead835ba6d31445380d6cdc85ced72fa1"
+    }
+  },
+  "measured_anchors": {
+    "enriched_diagnostic": {
+      "cpu_reduction_fraction": 0.19896628115780532,
+      "proposals": 992,
+      "throughput_multiplier_from_cpu": 1.2483868986756126,
+      "verdict_agreements": 990,
+      "verdict_disagreement_count": 2
+    },
+    "representative": {
+      "automatic_hits": 921,
+      "cpu_reduction_fraction": 0.03240514707223529,
+      "proposals": 4096,
+      "throughput_multiplier_from_cpu": 1.033490408691389,
+      "verdict_agreements": 4096
+    },
+    "successful_transfer_acceleration_range": [
+      27.051195461299475,
+      325.18461741773496
+    ]
+  },
+  "model": {
+    "A": "measured generation-plus-check/application-plus-check acceleration",
+    "conservative_application_acceleration": 27.051195461299475,
+    "f": "share of end-to-end baseline CPU in reusable expensive closers",
+    "formula": "cpu_fraction = 1 - f + f / A + o; speedup = 1 / cpu_fraction",
+    "o": "assumed cache and orchestration overhead as share of baseline CPU",
+    "overhead_fraction": 0.02,
+    "upper_sensitivity_application_acceleration": 325.18461741773496
+  },
+  "required_reusable_cpu_fraction_at_conservative_acceleration": {
+    "1.5": 0.36689637054052143,
+    "2.0": 0.5399606962671825,
+    "3.0": 0.7130250219938435,
+    "4.0": 0.799557184857174
+  },
+  "scenarios": [
+    {
+      "conservative": {
+        "projected_cpu_fraction": 0.7792417357435334,
+        "projected_cpu_reduction_fraction": 0.2207582642564666,
+        "projected_throughput_multiplier": 1.2832988200328161
+      },
+      "reusable_expensive_closer_cpu_fraction": 0.25,
+      "upper_sensitivity": {
+        "projected_cpu_fraction": 0.7707687940530067,
+        "projected_cpu_reduction_fraction": 0.2292312059469933,
+        "projected_throughput_multiplier": 1.297405924728225
+      }
+    },
+    {
+      "conservative": {
+        "projected_cpu_fraction": 0.6347867771896535,
+        "projected_cpu_reduction_fraction": 0.3652132228103465,
+        "projected_throughput_multiplier": 1.5753321208536024
+      },
+      "reusable_expensive_closer_cpu_fraction": 0.4,
+      "upper_sensitivity": {
+        "projected_cpu_fraction": 0.6212300704848106,
+        "projected_cpu_reduction_fraction": 0.3787699295151894,
+        "projected_throughput_multiplier": 1.6097095866907984
+      }
+    },
+    {
+      "conservative": {
+        "projected_cpu_fraction": 0.4421801657844802,
+        "projected_cpu_reduction_fraction": 0.5578198342155198,
+        "projected_throughput_multiplier": 2.261521609016273
+      },
+      "reusable_expensive_closer_cpu_fraction": 0.6,
+      "upper_sensitivity": {
+        "projected_cpu_fraction": 0.421845105727216,
+        "projected_cpu_reduction_fraction": 0.578154894272784,
+        "projected_throughput_multiplier": 2.3705383478992994
+      }
+    },
+    {
+      "conservative": {
+        "projected_cpu_fraction": 0.24957355437930684,
+        "projected_cpu_reduction_fraction": 0.7504264456206932,
+        "projected_throughput_multiplier": 4.006834788593747
+      },
+      "reusable_expensive_closer_cpu_fraction": 0.8,
+      "upper_sensitivity": {
+        "projected_cpu_fraction": 0.22246014096962125,
+        "projected_cpu_reduction_fraction": 0.7775398590303788,
+        "projected_throughput_multiplier": 4.495187298009301
+      }
+    }
+  ]
+}

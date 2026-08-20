@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "name": "c1-grpo-default-20260820-held-out",
+  "source_root_default": "../../restriction",
+  "source_repository_commit": "5ced4c3210381950d51048355fcbd95f50a6004a",
+  "samples_per_theorem": 32,
+  "selection_rule": "retain the first 32 proposals per theorem in physical generation order",
+  "expected": {
+    "raw_proposals": 308992,
+    "registered_proposals": 308960,
+    "registered_correct": 215482,
+    "theorems": 9655,
+    "padding_proposals": 32,
+    "padding_by_theorem": {
+      "lean_workbook_plus_52332": 32
+    }
+  },
+  "partitions": [
+    {
+      "path": "runs/c1-grpo-default-full-20260814-seed42-5ced4c3/artifacts/proofs/global_step_604.jsonl",
+      "source_path": "runs/c1-grpo-default-full-20260814-seed42-5ced4c3/artifacts/proofs/global_step_604.jsonl",
+      "sha256": "1db715569b8d1d8d7abf558bfd0c0c9b59779fd2ae7e959af0a31f0bb622d9f0",
+      "content_sha256": "1db715569b8d1d8d7abf558bfd0c0c9b59779fd2ae7e959af0a31f0bb622d9f0",
+      "raw_proposals": 308992
+    }
+  ]
+}

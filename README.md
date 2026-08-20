@@ -230,6 +230,11 @@ both repository hashes and original uncompressed-source hashes.
   - automatic certificate prevalence and paired CPU measurements
 - [`reports/c0_certificate_prevalence_review.md`](reports/c0_certificate_prevalence_review.md)
   - hand audit of representative and expensive-tail cases
+- [`docs/RL_BENCHMARK.md`](docs/RL_BENCHMARK.md)
+  - exact held-out GRPO workload, prior-iteration admission rule, control, and
+    no-compute feasibility gate
+- [`reports/c0_rl_arithmetic_closure_admission.json`](reports/c0_rl_arithmetic_closure_admission.json)
+  - machine-readable cohort characteristics and upper-sensitivity projection
 - [`docs/DESIGN.md`](docs/DESIGN.md) - execution and correctness model
 - [`docs/VERIFICATION.md`](docs/VERIFICATION.md) - test and evidence contract
 - [`docs/DATA.md`](docs/DATA.md) - immutable corpus and provenance

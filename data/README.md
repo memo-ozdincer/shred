@@ -18,6 +18,11 @@ shred init --input /path/to/rollouts.jsonl.gz \
   --samples-per-theorem 32 --output workload.manifest.json
 ```
 
+`c1-rl.manifest.json` registers the read-only, held-out C1 GRPO verifier stream
+in the sibling RL repository. It does not copy or rewrite the 476 MiB source
+JSONL. See `../docs/RL_BENCHMARK.md` for the exact 505-theorem evaluation
+cohort and its prior-iteration admission rule.
+
 Each record must contain `theorem_name`, `proof`, and `correct`. The initializer
 stores paths, compressed and logical-content SHA-256 values, proposal counts,
 and explicit padding accounting; it never modifies the source files.
