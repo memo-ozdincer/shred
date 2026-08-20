@@ -59,3 +59,17 @@ PYTHONPATH=src python -m lean_prefix.retention_gate
 The report records 13.892% paired CPU saving (1.161x) on 864 overlap proposals,
 with 864/864 verdict agreement and a 7.759%--20.258% theorem-bootstrap interval.
 It decisively fails the 36.690% reduction required before any C1 compute.
+
+The external repair corpus structural screen is checked in as
+`external_repair_structural_screen.json`; its interpretation is
+`external_repair_structural_screen_review.md`. It performs no Lean work and is
+reproduced from the immutable inputs in `data/external-repair.manifest.json`:
+
+```bash
+PYTHONPATH=src python -m lean_prefix.external_repair \
+  --output reports/external_repair_structural_screen.json
+```
+
+Exact byte statistics are measured source properties. The included
+source-position speedups are explicitly hypothesis-only and do not authorize a
+Lean run.

@@ -29,3 +29,7 @@ and explicit padding accounting; it never modifies the source files.
 
 No sibling checkout or extraction is required. `--source-root` remains
 available for auditing a relocated copy.
+
+`external-repair.manifest.json` pins the compute-free APRIL and LeanPolish
+structural screen. Raw archives and converted Goedel proof sources live under
+ignored `external-data/`; only aggregate results and checksums are committed.

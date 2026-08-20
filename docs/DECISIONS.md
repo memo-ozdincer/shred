@@ -891,3 +891,37 @@ paired run, or Slurm job should be performed for this mechanism. A future
 proposal may proceed only if it changes the mechanism materially and first
 supplies a new existing-evidence feasibility argument; selecting a still
 narrower positive tail from the same evidence does not qualify.
+
+## D-032 - Stop external repair corpora at the structural gate
+
+Date: 2026-08-20
+
+Status: accepted after the compute-free APRIL and LeanPolish screen
+
+Decision: do not invoke Lean, generate repair proposals, reconstruct rejected
+files for replay, or allocate cluster resources for APRIL or LeanPolish. Keep
+the pinned raw inputs outside Git and preserve the aggregate structural screen
+as a reproducible negative feasibility result. A later proposal must supply
+already-existing Lean-native boundaries and cost evidence; it may not proceed
+by selecting a positive source-position tail from this screen.
+
+Reason: APRIL contains 260,103 complete erroneous/correct proof pairs and large
+`src_hash` groups, but the groups are different corrupted inputs rather than
+alternative repairs to one failure. Their median earliest post-`by` source
+prefix is zero, only 445 of 38,177 groups retain at least half of the proof-body
+source, and the release does not pin Lean or Mathlib. LeanPolish has 11,675
+consistent multi-candidate edit identifiers and 4,722 local-edit identifiers.
+The pinned Goedel complete proofs exactly anchor 1,243 local groups with a median
+batch of four. Although the median raw proof-source prefix is 80.92%, removing
+comments and whitespace reduces it to 36.14%. Substituting that source position
+for reusable verifier CPU with 2% overhead gives only a hypothesis median of
+1.260x; 393 groups reach 1.5x and 172 reach 2x. Only 28 groups combine at least
+eight candidates with an 80% non-trivia source prefix. Rejected siblings were
+not applied as complete files, and neither corpus provides per-tactic cost.
+
+Consequence: there is no defensible headline speedup and no compute is
+authorized. The result narrows the promising workload to authentic
+repair/self-correction rollout logs that retain complete failed revisions,
+ordinary Lean verdicts, exact environments, and per-tactic telemetry. Such logs
+may be screened read-only when available; new proposal generation or Lean replay
+requires a separate gate.

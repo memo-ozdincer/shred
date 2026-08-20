@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "analysis": "external-repair-structural-screen-v1",
+  "data_policy": "Raw external data remains under ignored external-data/ and is never copied into Git.",
+  "sources": {
+    "april": {
+      "dataset": "uw-math-ai/APRIL",
+      "revision": "4e3075279b4aedfb28fe435d08a8caf76272586d",
+      "artifact": "data_by_split.zip",
+      "bytes": 285292255,
+      "sha256": "6acc8b668d04ad52626b87f0ede6ad4258345a3d57ac01125a0dcf79dc3b39c8",
+      "url": "https://huggingface.co/datasets/uw-math-ai/APRIL/resolve/4e3075279b4aedfb28fe435d08a8caf76272586d/data_by_split.zip"
+    },
+    "leanpolish": {
+      "dataset": "leanpolish-anon/lean-proof-compression",
+      "revision": "e161aae6770178bf96fd6dd0eecc4715106ec7fd",
+      "publisher_manifest": "shards/MANIFEST.json",
+      "publisher_manifest_sha256": "d4e0e1ed594a70ae0b06bd2729cdf6c415761b16208f9b8a43838ae068d5ec9c",
+      "url": "https://huggingface.co/datasets/leanpolish-anon/lean-proof-compression/resolve/e161aae6770178bf96fd6dd0eecc4715106ec7fd/shards/MANIFEST.json",
+      "note": "The publisher manifest pins every canonical gzip shard by logical JSONL SHA-256, byte count, and row count."
+    },
+    "goedel_complete_proofs": {
+      "dataset": "Goedel-LM/Lean-workbook-proofs",
+      "revision": "b731852af8d8ab11498fda27bce9020738c01c59",
+      "artifact": "data/train-00000-of-00001.parquet",
+      "bytes": 16165753,
+      "sha256": "24fcb50eecc2ccbcc52a58c6412c6d10edbeaa9483a97d30e207fb20ef6e2677",
+      "url": "https://huggingface.co/datasets/Goedel-LM/Lean-workbook-proofs/resolve/b731852af8d8ab11498fda27bce9020738c01c59/data/train-00000-of-00001.parquet",
+      "derived_jsonl_sha256": "3210e41c4ed2a9d82f3f86f1ad746a9aaef6af7880c5834479fb8f07e7dd69f6",
+      "conversion": "COPY (SELECT problem_id, full_proof FROM read_parquet('<parquet>')) TO '<jsonl>' (FORMAT JSON, ARRAY false)"
+    }
+  },
+  "reproduction": "PYTHONPATH=src python -m lean_prefix.external_repair --output reports/external_repair_structural_screen.json",
+  "lean_invoked": false
+}

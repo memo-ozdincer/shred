@@ -1,0 +1,1283 @@
+{
+  "analysis": "external-repair-structural-screen-v1",
+  "claim_boundary": "Read-only structural analysis. Exact UTF-8 source prefixes and source-position sensitivity are not Lean-native executable prefix matches, verifier-cost fractions, measured speedups, or benchmark results. No Lean process was run.",
+  "datasets": {
+    "april": {
+      "archive": {
+        "bytes": 285292255,
+        "members": [
+          {
+            "path": "gpfs/projects/mathai/lean_error_correction/final_data/data_by_split/test/lme_test.jsonl",
+            "rows": 200,
+            "uncompressed_bytes": 714691,
+            "zip_crc32": "80f919fb"
+          },
+          {
+            "path": "gpfs/projects/mathai/lean_error_correction/final_data/data_by_split/test/mlme_test.jsonl",
+            "rows": 144,
+            "uncompressed_bytes": 494385,
+            "zip_crc32": "dcafdfd6"
+          },
+          {
+            "path": "gpfs/projects/mathai/lean_error_correction/final_data/data_by_split/test/thme_test.jsonl",
+            "rows": 1093,
+            "uncompressed_bytes": 9433845,
+            "zip_crc32": "5f5f411b"
+          },
+          {
+            "path": "gpfs/projects/mathai/lean_error_correction/final_data/data_by_split/test/tme_test.jsonl",
+            "rows": 398,
+            "uncompressed_bytes": 1797124,
+            "zip_crc32": "6c1de899"
+          },
+          {
+            "path": "gpfs/projects/mathai/lean_error_correction/final_data/data_by_split/train/lme_train.jsonl",
+            "rows": 17098,
+            "uncompressed_bytes": 59692374,
+            "zip_crc32": "03edbb66"
+          },
+          {
+            "path": "gpfs/projects/mathai/lean_error_correction/final_data/data_by_split/train/mlme_train.jsonl",
+            "rows": 23879,
+            "uncompressed_bytes": 84869377,
+            "zip_crc32": "b50e69d1"
+          },
+          {
+            "path": "gpfs/projects/mathai/lean_error_correction/final_data/data_by_split/train/thme_train.jsonl",
+            "rows": 148361,
+            "uncompressed_bytes": 1386677133,
+            "zip_crc32": "c1b4e6b3"
+          },
+          {
+            "path": "gpfs/projects/mathai/lean_error_correction/final_data/data_by_split/train/tme_train.jsonl",
+            "rows": 59667,
+            "uncompressed_bytes": 277550990,
+            "zip_crc32": "922af2a3"
+          },
+          {
+            "path": "gpfs/projects/mathai/lean_error_correction/final_data/data_by_split/val/lme_val.jsonl",
+            "rows": 1021,
+            "uncompressed_bytes": 3658965,
+            "zip_crc32": "dd27649f"
+          },
+          {
+            "path": "gpfs/projects/mathai/lean_error_correction/final_data/data_by_split/val/mlme_val.jsonl",
+            "rows": 763,
+            "uncompressed_bytes": 2796793,
+            "zip_crc32": "5f6bd312"
+          },
+          {
+            "path": "gpfs/projects/mathai/lean_error_correction/final_data/data_by_split/val/thme_val.jsonl",
+            "rows": 5415,
+            "uncompressed_bytes": 50944458,
+            "zip_crc32": "13240e1e"
+          },
+          {
+            "path": "gpfs/projects/mathai/lean_error_correction/final_data/data_by_split/val/tme_val.jsonl",
+            "rows": 2064,
+            "uncompressed_bytes": 9550915,
+            "zip_crc32": "8bf29adf"
+          }
+        ],
+        "path": "external-data/april-4e307527/data_by_split.zip",
+        "sha256": "6acc8b668d04ad52626b87f0ede6ad4258345a3d57ac01125a0dcf79dc3b39c8"
+      },
+      "dataset": "uw-math-ai/APRIL",
+      "pairwise_correct_vs_incorrect": {
+        "by_error_type": {
+          "lme": {
+            "exact_source_prefix_fraction": {
+              "at_least_0_50": 12453,
+              "at_least_0_80": 7401,
+              "at_least_0_90": 3615,
+              "quantiles": {
+                "maximum": 1.0,
+                "median": 0.733502538071066,
+                "minimum": 0.0,
+                "p10": 0.0,
+                "p90": 0.9371011850501367,
+                "p95": 0.9610963748894783
+              },
+              "total": 18319
+            },
+            "post_by_marker_source_prefix_fraction": {
+              "at_least_0_50": 2555,
+              "at_least_0_80": 604,
+              "at_least_0_90": 256,
+              "quantiles": {
+                "maximum": 1.0,
+                "median": 0.04929577464788732,
+                "minimum": 0.0,
+                "p10": 0.0,
+                "p90": 0.5902439024390244,
+                "p95": 0.7401574803149606
+              },
+              "total": 18315
+            },
+            "rows": 18319
+          },
+          "mlme": {
+            "exact_source_prefix_fraction": {
+              "at_least_0_50": 3377,
+              "at_least_0_80": 764,
+              "at_least_0_90": 205,
+              "quantiles": {
+                "maximum": 0.9983552631578947,
+                "median": 0.0,
+                "minimum": 0.0,
+                "p10": 0.0,
+                "p90": 0.6115942028985507,
+                "p95": 0.7415730337078652
+              },
+              "total": 24786
+            },
+            "post_by_marker_source_prefix_fraction": {
+              "at_least_0_50": 599,
+              "at_least_0_80": 109,
+              "at_least_0_90": 56,
+              "quantiles": {
+                "maximum": 0.9953488372093023,
+                "median": 0.0,
+                "minimum": 0.0,
+                "p10": 0.0,
+                "p90": 0.05319148936170213,
+                "p95": 0.28027681660899656
+              },
+              "total": 24782
+            },
+            "rows": 24786
+          },
+          "thme": {
+            "exact_source_prefix_fraction": {
+              "at_least_0_50": 106894,
+              "at_least_0_80": 53406,
+              "at_least_0_90": 27772,
+              "quantiles": {
+                "maximum": 0.9990438247011952,
+                "median": 0.6875,
+                "minimum": 0.0031263286896931197,
+                "p10": 0.2263208762886598,
+                "p90": 0.9402173913043478,
+                "p95": 0.9647058823529412
+              },
+              "total": 154869
+            },
+            "post_by_marker_source_prefix_fraction": {
+              "at_least_0_50": 30809,
+              "at_least_0_80": 8680,
+              "at_least_0_90": 3007,
+              "quantiles": {
+                "maximum": 0.9943314438146049,
+                "median": 0.0,
+                "minimum": 0.0,
+                "p10": 0.0,
+                "p90": 0.7016574585635359,
+                "p95": 0.8142857142857143
+              },
+              "total": 154857
+            },
+            "rows": 154869
+          },
+          "tme": {
+            "exact_source_prefix_fraction": {
+              "at_least_0_50": 49679,
+              "at_least_0_80": 23862,
+              "at_least_0_90": 12038,
+              "quantiles": {
+                "maximum": 0.999410446881264,
+                "median": 0.732,
+                "minimum": 0.013422818791946308,
+                "p10": 0.35525746430116834,
+                "p90": 0.9438202247191011,
+                "p95": 0.9683210137275607
+              },
+              "total": 62129
+            },
+            "post_by_marker_source_prefix_fraction": {
+              "at_least_0_50": 7233,
+              "at_least_0_80": 2003,
+              "at_least_0_90": 825,
+              "quantiles": {
+                "maximum": 0.9967643700038066,
+                "median": 0.047619047619047616,
+                "minimum": 0.0,
+                "p10": 0.0,
+                "p90": 0.5471698113207547,
+                "p95": 0.7232142857142857
+              },
+              "total": 62117
+            },
+            "rows": 62129
+          }
+        },
+        "exact_source_prefix_fraction": {
+          "at_least_0_50": 172403,
+          "at_least_0_80": 85433,
+          "at_least_0_90": 43630,
+          "quantiles": {
+            "maximum": 1.0,
+            "median": 0.6701846965699209,
+            "minimum": 0.0,
+            "p10": 0.09271884374147804,
+            "p90": 0.9358831931439454,
+            "p95": 0.9629629629629629
+          },
+          "total": 260103
+        },
+        "post_by_marker_source_prefix_fraction": {
+          "at_least_0_50": 41196,
+          "at_least_0_80": 11396,
+          "at_least_0_90": 4144,
+          "quantiles": {
+            "maximum": 1.0,
+            "median": 0.02158273381294964,
+            "minimum": 0.0,
+            "p10": 0.0,
+            "p90": 0.6438356164383562,
+            "p95": 0.7807276302851525
+          },
+          "total": 260071
+        }
+      },
+      "records": {
+        "malformed_rows": 0,
+        "proof_marker_heuristic_eligible_rows": 260071,
+        "rows": 260103,
+        "sources": {
+          "herald": 87230,
+          "numina_auto": 20618,
+          "numina_human": 108504,
+          "workbook": 43751
+        },
+        "splits": {
+          "test": 1835,
+          "train": 249005,
+          "val": 9263
+        }
+      },
+      "replay_readiness": {
+        "complete_correct_and_incorrect_source_embedded": true,
+        "historical_incorrect_error_present": true,
+        "lean_toolchain_revision_published_per_row_or_corpus": false,
+        "mathlib_revision_published_per_row_or_corpus": false,
+        "ordinary_lean_replay_required_for_any_benchmark_claim": true
+      },
+      "revision": "4e3075279b4aedfb28fe435d08a8caf76272586d",
+      "src_hash_groups": {
+        "candidate_count_including_one_correct_proof": {
+          "groups": 38186,
+          "groups_at_least_16": 3231,
+          "groups_at_least_3": 34764,
+          "groups_at_least_32": 891,
+          "groups_at_least_8": 11913,
+          "histogram_1_to_32_plus": {
+            "10": 1431,
+            "11": 989,
+            "12": 815,
+            "13": 553,
+            "14": 513,
+            "15": 383,
+            "16": 331,
+            "17": 266,
+            "18": 260,
+            "19": 203,
+            "2": 3422,
+            "20": 187,
+            "21": 177,
+            "22": 139,
+            "23": 130,
+            "24": 116,
+            "25": 99,
+            "26": 99,
+            "27": 76,
+            "28": 89,
+            "29": 72,
+            "3": 4996,
+            "30": 49,
+            "31": 47,
+            "32_plus": 891,
+            "4": 5521,
+            "5": 5030,
+            "6": 4268,
+            "7": 3036,
+            "8": 2351,
+            "9": 1647
+          },
+          "mean": 7.808149583617032,
+          "quantiles": {
+            "maximum": 490.0,
+            "median": 6.0,
+            "minimum": 2.0,
+            "p10": 3.0,
+            "p90": 14.0,
+            "p95": 21.0
+          }
+        },
+        "earliest_exact_source_prefix_fraction": {
+          "at_least_0_50": 10960,
+          "at_least_0_80": 4705,
+          "at_least_0_90": 2114,
+          "quantiles": {
+            "maximum": 0.9960323886639676,
+            "median": 0.0,
+            "minimum": 0.0,
+            "p10": 0.0,
+            "p90": 0.8352601156069365,
+            "p95": 0.9071274298056156
+          },
+          "total": 38186
+        },
+        "earliest_post_by_marker_source_prefix_fraction": {
+          "at_least_0_50": 445,
+          "at_least_0_80": 96,
+          "at_least_0_90": 34,
+          "quantiles": {
+            "maximum": 0.9775910364145658,
+            "median": 0.0,
+            "minimum": 0.0,
+            "p10": 0.0,
+            "p90": 0.08031088082901554,
+            "p95": 0.1836734693877551
+          },
+          "total": 38177
+        },
+        "groups": 38186,
+        "groups_crossing_splits": 0,
+        "groups_with_multiple_correct_proof_digests": 40,
+        "source_position_sensitivity_with_2pct_overhead": {
+          "evidence_label": "Hypothesis",
+          "groups_at_least_1_5x": 11736,
+          "groups_at_least_2x": 5937,
+          "quantiles": {
+            "maximum": 8.267255735655894,
+            "median": 0.9803921568627452,
+            "minimum": 0.9803921568627451,
+            "p10": 0.9803921568627451,
+            "p90": 2.349290780141844,
+            "p95": 2.751817237798546
+          }
+        }
+      }
+    },
+    "leanpolish": {
+      "attempt_id_groups": {
+        "candidate_count": {
+          "groups": 21736,
+          "groups_at_least_16": 168,
+          "groups_at_least_3": 10091,
+          "groups_at_least_32": 0,
+          "groups_at_least_8": 4295,
+          "histogram_1_to_32_plus": {
+            "1": 10047,
+            "10": 297,
+            "11": 18,
+            "12": 69,
+            "13": 190,
+            "14": 1507,
+            "15": 130,
+            "16": 168,
+            "2": 1598,
+            "3": 75,
+            "32_plus": 0,
+            "4": 3393,
+            "5": 1818,
+            "6": 497,
+            "7": 13,
+            "8": 1388,
+            "9": 528
+          },
+          "mean": 4.014584100110416,
+          "quantiles": {
+            "maximum": 16.0,
+            "median": 2.0,
+            "minimum": 1.0,
+            "p10": 1.0,
+            "p90": 10.0,
+            "p95": 14.0
+          }
+        },
+        "consistent_local_multi_candidate_cohort": {
+          "candidate_count": {
+            "groups": 4722,
+            "groups_at_least_16": 79,
+            "groups_at_least_3": 3865,
+            "groups_at_least_32": 0,
+            "groups_at_least_8": 1612,
+            "histogram_1_to_32_plus": {
+              "10": 179,
+              "11": 13,
+              "12": 27,
+              "13": 64,
+              "14": 575,
+              "15": 35,
+              "16": 79,
+              "2": 857,
+              "3": 27,
+              "32_plus": 0,
+              "4": 1128,
+              "5": 1009,
+              "6": 76,
+              "7": 13,
+              "8": 437,
+              "9": 203
+            },
+            "mean": 6.385006353240152,
+            "quantiles": {
+              "maximum": 16.0,
+              "median": 5.0,
+              "minimum": 2.0,
+              "p10": 2.0,
+              "p90": 14.0,
+              "p95": 14.0
+            }
+          },
+          "corpora": {
+            "goedel": 1293,
+            "mathlib": 2103,
+            "minif2f": 528,
+            "putnam2025_per_file": 5,
+            "putnam2025_pool": 1,
+            "putnam_bench": 762,
+            "putnam_verified": 30
+          },
+          "groups": 4722,
+          "known_exact_file_source_prefix_fraction": {
+            "at_least_0_50": 3158,
+            "at_least_0_80": 1721,
+            "at_least_0_90": 944,
+            "quantiles": {
+              "maximum": 0.9995246771765824,
+              "median": 0.6883049974240082,
+              "minimum": 0.024737579922727116,
+              "p10": 0.24637177370296343,
+              "p90": 0.9548144163528779,
+              "p95": 0.9799703264094956
+            },
+            "total": 4722
+          },
+          "source_position_sensitivity_with_2pct_overhead": {
+            "evidence_label": "Hypothesis",
+            "groups_at_least_1_5x": 3275,
+            "groups_at_least_2x": 1936,
+            "quantiles": {
+              "maximum": 11.425848433203146,
+              "median": 1.7869771401244472,
+              "minimum": 1.002268958448349,
+              "p10": 1.205912999710524,
+              "p90": 4.347268530392407,
+              "p95": 5.638208284877892
+            }
+          }
+        },
+        "consistent_multi_candidate_cohort": {
+          "candidate_count": {
+            "groups": 11675,
+            "groups_at_least_16": 166,
+            "groups_at_least_3": 10079,
+            "groups_at_least_32": 0,
+            "groups_at_least_8": 4291,
+            "histogram_1_to_32_plus": {
+              "10": 297,
+              "11": 18,
+              "12": 69,
+              "13": 190,
+              "14": 1507,
+              "15": 130,
+              "16": 166,
+              "2": 1596,
+              "3": 73,
+              "32_plus": 0,
+              "4": 3390,
+              "5": 1815,
+              "6": 497,
+              "7": 13,
+              "8": 1388,
+              "9": 526
+            },
+            "mean": 6.606167023554604,
+            "quantiles": {
+              "maximum": 16.0,
+              "median": 5.0,
+              "minimum": 2.0,
+              "p10": 2.0,
+              "p90": 14.0,
+              "p95": 14.0
+            }
+          },
+          "corpora": {
+            "goedel": 5929,
+            "mathlib": 4090,
+            "minif2f": 654,
+            "putnam2025_per_file": 13,
+            "putnam2025_pool": 2,
+            "putnam_bench": 948,
+            "putnam_verified": 39
+          },
+          "groups": 11675,
+          "known_exact_file_source_prefix_fraction": {
+            "at_least_0_50": 5106,
+            "at_least_0_80": 2745,
+            "at_least_0_90": 1439,
+            "quantiles": {
+              "maximum": 0.9995246771765824,
+              "median": 0.4318344039971449,
+              "minimum": 0.024737579922727116,
+              "p10": 0.20637898686679174,
+              "p90": 0.916734693877551,
+              "p95": 0.9608076009501187
+            },
+            "total": 11675
+          },
+          "source_position_sensitivity_with_2pct_overhead": {
+            "evidence_label": "Hypothesis",
+            "groups_at_least_1_5x": 5726,
+            "groups_at_least_2x": 3408,
+            "quantiles": {
+              "maximum": 11.425848433203146,
+              "median": 1.4875395060669443,
+              "minimum": 0.999559621385318,
+              "p10": 1.14435611354212,
+              "p90": 3.527759418374091,
+              "p95": 4.562622752681674
+            }
+          }
+        },
+        "goedel_complete_source_anchored_local_multi_candidate_cohort": {
+          "anchored_groups": 1243,
+          "candidate_count": {
+            "groups": 1243,
+            "groups_at_least_16": 23,
+            "groups_at_least_3": 678,
+            "groups_at_least_32": 0,
+            "groups_at_least_8": 303,
+            "histogram_1_to_32_plus": {
+              "10": 22,
+              "12": 3,
+              "13": 13,
+              "14": 33,
+              "16": 23,
+              "2": 565,
+              "32_plus": 0,
+              "4": 208,
+              "5": 127,
+              "6": 32,
+              "7": 8,
+              "8": 138,
+              "9": 71
+            },
+            "mean": 4.700724054706356,
+            "quantiles": {
+              "maximum": 16.0,
+              "median": 4.0,
+              "minimum": 2.0,
+              "p10": 2.0,
+              "p90": 9.0,
+              "p95": 13.0
+            }
+          },
+          "comment_stripped_nonwhitespace_source_prefix_fraction": {
+            "at_least_0_50": 439,
+            "at_least_0_80": 140,
+            "at_least_0_90": 50,
+            "quantiles": {
+              "maximum": 0.9834710743801653,
+              "median": 0.3614457831325301,
+              "minimum": 0.0,
+              "p10": 0.058333333333333334,
+              "p90": 0.8163265306122449,
+              "p95": 0.8857142857142857
+            },
+            "total": 1243
+          },
+          "exploratory_nontrivia_cross_counts": {
+            "candidates_at_least_16": {
+              "prefix_at_least_0.5": 5,
+              "prefix_at_least_0.8": 0,
+              "prefix_at_least_0.9": 0
+            },
+            "candidates_at_least_2": {
+              "prefix_at_least_0.5": 439,
+              "prefix_at_least_0.8": 140,
+              "prefix_at_least_0.9": 50
+            },
+            "candidates_at_least_4": {
+              "prefix_at_least_0.5": 245,
+              "prefix_at_least_0.8": 71,
+              "prefix_at_least_0.9": 24
+            },
+            "candidates_at_least_8": {
+              "prefix_at_least_0.5": 123,
+              "prefix_at_least_0.8": 28,
+              "prefix_at_least_0.9": 8
+            }
+          },
+          "failures": {
+            "missing_source": 19,
+            "source_size_mismatch": 31
+          },
+          "known_exact_proof_body_source_prefix_fraction": {
+            "at_least_0_50": 1082,
+            "at_least_0_80": 642,
+            "at_least_0_90": 329,
+            "quantiles": {
+              "maximum": 0.9967126890203813,
+              "median": 0.8091934084995663,
+              "minimum": 0.0009049773755656109,
+              "p10": 0.4289732770745429,
+              "p90": 0.9711664482306684,
+              "p95": 0.984304932735426
+            },
+            "total": 1243
+          },
+          "nontrivia_source_position_sensitivity_with_2pct_overhead": {
+            "evidence_label": "Hypothesis",
+            "groups_at_least_1_5x": 393,
+            "groups_at_least_2x": 172,
+            "quantiles": {
+              "maximum": 6.198540601709134,
+              "median": 1.260338716029933,
+              "minimum": 0.9803921568627451,
+              "p10": 1.015510262564029,
+              "p90": 2.2581544466127683,
+              "p95": 2.938916634652324
+            }
+          },
+          "proof_source_position_sensitivity_with_2pct_overhead": {
+            "evidence_label": "Hypothesis",
+            "groups_at_least_1_5x": 976,
+            "groups_at_least_2x": 520,
+            "quantiles": {
+              "maximum": 9.053722840487545,
+              "median": 1.805351498152353,
+              "minimum": 0.981153854691558,
+              "p10": 1.2893482549714546,
+              "p90": 4.341597109754578,
+              "p95": 5.675646895964221
+            }
+          },
+          "source": {
+            "converted_jsonl_path": "external-data/goedel-proofs-b731852a/proofs.jsonl",
+            "converted_jsonl_sha256": "3210e41c4ed2a9d82f3f86f1ad746a9aaef6af7880c5834479fb8f07e7dd69f6",
+            "dataset": "Goedel-LM/Lean-workbook-proofs",
+            "proofs": 29750,
+            "revision": "b731852af8d8ab11498fda27bce9020738c01c59"
+          }
+        },
+        "groups": 21736,
+        "groups_without_distinct_sibling": 10047,
+        "groups_without_training_winner": 2,
+        "inconsistent_field_reasons": {
+          "corpus": 116
+        },
+        "inconsistent_shared_fields": 116,
+        "known_exact_file_source_prefix_fraction": {
+          "at_least_0_50": 12251,
+          "at_least_0_80": 5267,
+          "at_least_0_90": 2242,
+          "quantiles": {
+            "maximum": 0.999906846762925,
+            "median": 0.5788912579957356,
+            "minimum": 0.017981730561749263,
+            "p10": 0.2216323822163238,
+            "p90": 0.9029803424223208,
+            "p95": 0.9502523431867339
+          },
+          "total": 21736
+        },
+        "local_known_exact_file_source_prefix_fraction": {
+          "at_least_0_50": 9194,
+          "at_least_0_80": 3852,
+          "at_least_0_90": 1515,
+          "quantiles": {
+            "maximum": 0.999906846762925,
+            "median": 0.7077844311377246,
+            "minimum": 0.017981730561749263,
+            "p10": 0.2962014511310286,
+            "p90": 0.9171062547098718,
+            "p95": 0.9577812892508407
+          },
+          "total": 12073
+        },
+        "local_replacement_groups": 12073,
+        "root_by_tactic_replacement_groups": 9663,
+        "root_known_exact_file_source_prefix_fraction": {
+          "at_least_0_50": 3057,
+          "at_least_0_80": 1415,
+          "at_least_0_90": 727,
+          "quantiles": {
+            "maximum": 0.9996783876500858,
+            "median": 0.3691672209192425,
+            "minimum": 0.0181651729787029,
+            "p10": 0.19442292796281951,
+            "p90": 0.8653004028726572,
+            "p95": 0.9307185206683527
+          },
+          "total": 9663
+        },
+        "source_position_sensitivity_with_2pct_overhead": {
+          "evidence_label": "Hypothesis",
+          "groups_at_least_1_5x": 5730,
+          "groups_at_least_2x": 3411,
+          "quantiles": {
+            "maximum": 11.425848433203146,
+            "median": 1.1201922950901317,
+            "minimum": 0.9803921568627451,
+            "p10": 0.9803921568627451,
+            "p90": 2.722278163478015,
+            "p95": 3.6228267199068296
+          }
+        }
+      },
+      "dataset": "leanpolish-anon/lean-proof-compression",
+      "manifest": {
+        "files": [
+          {
+            "compressed_bytes": 5503225,
+            "compressed_sha256": "16d67eac7a187967ba15a636140cd9021d67db799fa1b6ae370931c284c06631",
+            "corpus": "goedel",
+            "logical_jsonl_bytes": 48398402,
+            "logical_jsonl_sha256": "7f41d324279491e4292c2fd19d6374052077aa4793c2eb500a8d4d73b9e46660",
+            "path": "external-data/leanpolish-e161aae6/shards/goedel/training_pairs.jsonl.gz",
+            "rows": 20822,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 4942213,
+            "compressed_sha256": "16b3936a0dd2657b3b3cde91d9f3d7cd257a6027dfd72c8dfdd1c612876937dd",
+            "corpus": "goedel",
+            "logical_jsonl_bytes": 107389749,
+            "logical_jsonl_sha256": "d73712248a370213b9e7d9b23fec8010bf02b680bd685a6587d0813390d61d01",
+            "path": "external-data/leanpolish-e161aae6/shards/goedel/rejected_pairs.jsonl.gz",
+            "rows": 28525,
+            "split": "rejected_pairs"
+          },
+          {
+            "compressed_bytes": 2332042,
+            "compressed_sha256": "86db26c9d15126ca9ec9894ab6283bb896d17c470d0dd359ac3af4548290cae3",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 187048724,
+            "logical_jsonl_sha256": "c507da50176a9f9e3aa8d67f3ec9ed3d81b096cd90e41fe96b1deb9e10ad2e7a",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/training_pairs_00.jsonl.gz",
+            "rows": 670,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 9054407,
+            "compressed_sha256": "3c7c50fe9eb4ccb15c610f9e9f805409fa43f7ea06557caa9c2e258c838d120e",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 969576139,
+            "logical_jsonl_sha256": "5a5ac2d32dedd37a9ced4a40665d8869509d34e741382c4e92163caaf2a938cf",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/training_pairs_01.jsonl.gz",
+            "rows": 670,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 8754415,
+            "compressed_sha256": "f9072f33700b51be05f037118958199f46559e6bc196c13eb012ec93207cc43c",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 832757380,
+            "logical_jsonl_sha256": "8b8fbdf7003d1b35044970393c9aacd9638f101526409ceb6d51646abeb227a7",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/training_pairs_02.jsonl.gz",
+            "rows": 670,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 1145292,
+            "compressed_sha256": "2816afdeff1fdb68cfc6c878011146e5da15cc57a1086515a17923bf3cba412d",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 63036440,
+            "logical_jsonl_sha256": "4bf09b5ba10925dc5d4a26425b4b347c76c16c6cafeed34c88826e40b1e03b44",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/training_pairs_03.jsonl.gz",
+            "rows": 670,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 374062,
+            "compressed_sha256": "0ec54ebbe89bb6e4a8112d6b6a8d0fea1928a2b58735aab609553aad98d8ed80",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 3286775,
+            "logical_jsonl_sha256": "af86699728af8df1b98a62ffb4eacc2367c85a3ab0393e264d22c2bf2919db59",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/training_pairs_04.jsonl.gz",
+            "rows": 670,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 519952,
+            "compressed_sha256": "25988f51806a75aab366c805c175f168cd922b22ee6fed708ba2d99af812797e",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 14469424,
+            "logical_jsonl_sha256": "bd7b5b67c9df8901b5da86e0d8290cab874315dd13b71144b33c20f31a1589ca",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/training_pairs_05.jsonl.gz",
+            "rows": 670,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 1007998,
+            "compressed_sha256": "497ef204e036e6083a6ed549193f076d3d0d59d9432470e51e5e68515c86a208",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 52115381,
+            "logical_jsonl_sha256": "69136f7d83361bdec37d3a786d1a4e8d78fde4b7663e7f78b788780f44fcde9c",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/training_pairs_06.jsonl.gz",
+            "rows": 670,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 481939,
+            "compressed_sha256": "c811daca16056138ab631ac8c8c42bb9f8eb5b7cec10036b94d4b040bfca2f14",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 6456200,
+            "logical_jsonl_sha256": "f93d31427ce9808a8b77957f37203f7977d805424f0b06b52918d747fba053c4",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/training_pairs_07.jsonl.gz",
+            "rows": 670,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 1336142,
+            "compressed_sha256": "06de2b02a3503f7e52076b02a49d26f72231c08577243c09b54a3a258fc942c6",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 74415134,
+            "logical_jsonl_sha256": "6f2ec4272525b687a37a2da176552e8d0e4230b5381f6a44c230de98d48544c3",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/training_pairs_08.jsonl.gz",
+            "rows": 670,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 1917795,
+            "compressed_sha256": "6aa37080a114137f2e61b0792d244a90467de5c65006ad37c74530da4a08d553",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 126957728,
+            "logical_jsonl_sha256": "ab191e74aea0886d5dd7c8192eb9a93749fa7343ee1223bc9bf0722aa5732ffc",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/training_pairs_09.jsonl.gz",
+            "rows": 665,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 2320053,
+            "compressed_sha256": "0fb82f31f4cb4640efed2ce6106344f5281d1d07d6d4cfa2a713c33142789b2f",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 130981015,
+            "logical_jsonl_sha256": "7b1d472f922123359b8cd9d9f697fb57494704f4e110d5d3074c9c53d5009994",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/rejected_pairs_00.jsonl.gz",
+            "rows": 2692,
+            "split": "rejected_pairs"
+          },
+          {
+            "compressed_bytes": 1709981,
+            "compressed_sha256": "10cc1d45311f9547ce1262e52b7f5a2a6ac8f3272708a0e24d9bf7561f34bb74",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 91438923,
+            "logical_jsonl_sha256": "946c471d8e7f027dfaf04b85a1337fc74f65639db1ed527e3f73b2031d012141",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/rejected_pairs_01.jsonl.gz",
+            "rows": 2691,
+            "split": "rejected_pairs"
+          },
+          {
+            "compressed_bytes": 1319453,
+            "compressed_sha256": "eca2a5d35c027fe665e968ec0bc9f906338844e2accd3868f11f507e6d9dcb2c",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 63679888,
+            "logical_jsonl_sha256": "120ed03378004d7467bdc2337c6231403702b6df24377c24727adf2ff77724c8",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/rejected_pairs_02.jsonl.gz",
+            "rows": 2692,
+            "split": "rejected_pairs"
+          },
+          {
+            "compressed_bytes": 3500075,
+            "compressed_sha256": "87aef45f5cfa53222c4715c709746095f431add73a74ca00f6215a257dd764a5",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 245111163,
+            "logical_jsonl_sha256": "0ea64d3e9fba485e4234902c2025b6892bb72c1470832b234c9bc03b90bbc983",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/rejected_pairs_03.jsonl.gz",
+            "rows": 2691,
+            "split": "rejected_pairs"
+          },
+          {
+            "compressed_bytes": 501758,
+            "compressed_sha256": "bbcea5d22c736fb5fdd5299fb390ca80f50e7ae74ae1861aa9cb3c4d0a14137e",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 8851892,
+            "logical_jsonl_sha256": "5d68c916de7a7ab57becb8f3e1b6628e9f942bea3516d95c270a8256025eaa81",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/rejected_pairs_04.jsonl.gz",
+            "rows": 2692,
+            "split": "rejected_pairs"
+          },
+          {
+            "compressed_bytes": 622809,
+            "compressed_sha256": "de4e237df4e9a9403938f2c2a6a405a6d92b7e1e531d5e795f2442625bc25069",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 14612012,
+            "logical_jsonl_sha256": "73703ab0b92da8648410fbf2a0fe09d949cb5417a5eadf388033e89bb3af9636",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/rejected_pairs_05.jsonl.gz",
+            "rows": 2691,
+            "split": "rejected_pairs"
+          },
+          {
+            "compressed_bytes": 2173759,
+            "compressed_sha256": "6ddb42b3a52ad4ff32b9aded52410c5f8692506b18b8f89a99215ea981840313",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 153985406,
+            "logical_jsonl_sha256": "5b4e3fb8798e03ffd2c4dca165c3725a088d587a4ca99bbf23ad46a910f61fc8",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/rejected_pairs_06.jsonl.gz",
+            "rows": 2692,
+            "split": "rejected_pairs"
+          },
+          {
+            "compressed_bytes": 683312,
+            "compressed_sha256": "a083ee0d2dc0f370c3b8305adef70bfbbb963edfef2f130c46f3f7ef859ad4ac",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 16935169,
+            "logical_jsonl_sha256": "4f438afb0389bf145524ae14612f7204c149d42b838ce5bed2da2fc72df8dd9e",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/rejected_pairs_07.jsonl.gz",
+            "rows": 2691,
+            "split": "rejected_pairs"
+          },
+          {
+            "compressed_bytes": 2283806,
+            "compressed_sha256": "467af60c03a04522bf051130d1fc539c8d2472b78e892d1f4b7ce2d0a10b8736",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 130884781,
+            "logical_jsonl_sha256": "6087fc14bb628d8a1a11acc981803ef9a1fac776326d024dd80f0436bce7f1fd",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/rejected_pairs_08.jsonl.gz",
+            "rows": 2692,
+            "split": "rejected_pairs"
+          },
+          {
+            "compressed_bytes": 2188908,
+            "compressed_sha256": "2543bba6f5c331e40dc825004250af6344b65f5d133e927c2463b5ed65b65f97",
+            "corpus": "mathlib",
+            "logical_jsonl_bytes": 176642456,
+            "logical_jsonl_sha256": "f0e495bd7923b2883cb27f5391c55b886ce27d2700f9db93243ac30b4e30ba57",
+            "path": "external-data/leanpolish-e161aae6/shards/mathlib/rejected_pairs_09.jsonl.gz",
+            "rows": 2688,
+            "split": "rejected_pairs"
+          },
+          {
+            "compressed_bytes": 306666,
+            "compressed_sha256": "ed5e43c5cb8b903bd0ae7c91394dfeeaa9f9974f9fda48e1ea239719ed597616",
+            "corpus": "minif2f",
+            "logical_jsonl_bytes": 3232180,
+            "logical_jsonl_sha256": "08cf7c580d4913dac7b36b1813c24743129fc1f0ac992b6a64ce28b8b78c50b7",
+            "path": "external-data/leanpolish-e161aae6/shards/minif2f/training_pairs.jsonl.gz",
+            "rows": 1184,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 340687,
+            "compressed_sha256": "be889ecab1ec9e9c84dc20a722c35b5ebbf244f665b873ef3353d9775d97796d",
+            "corpus": "minif2f",
+            "logical_jsonl_bytes": 10263578,
+            "logical_jsonl_sha256": "611458503f081863f71a5b94c5d0e7b258fcec043cba9b4740e1d444faf44d54",
+            "path": "external-data/leanpolish-e161aae6/shards/minif2f/rejected_pairs.jsonl.gz",
+            "rows": 3753,
+            "split": "rejected_pairs"
+          },
+          {
+            "compressed_bytes": 71214,
+            "compressed_sha256": "9086a3e19975290acd16f807acfaa8bd77adecc6027815f545fd91c25876c284",
+            "corpus": "putnam2025_per_file",
+            "logical_jsonl_bytes": 525224,
+            "logical_jsonl_sha256": "3428ef8cef4c44030e54241d733972f954224448609879a5f60034884e384564",
+            "path": "external-data/leanpolish-e161aae6/shards/putnam2025_per_file/training_pairs.jsonl.gz",
+            "rows": 142,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 12354,
+            "compressed_sha256": "6266b6e7e8f32f81cfdfae3d83474c363325b3b151f5e2da2ca4e0d0b2e5be65",
+            "corpus": "putnam2025_per_file",
+            "logical_jsonl_bytes": 346688,
+            "logical_jsonl_sha256": "269bc263dc270b789c8b0b9429638547a852d6aa2432f67328954d9d714871e8",
+            "path": "external-data/leanpolish-e161aae6/shards/putnam2025_per_file/rejected_pairs.jsonl.gz",
+            "rows": 147,
+            "split": "rejected_pairs"
+          },
+          {
+            "compressed_bytes": 79117,
+            "compressed_sha256": "6ca375c8848b97b42c07754f87fad6f7cab0f6913cbf6b6764c52e8d98413230",
+            "corpus": "putnam2025_pool",
+            "logical_jsonl_bytes": 537539,
+            "logical_jsonl_sha256": "e14ff1ce6911bfce76a070e09d9ac32fcec6907a593f7ab3b5d8463f02af6530",
+            "path": "external-data/leanpolish-e161aae6/shards/putnam2025_pool/training_pairs.jsonl.gz",
+            "rows": 125,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 12456,
+            "compressed_sha256": "3197c8a6e6bbbc42e0f8a66ea053217896880434a77a06bbba664cbca9c4d838",
+            "corpus": "putnam2025_pool",
+            "logical_jsonl_bytes": 217395,
+            "logical_jsonl_sha256": "0ee4e386794bc2a2439b8c9127ff2c2f2dc84d40ac2301e6656a6ebc8324e752",
+            "path": "external-data/leanpolish-e161aae6/shards/putnam2025_pool/rejected_pairs.jsonl.gz",
+            "rows": 75,
+            "split": "rejected_pairs"
+          },
+          {
+            "compressed_bytes": 498672,
+            "compressed_sha256": "d9633ad66419c3dd06a2fda90042fa4c601b86bad186c6438bf1bbea690cb93a",
+            "corpus": "putnam_bench",
+            "logical_jsonl_bytes": 7962201,
+            "logical_jsonl_sha256": "2f3a97a23bbb52fc63de9def0712e62a1d6b21c52392fd0aa2227b0013875f95",
+            "path": "external-data/leanpolish-e161aae6/shards/putnam_bench/training_pairs.jsonl.gz",
+            "rows": 4354,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 494890,
+            "compressed_sha256": "a7645f396cc5992505e394c9a026336962effb92211af5736431f16957aaeda4",
+            "corpus": "putnam_bench",
+            "logical_jsonl_bytes": 18118403,
+            "logical_jsonl_sha256": "867b2914e41e8f1c2df8f43d22f581326f08e38bd33436fd1731205630bfba2f",
+            "path": "external-data/leanpolish-e161aae6/shards/putnam_bench/rejected_pairs.jsonl.gz",
+            "rows": 5930,
+            "split": "rejected_pairs"
+          },
+          {
+            "compressed_bytes": 23236,
+            "compressed_sha256": "15321233b1b3a48f54f0068a6d4e8a1347a6ac0a2918eb1adf41deb9b01b6e8b",
+            "corpus": "putnam_verified",
+            "logical_jsonl_bytes": 219259,
+            "logical_jsonl_sha256": "d85c7d3a7d48386b683523e1c589ad73a058678f179aaaa70692b9ba4fe3011c",
+            "path": "external-data/leanpolish-e161aae6/shards/putnam_verified/training_pairs.jsonl.gz",
+            "rows": 80,
+            "split": "training_pairs"
+          },
+          {
+            "compressed_bytes": 25015,
+            "compressed_sha256": "63a23f8c406507edad112ddedb73f4a217b254611d16ca7567fbfe814acf8d7c",
+            "corpus": "putnam_verified",
+            "logical_jsonl_bytes": 760577,
+            "logical_jsonl_sha256": "50632729220ab869700aec0356b4247b9ddf2ff405547d600fa9909a9ad9c6e6",
+            "path": "external-data/leanpolish-e161aae6/shards/putnam_verified/rejected_pairs.jsonl.gz",
+            "rows": 254,
+            "split": "rejected_pairs"
+          }
+        ],
+        "path": "external-data/leanpolish-e161aae6/MANIFEST.json",
+        "sha256": "d4e0e1ed594a70ae0b06bd2729cdf6c415761b16208f9b8a43838ae068d5ec9c"
+      },
+      "published_provenance": {
+        "goedel": {
+          "build_commit": "97b93d7178331d06c3a3152062092029389f2126",
+          "build_timestamp_utc": "2026-04-30T08:41:11Z",
+          "corpus": {
+            "license": "see upstream dataset card",
+            "name": "Goedel-LM Lean Workbook proofs",
+            "revision": null,
+            "url": "https://huggingface.co/datasets/Goedel-LM/Lean-workbook-proofs",
+            "version": "HF dataset Goedel-LM/Lean-workbook-proofs (29,750 upstream proofs ingested; 29,985 optimizer attempts after pool expansion, of which 29,676 verified and 11,367 accepted -- see analysis/corpus_stats_v2.json)"
+          },
+          "lean_toolchain": "leanprover/lean4:v4.21.0",
+          "mathlib_revision": "308445d7985027f538e281e18df29ca16ede2ba3"
+        },
+        "mathlib": {
+          "build_commit": "97b93d7178331d06c3a3152062092029389f2126",
+          "build_timestamp_utc": "2026-04-30T08:42:32Z",
+          "corpus": {
+            "license": "Apache-2.0",
+            "name": "Mathlib4",
+            "revision": "308445d7985027f538e281e18df29ca16ede2ba3",
+            "url": "https://github.com/leanprover-community/mathlib4",
+            "version": "v4.21.0"
+          },
+          "lean_toolchain": "leanprover/lean4:v4.21.0",
+          "mathlib_revision": "308445d7985027f538e281e18df29ca16ede2ba3"
+        },
+        "minif2f": {
+          "build_commit": "97b93d7178331d06c3a3152062092029389f2126",
+          "build_timestamp_utc": "2026-04-30T08:43:21Z",
+          "corpus": {
+            "license": "MIT",
+            "name": "miniF2F (Lean4 verified subset)",
+            "revision": "97b93d7178331d06c3a3152062092029389f2126",
+            "url": "https://github.com/openai/miniF2F",
+            "version": "embedded snapshot in optimizer build_commit"
+          },
+          "lean_toolchain": "leanprover/lean4:v4.21.0",
+          "mathlib_revision": "308445d7985027f538e281e18df29ca16ede2ba3"
+        },
+        "putnam2025_per_file": {
+          "build_commit": "97b93d7178331d06c3a3152062092029389f2126",
+          "build_timestamp_utc": "2026-04-30T08:43:22Z",
+          "corpus": {
+            "license": "see top-level LICENSE",
+            "name": "Putnam 2025 (per-file optimizer runs, AxiomProver candidates)",
+            "revision": "97b93d7178331d06c3a3152062092029389f2126",
+            "url": "https://anonymous.4open.science/r/leanpolish-EA28",
+            "version": "embedded snapshot in optimizer build_commit"
+          },
+          "lean_toolchain": "leanprover/lean4:v4.21.0",
+          "mathlib_revision": "308445d7985027f538e281e18df29ca16ede2ba3"
+        },
+        "putnam2025_pool": {
+          "build_commit": "97b93d7178331d06c3a3152062092029389f2126",
+          "build_timestamp_utc": "2026-04-30T08:43:22Z",
+          "corpus": {
+            "license": "see top-level LICENSE",
+            "name": "Putnam 2025 (pooled orchestrator output, AxiomProver candidates)",
+            "revision": "97b93d7178331d06c3a3152062092029389f2126",
+            "url": "https://anonymous.4open.science/r/leanpolish-EA28",
+            "version": "embedded snapshot in optimizer build_commit"
+          },
+          "lean_toolchain": "leanprover/lean4:v4.21.0",
+          "mathlib_revision": "308445d7985027f538e281e18df29ca16ede2ba3"
+        },
+        "putnam_bench": {
+          "build_commit": "97b93d7178331d06c3a3152062092029389f2126",
+          "build_timestamp_utc": "2026-04-30T08:43:22Z",
+          "corpus": {
+            "license": "Apache-2.0",
+            "name": "PutnamBench (Lean4 subset)",
+            "revision": "97b93d7178331d06c3a3152062092029389f2126",
+            "url": "https://github.com/trishullab/PutnamBench",
+            "version": "embedded snapshot in optimizer build_commit"
+          },
+          "lean_toolchain": "leanprover/lean4:v4.21.0",
+          "mathlib_revision": "308445d7985027f538e281e18df29ca16ede2ba3"
+        },
+        "putnam_verified": {
+          "build_commit": "97b93d7178331d06c3a3152062092029389f2126",
+          "build_timestamp_utc": "2026-04-30T08:43:23Z",
+          "corpus": {
+            "license": "Apache-2.0",
+            "name": "PutnamBench (kernel-verified subset)",
+            "revision": "97b93d7178331d06c3a3152062092029389f2126",
+            "url": "https://github.com/trishullab/PutnamBench",
+            "version": "embedded snapshot in optimizer build_commit"
+          },
+          "lean_toolchain": "leanprover/lean4:v4.21.0",
+          "mathlib_revision": "308445d7985027f538e281e18df29ca16ede2ba3"
+        }
+      },
+      "records": {
+        "corpora": {
+          "goedel": 49347,
+          "mathlib": 33607,
+          "minif2f": 4937,
+          "putnam2025_per_file": 289,
+          "putnam2025_pool": 200,
+          "putnam_bench": 10284,
+          "putnam_verified": 334
+        },
+        "outcomes": {
+          "accepted": 33402,
+          "rejected": 65596
+        },
+        "rows": 98998,
+        "rows_without_attempt_id_excluded_from_grouping": 11552,
+        "splits": {
+          "rejected_pairs": 65596,
+          "training_pairs": 33402
+        },
+        "syntax_kinds": {
+          "Aesop.Frontend.Parser.aesopTactic": 101,
+          "Batteries.Tactic.congrConfigWith": 1,
+          "CategoryTheory.aesop_cat": 34,
+          "CategoryTheory.rfl_cat": 3,
+          "Congr!.congr!": 11,
+          "L1_dedup": 100,
+          "L2_antiun_exact": 1,
+          "L2_antiun_lemma": 256,
+          "L2_antiun_prop": 3,
+          "Lean.Parser.Tactic.acRfl": 16,
+          "Lean.Parser.Tactic.apply": 12,
+          "Lean.Parser.Tactic.applyAssumption": 14,
+          "Lean.Parser.Tactic.applyRfl": 8,
+          "Lean.Parser.Tactic.applyRules": 36,
+          "Lean.Parser.Tactic.assumption": 242,
+          "Lean.Parser.Tactic.case": 170,
+          "Lean.Parser.Tactic.cases": 88,
+          "Lean.Parser.Tactic.classical": 62,
+          "Lean.Parser.Tactic.congr": 117,
+          "Lean.Parser.Tactic.contradiction": 34,
+          "Lean.Parser.Tactic.decide": 25,
+          "Lean.Parser.Tactic.dsimp": 43,
+          "Lean.Parser.Tactic.exact": 1306,
+          "Lean.Parser.Tactic.induction": 22,
+          "Lean.Parser.Tactic.injection": 43,
+          "Lean.Parser.Tactic.omega": 120,
+          "Lean.Parser.Tactic.refine": 14,
+          "Lean.Parser.Tactic.repeat'": 40,
+          "Lean.Parser.Tactic.rintro": 177,
+          "Lean.Parser.Tactic.rwSeq": 2,
+          "Lean.Parser.Tactic.set_option": 4,
+          "Lean.Parser.Tactic.simp": 11464,
+          "Lean.Parser.Tactic.simpAll": 1632,
+          "Lean.Parser.Tactic.simpa": 2923,
+          "Lean.Parser.Tactic.solveByElim": 111,
+          "Lean.Parser.Tactic.tacticAssumption_mod_cast_": 10,
+          "Lean.Parser.Tactic.tacticExact_mod_cast_": 508,
+          "Lean.Parser.Tactic.tacticInfer_instance": 383,
+          "Lean.Parser.Tactic.tacticIterate____": 19,
+          "Lean.Parser.Tactic.tacticNorm_cast__": 29,
+          "Lean.Parser.Tactic.tacticRwa__": 623,
+          "Lean.Parser.Tactic.tacticSeqBracketed": 217,
+          "Lean.Parser.Tactic.tacticTrivial": 21,
+          "Lean.Parser.Tactic.\u00abtacticExists_,,\u00bb": 16,
+          "Lean.Parser.Tactic.\u00abtacticNext_=>_\u00bb": 78,
+          "Lean.Parser.Tactic.\u00abtactic_<;>_\u00bb": 10642,
+          "Lean.Parser.Term.byTactic": 49374,
+          "Lean.calcTactic": 550,
+          "Mathlib.Meta.FunProp.funPropTacStx": 19,
+          "by": 10,
+          "cleanup_dead_tactic": 5295,
+          "cleanup_never_executed": 5235,
+          "cleanup_use_semicolon": 1022,
+          "dead_have": 5691,
+          "finiteness": 12,
+          "tacticDecreasing_trivial": 5,
+          "tacticEval_simp._@._hyg.901": 4
+        }
+      },
+      "replay_readiness": {
+        "accepted_winners_kernel_and_file_checked": true,
+        "complete_candidate_files_embedded": false,
+        "lean_toolchain_and_mathlib_revision_published": true,
+        "ordinary_lean_replay_required_for_any_benchmark_claim": true,
+        "rejected_siblings_applied_as_complete_files": false,
+        "source_paths_and_revisions_published": true
+      },
+      "revision": "e161aae6770178bf96fd6dd0eecc4715106ec7fd"
+    }
+  },
+  "evidence_label": "Measured",
+  "gate": {
+    "decision": "promising_structural_screen_but_no_lean_compute_authorized",
+    "evidence_label": "Decision",
+    "minimum_target_speedup": 1.5,
+    "reason": "Source structure may justify a later feasibility design, but neither corpus currently supplies a conservative lower bound on reusable verifier CPU.",
+    "requires_baseline_cost_weighting": true,
+    "requires_complete_candidate_verdicts": true,
+    "requires_lean_native_boundaries": true
+  },
+  "method": {
+    "grouping": {
+      "APRIL": "src_hash; one unique correct proof plus unique incorrect proofs",
+      "LeanPolish": "attempt_id; unique candidate replacement texts"
+    },
+    "lean_invoked": false,
+    "nontrivia_lexer": "descriptive nested-comment/string-aware byte counter; not Lean-native syntax",
+    "prefix": "exact common UTF-8 bytes from complete-source root",
+    "proof_marker": "descriptive regex :=\\s*by; not a Lean parser boundary",
+    "sensitivity_formula": "n / (p + n*(1-p) + 0.02*n), with source-position fraction p counterfactually substituted for verifier-cost fraction"
+  },
+  "runtime": {
+    "git": {
+      "commit": "b7c94870a3314fd7e2e05018fbad48a9244d81d2",
+      "dirty": true,
+      "status_porcelain": [
+        " M data/README.md",
+        " M docs/DECISIONS.md",
+        " M docs/STATUS.md",
+        " M reports/README.md",
+        "?? data/external-repair.manifest.json",
+        "?? reports/external_repair_structural_screen.json",
+        "?? reports/external_repair_structural_screen_review.md",
+        "?? src/lean_prefix/external_repair.py",
+        "?? tests/test_external_repair.py"
+      ]
+    },
+    "logical_cpus": 32,
+    "platform": "Linux-5.14.0-570.44.1.el9_6.x86_64-x86_64-Intel-R-_Xeon-R-_Platinum_8480+-with-glibc2.37",
+    "python": "3.11.4"
+  }
+}

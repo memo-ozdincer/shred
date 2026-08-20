@@ -238,6 +238,22 @@ equivalent to 1.161x, with 864/864 verdict agreement. Its theorem-bootstrap 95%
 interval is 7.759%--20.258%, entirely below the required 36.690%.
 
 D-031 therefore stops the C1 cohort without spending new verification compute.
+
+## External repair corpus screen
+
+The compute-free D-032 screen pins and analyzes APRIL and LeanPolish without
+invoking Lean. APRIL has large `src_hash` groups but a median zero post-`by`
+common source prefix across each group and no pinned Lean/Mathlib environment.
+LeanPolish supplies authentic candidate siblings, but 11,552 cleanup rows lack
+group identifiers and rejected siblings were not replayed as complete files.
+
+Pinned Goedel sources exactly anchor 1,243 LeanPolish local-edit groups. Their
+median raw proof-source prefix is 80.92%, but generated comments inflate it;
+the comment-stripped non-whitespace median is 36.14%. Replacing reusable CPU
+with that source-position proxy gives a hypothesis median of only 1.260x at 2%
+overhead. No Lean run is authorized. The next credible input must already retain
+complete repair/self-correction attempts, exact environments, ordinary Lean
+verdicts, and per-tactic cost telemetry.
 No C1 extraction, replay, paired benchmark, or cluster allocation is planned.
 The authoritative aggregate is `reports/c0_rl_retention_gate.json`; the hand
 review is `reports/c0_rl_retention_gate_review.md`.
