@@ -13,7 +13,7 @@ that work once, and preserves ordinary Lean as the final correctness authority.
 
 On authentic proof closures from a large theorem-proving rollout, SHRED's
 certificate-transfer prototype made repeated `nlinarith` closure up to
-**325.6× faster** and repeated `positivity` closure **27.1× faster**, measured
+**325.2× faster** and repeated `positivity` closure **27.1× faster**, measured
 as generation-plus-check versus application-plus-check. The project combines
 Lean metaprogramming with a reproducible Python analysis and execution stack.
 
@@ -134,12 +134,30 @@ SHRED was developed against a self-contained DeepSeek-Prover rollout corpus:
 | Automatic certificate pairs checked in the representative study | 4,096 |
 | Paired Lean-verdict agreement | 4,096 / 4,096 |
 | Safe automatic certificate hits | 921 |
-| Best measured certificate-transfer acceleration | 325.6× |
+| Best measured certificate-transfer acceleration | 325.2× |
 
 The repository includes immutable manifests, aggregate reports, deterministic
 selection logic, proposal-level accounting, and hand-reviewed examples. Its
 experiments ran on a 192-core Intel node with up to 766 GB RAM, using pinned
 Lean, Mathlib, REPL, corpus, and Git revisions.
+
+## Projections
+
+The first two rows are measured per-hit transfer anchors. The remaining rows
+are hypothesis-only throughput projections under the stated workload shape.
+
+| Workload or bounded example | Throughput |
+|---|---:|
+| Authentic `nlinarith` certificate transfer | **325.2×** |
+| Authentic `positivity` certificate transfer | **27.1×** |
+| LeanPolish/Goedel late-edit repair cohort: at least 8 candidates and 80% non-trivia shared source | **at least 3.1× projected** |
+| Typical workload with 40% of verifier CPU in reusable expensive closures | **1.58×–1.61× projected** |
+| Typical workload with 60% of verifier CPU in reusable expensive closures | **2.26×–2.37× projected** |
+
+These are bounded examples and sensitivity calculations, not general measured
+end-to-end throughput. The representative 4,096-pair certificate study measured
+1.033× CPU-equivalent throughput, and the later arithmetic-heavy RL gate
+measured 1.16× on its existing 864-proposal overlap.
 
 ## Where this can matter most
 
