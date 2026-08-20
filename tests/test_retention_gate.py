@@ -24,6 +24,7 @@ class RetentionGateTests(unittest.TestCase):
             admission, records, conservative_acceleration=27.051195461299475
         )
         self.assertFalse(report["gate"]["passes"])
+        self.assertTrue(report["gate"]["decisive_failure"])
         self.assertEqual(
             report["gate"]["decision"],
             "stop_no_new_c1_lean_or_cluster_compute",

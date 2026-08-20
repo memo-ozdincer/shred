@@ -160,7 +160,14 @@ def summarize_retention(
     bootstrap = theorem_bootstrap(
         [(row["baseline_cpu_seconds"], row["cached_cpu_seconds"]) for row in theorem_rows]
     )
-    gate_passed = bootstrap["high"] >= required_fraction
+    gate_passed = bootstrap["low"] >= required_fraction
+    decisive_failure = bootstrap["high"] < required_fraction
+    if gate_passed:
+        decision = "theory_gate_passed"
+    elif decisive_failure:
+        decision = "stop_no_new_c1_lean_or_cluster_compute"
+    else:
+        decision = "inconclusive_no_compute_authorized"
     return {
         "overlap": {
             "theorems": len(theorem_rows),
@@ -195,13 +202,11 @@ def summarize_retention(
             "minimum_throughput_multiplier": MINIMUM_THROUGHPUT_MULTIPLIER,
             "required_realized_reusable_cpu_fraction": required_fraction,
             "observed_paired_cpu_saved_fraction": saved_fraction,
+            "bootstrap_low_fraction": bootstrap["low"],
             "bootstrap_high_fraction": bootstrap["high"],
             "passes": gate_passed,
-            "decision": (
-                "theory_gate_passed"
-                if gate_passed
-                else "stop_no_new_c1_lean_or_cluster_compute"
-            ),
+            "decisive_failure": decisive_failure,
+            "decision": decision,
         },
     }
 
