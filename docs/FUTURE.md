@@ -117,3 +117,21 @@ but they do not solve the observed exact-key miss and first-capture burden.
 They remain a future mechanism idea, not a pending experiment. Reopening them
 requires a materially new compute-free argument rather than a narrower
 post-hoc selection of positive D030 cases.
+
+## Resolution after D035
+
+The exact checkpoint-fork probe works, but current tactic-tree systems already
+fan tactics out from a retained live state. That makes integration useful
+engineering, not by itself the strongest SHRED research claim. A read-only
+audit of BFS-Prover-V2, nanoproof, LeanTree, LeanProgress, and Lean-Prover found
+no committed completed artifact with full sibling lineage, all verdicts, and
+per-edge verifier CPU, so no authentic gate can be computed without collecting
+new data.
+
+The higher-value successor is exact reuse beyond one live search tree: across
+independent attempts, workers, or policy iterations, or intentional
+checkpointing for localized repair. This is distinct from reconstructing a
+state from its pretty-printed goals, which D013 already showed is unsafe for
+evidence. Any proposal must first define full hidden-context identity,
+attribution, isolation, timeout behavior, eviction, and ordinary-Lean fallback,
+then demonstrate a compute-free opportunity bound from an existing artifact.

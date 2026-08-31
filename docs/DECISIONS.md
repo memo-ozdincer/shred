@@ -994,3 +994,33 @@ Consequence: exact fork execution has cleared mechanism risk but not workload
 or product-value risk. Repeating variants of the constructed arithmetic prefix
 would add precision to the wrong question and is not authorized. The raw 48
 records and aggregate report are frozen as D-033 evidence.
+
+## D-035 - Stop at the public authentic-trace availability gate
+
+Date: 2026-08-31
+
+Status: accepted after a read-only audit of five pinned public repositories
+
+Decision: do not run Lean, generate proposals, or rerun public prover
+benchmarks for the checkpoint-branch mechanism. Record the pinned source audit
+as an **Observed** negative availability result. Do not describe ordinary
+same-process fan-out from a retained tactic-search node as a new SHRED
+capability.
+
+Reason: BFS-Prover-V2 and nanoproof already retain Lean states and apply
+multiple tactics from the same node. Their pinned repositories do not include
+completed full-tree run artifacts with every sibling verdict and per-edge
+verifier CPU. LeanTree provides proof structure rather than alternative search
+branches; LeanProgress references uncommitted trajectory data; Lean-Prover
+records repair sessions at whole-run granularity rather than Lean checkpoint
+and suffix granularity. Zero of the five audited sources therefore supplies
+the fields needed to evaluate D-034 without new data collection.
+
+Consequence: D-033 remains a controlled mechanism result, not a README
+headline. The differentiating research question moves to exact reuse across
+otherwise independent attempts, workers, or policy iterations, or to an
+intentional localized-repair protocol. Those ideas remain out of scope until a
+new decision establishes safe full-context identity, explicit fallback, and a
+compute-free workload gate. An existing private artifact with full sibling
+branches and per-edge verifier CPU may be screened read-only under a frozen
+manifest.

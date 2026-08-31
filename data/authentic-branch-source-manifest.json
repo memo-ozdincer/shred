@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-08-31",
+  "purpose": "Read-only source audit for the D-034 authentic retained-state trace gate",
+  "sources": [
+    {
+      "name": "BFS-Prover-V2",
+      "url": "https://github.com/ByteDance-Seed/BFS-Prover-V2.git",
+      "revision": "ada0f976e95b09e0b9efa8f171fdf4b09e161ba0"
+    },
+    {
+      "name": "nanoproof",
+      "url": "https://github.com/Kripner/nanoproof.git",
+      "revision": "4f410c6e7a820557501848f954402514201322a5"
+    },
+    {
+      "name": "leantree",
+      "url": "https://github.com/Kripner/leantree.git",
+      "revision": "53493b9fb48a10a21d01cc6ff77f824e26b6217f"
+    },
+    {
+      "name": "LeanProgress",
+      "url": "https://github.com/lean-dojo/LeanProgress.git",
+      "revision": "328ca46ede8ab9e3506805ba7658859af74aa7be"
+    },
+    {
+      "name": "Lean-Prover",
+      "url": "https://github.com/Lean-Prover/lean-prover.git",
+      "revision": "3f18e63372060a1b29e6690500fca466c83243b0"
+    }
+  ],
+  "raw_data_policy": "Source repositories were inspected under ignored external-data paths. No rollout or session data was copied into Git."
+}
