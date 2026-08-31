@@ -73,3 +73,23 @@ PYTHONPATH=src python -m lean_prefix.external_repair \
 Exact byte statistics are measured source properties. The included
 source-position speedups are explicitly hypothesis-only and do not authorize a
 Lean run.
+
+The bounded exact checkpoint-branch mechanism probe is checked in as
+`branch_probe_d033.json`; its interpretation is
+`branch_probe_d033_review.md`. It is reproduced against the already-built
+pinned patched REPL with:
+
+```bash
+PYTHONPATH=src python -m lean_prefix.branch_probe \
+  --lean-workspace /path/to/pinned/mathlib4 \
+  --repl-executable /path/to/pinned/repl \
+  --artifact artifacts/branch_probe_d033.jsonl.gz \
+  --output reports/branch_probe_d033.json \
+  --timeout-seconds 300 \
+  --memory-limit-gib 16
+```
+
+The controlled result is 5.531x CPU and 5.448x wall speedup with 16/16
+shared/independent/ordinary-Lean verdict agreement. The prefix is deliberately
+expensive, so this validates only the fork mechanism and cost model. It is not
+an authentic workload or pipeline result.

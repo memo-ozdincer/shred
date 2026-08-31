@@ -1,0 +1,158 @@
+{
+  "analysis": "exact-checkpoint-branch-probe-v1",
+  "artifact": {
+    "path": "artifacts/branch_probe_d033.jsonl.gz",
+    "records": 48,
+    "sha256": "7baad4372ff23e5544d065fb81f487bda9306bfbe965773e47898071eac05146"
+  },
+  "claim_boundary": "Not an authentic workload, prevalence estimate, dataset speedup, or RL pipeline result",
+  "command": "python -m lean_prefix.branch_probe --lean-workspace /scratch/memoozd/rl/DeepSeek-Prover-V1.5/mathlib4 --repl-executable /scratch/memoozd/rl/lean-prefix/artifacts/repl-patched-c6199a8-v2/.lake/build/bin/repl --artifact artifacts/branch_probe_d033.jsonl.gz --output reports/branch_probe_d033.json --timeout-seconds 300.0 --memory-limit-gib 16.0",
+  "configuration": {
+    "base": 12345,
+    "branches": 16,
+    "execution_order": "shared_then_independent_then_complete",
+    "exponent": 500,
+    "memory_limit_gib": 16.0,
+    "prefix_sha256": "76a165a237245942b3276ac8a9b4ef7b6eea992ee1667006c74ac481417cd420",
+    "timeout_seconds": 300.0
+  },
+  "counts": {
+    "accepted": 9,
+    "errors": 0,
+    "fallbacks": 0,
+    "independent_verdict_disagreements": 0,
+    "proposals": 16,
+    "rejected": 7,
+    "shared_verdict_disagreements": 0,
+    "timeouts": 0
+  },
+  "evidence_label": "Measured controlled mechanism probe",
+  "non_benchmark_costs": {
+    "initialization": {
+      "cpu_seconds": null,
+      "peak_rss_kib": 3621020,
+      "wall_seconds": 10.199839945882559
+    },
+    "ordinary_complete_proof_total_wall_seconds": 0.3355821156874299,
+    "root_setup": {
+      "cpu_seconds": 0.0040703749999999594,
+      "peak_rss_kib": 3627420,
+      "wall_seconds": 0.004236921668052673
+    },
+    "total_probe_wall_seconds": 10.925889439880848
+  },
+  "provenance": {
+    "hardware": {
+      "cpu_count": 32,
+      "hostname": "l2.nibi.sharcnet",
+      "platform": "Linux-5.14.0-570.44.1.el9_6.x86_64-x86_64-Intel-R-_Xeon-R-_Platinum_8480+-with-glibc2.37"
+    },
+    "lean_workspace_git": {
+      "commit": "2f65ba7f1a9144b20c8e7358513548e317d26de1",
+      "dirty": true
+    },
+    "project_git": {
+      "commit": "a6616e99534ce777dcebfd56566eaaffb63997a8",
+      "dirty": true
+    },
+    "repl_executable": "/scratch/memoozd/rl/lean-prefix/artifacts/repl-patched-c6199a8-v2/.lake/build/bin/repl",
+    "repl_sha256": "89a35afd9f7a472b45e57dfd5dd0cede08bd0485ca4ac71b860d486cde8a42f3"
+  },
+  "timing": {
+    "branches": 16,
+    "cpu": {
+      "independent_prefix_fraction": 0.8849062229786474,
+      "independent_prefix_seconds": 0.23731545699999845,
+      "independent_suffix_seconds": 0.030866019000001188,
+      "independent_total_seconds": 0.26818147599999964,
+      "measured_speedup": 5.531108042231742,
+      "shared_prefix_seconds": 0.018237625000000257,
+      "shared_suffix_seconds": 0.030248406000000116,
+      "shared_total_seconds": 0.048486031000000374
+    },
+    "wall": {
+      "independent_prefix_fraction": 0.8784444078464525,
+      "independent_prefix_seconds": 0.24086789228022099,
+      "independent_suffix_seconds": 0.03333032689988613,
+      "independent_total_seconds": 0.2741982191801071,
+      "measured_speedup": 5.448466971689274,
+      "shared_prefix_seconds": 0.018490689806640148,
+      "shared_suffix_seconds": 0.03183506615459919,
+      "shared_total_seconds": 0.05032575596123934
+    },
+    "per_theorem": [
+      {
+        "branches": 16,
+        "cpu_speedup": 5.531108042231742,
+        "theorem": "shred_branch_probe",
+        "wall_speedup": 5.448466971689274
+      }
+    ],
+    "request_latency_distributions": {
+      "independent_prefix_cpu_seconds": {
+        "maximum": 0.016209268000000332,
+        "median": 0.014862176999999921,
+        "minimum": 0.014006116000000013,
+        "p90": 0.015084793999999846,
+        "p95": 0.015344809999999764,
+        "p99": 0.015344809999999764
+      },
+      "independent_prefix_wall_seconds": {
+        "maximum": 0.016545078717172146,
+        "median": 0.015069742687046528,
+        "minimum": 0.014200874604284763,
+        "p90": 0.015374547801911831,
+        "p95": 0.015530979260802269,
+        "p99": 0.015530979260802269
+      },
+      "independent_suffix_cpu_seconds": {
+        "maximum": 0.011607992999999706,
+        "median": 0.0005187980000003201,
+        "minimum": 0.00012131700000006518,
+        "p90": 0.0026743750000002287,
+        "p95": 0.00693342500000016,
+        "p99": 0.00693342500000016
+      },
+      "independent_suffix_wall_seconds": {
+        "maximum": 0.011735434643924236,
+        "median": 0.000629856251180172,
+        "minimum": 0.00019837543368339539,
+        "p90": 0.002757313661277294,
+        "p95": 0.007179261185228825,
+        "p99": 0.007179261185228825
+      },
+      "ordinary_complete_proof_cpu_seconds": {
+        "maximum": 0.030317166000000118,
+        "median": 0.019356694999999924,
+        "minimum": 0.017785828999999698,
+        "p90": 0.02156865200000002,
+        "p95": 0.02525006999999979,
+        "p99": 0.02525006999999979
+      },
+      "ordinary_complete_proof_wall_seconds": {
+        "maximum": 0.030653150752186775,
+        "median": 0.01959995087236166,
+        "minimum": 0.01801249384880066,
+        "p90": 0.021994060836732388,
+        "p95": 0.025572530925273895,
+        "p99": 0.025572530925273895
+      },
+      "shared_suffix_cpu_seconds": {
+        "maximum": 0.011564062999999791,
+        "median": 0.00044912800000007636,
+        "minimum": 6.89290000002174e-05,
+        "p90": 0.0027343509999999682,
+        "p95": 0.00701060699999978,
+        "p99": 0.00701060699999978
+      },
+      "shared_suffix_wall_seconds": {
+        "maximum": 0.01173410564661026,
+        "median": 0.0005253804847598076,
+        "minimum": 0.00014579296112060547,
+        "p90": 0.003024442121386528,
+        "p95": 0.007146499119699001,
+        "p99": 0.007146499119699001
+      }
+    }
+  }
+}

@@ -925,3 +925,72 @@ repair/self-correction rollout logs that retain complete failed revisions,
 ordinary Lean verdicts, exact environments, and per-tactic telemetry. Such logs
 may be screened read-only when available; new proposal generation or Lean replay
 requires a separate gate.
+
+## D-033 - Authorize one bounded exact-fork mechanism probe
+
+Date: 2026-08-31
+
+Status: accepted before implementation or execution
+
+Decision: treat checkpoint branching as a materially different successor to
+the stopped accidental-prefix workload. Authorize one local, single-process
+proof-of-mechanism probe using the already-built pinned patched REPL. The probe
+may execute one exact common tactic prefix from one theorem root, reuse the
+resulting immutable proof-state identifier for at most 16 unchanged suffixes,
+and compare every suffix verdict with both root-replayed independent execution
+and ordinary complete-proof elaboration. It must finish within a 300-second
+per-request limit, allocate no cluster resources, generate no model proposals,
+and leave all source rollout data untouched.
+
+The pre-execution theory gate is structural rather than empirical: with 16
+branches and a common prefix accounting for at least 60% of independent
+prefix-plus-suffix execution, the zero-overhead fork model predicts
+`16 / (0.6 + 16 * 0.4) = 2.286x`. The probe is authorized only to test verdict
+isolation and whether orchestration overhead preserves at least 1.5x on this
+controlled workload.
+
+Reason: D-017 and D-031 reject mechanisms that wait for independently generated
+complete proofs to collide. Exact fork execution changes the proposal protocol:
+several already-chosen continuations intentionally originate from the same
+Lean state, so the shared work exists by construction. The pinned REPL already
+exposes immutable proof-state identifiers and the repository already has an
+instrumented client, making a bounded local probe cheap enough to resolve basic
+mechanism risk without committing to an engine or authentic benchmark.
+
+Consequence: any result is a controlled **Measured** mechanism result only. It
+is not evidence of prevalence, dataset-level speedup, RL end-to-end speedup, or
+production value and must not appear as such in the README. Further execution
+requires authentic retained-state search, tactic-RL, or localized-repair traces
+that can be screened read-only for branch count, common-prefix CPU share, and
+verifier share of pipeline cost.
+
+## D-034 - Advance exact fork execution only to an authentic-trace gate
+
+Date: 2026-08-31
+
+Status: accepted after the D-033 controlled probe
+
+Decision: retain the exact checkpoint-branch runner as a successful controlled
+proof of mechanism, but do not promote its result to the README and do not run
+a broader synthetic benchmark. The next permitted analysis is read-only
+screening of authentic retained-state search, tactic-RL, or localized-repair
+traces. New Lean execution requires a frozen workload with at least eight
+unchanged suffixes per qualifying checkpoint, a conservative common-prefix
+share of at least 60% of verifier CPU, and enough groups to report per-theorem,
+median, and tail results. End-to-end value additionally requires measuring the
+verifier fraction of total pipeline cost.
+
+Reason: the D-033 probe returned exactly matching shared, root-replayed, and
+ordinary complete-proof verdicts for all 16 candidates: nine acceptances and
+seven rejections, with no fallback, timeout, or process error. Reusing one
+exact proof state reduced measured prefix-plus-suffix CPU from 0.268181 seconds
+to 0.048486 seconds (5.531x) and wall time from 0.274198 seconds to 0.050326
+seconds (5.448x). The independent path spent 88.49% of CPU in the deliberately
+expensive common prefix. This validates isolation and the cost model on one
+controlled prefix-heavy construction; it says nothing about authentic branch
+prevalence or pipeline-level value.
+
+Consequence: exact fork execution has cleared mechanism risk but not workload
+or product-value risk. Repeating variants of the constructed arithmetic prefix
+would add precision to the wrong question and is not authorized. The raw 48
+records and aggregate report are frozen as D-033 evidence.

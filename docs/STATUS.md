@@ -14,7 +14,7 @@ sample into deployment evidence. Full-workload results apply the registered
 cost-weighted gate and direct below-gate workloads toward bounded expensive
 closing-tactic analysis rather than enabling broad certificate caching.
 
-Last updated: 2026-08-20
+Last updated: 2026-08-31
 
 ## Established
 
@@ -257,3 +257,25 @@ verdicts, and per-tactic cost telemetry.
 No C1 extraction, replay, paired benchmark, or cluster allocation is planned.
 The authoritative aggregate is `reports/c0_rl_retention_gate.json`; the hand
 review is `reports/c0_rl_retention_gate_review.md`.
+
+## Exact checkpoint-branch mechanism probe
+
+D-033 treats intentional branching from one retained Lean state as a materially
+different successor to accidental prefix collisions. Its bounded local probe
+uses one deliberately expensive exact prefix and 16 fixed suffixes. Shared
+execution, independent replay from the theorem root, and ordinary complete
+proof elaboration agree on all 16 verdicts: nine acceptances and seven
+rejections, with no fallback, timeout, or process error.
+
+On this controlled prefix-heavy construction, exact branching reduces measured
+prefix-plus-suffix CPU from 0.268181 seconds to 0.048486 seconds (5.531x) and
+wall time from 0.274198 seconds to 0.050326 seconds (5.448x). This is **Measured
+controlled mechanism evidence**, not an authentic workload or RL speedup. D-034
+prohibits broader synthetic benchmarking. The next gate requires read-only
+authentic retained-state traces with at least eight suffixes per checkpoint and
+at least 60% conservative common-prefix verifier CPU.
+
+The aggregate is `reports/branch_probe_d033.json`; the interpretation is
+`reports/branch_probe_d033_review.md`; the 48-record raw artifact checksum is
+recorded in both. The aggregate SHA-256 is
+`9f297bdebcb20c6865b7d941f324229e6e61588c9b6c088f0b598dffa4f97e97`.
