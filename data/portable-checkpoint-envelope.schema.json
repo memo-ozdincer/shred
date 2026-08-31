@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/memo-ozdincer/shred/data/portable-checkpoint-envelope.schema.json",
+  "title": "SHRED portable checkpoint envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol_version",
+    "admission_key_sha256",
+    "compatibility",
+    "work",
+    "artifact",
+    "producer"
+  ],
+  "properties": {
+    "protocol_version": {"const": 1},
+    "admission_key_sha256": {"$ref": "#/$defs/sha256"},
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "serializer_schema",
+        "lean_toolchain",
+        "lean_binary_sha256",
+        "repl_revision",
+        "repl_binary_sha256",
+        "host_arch",
+        "os_abi",
+        "execution_image_sha256",
+        "project_revision",
+        "project_dirty",
+        "lean_toolchain_sha256",
+        "lake_manifest_sha256",
+        "transitive_imports",
+        "native_plugins",
+        "resource_profile_sha256",
+        "hermetic_inputs_sha256"
+      ],
+      "properties": {
+        "serializer_schema": {"type": "string", "minLength": 1},
+        "lean_toolchain": {"type": "string", "minLength": 1},
+        "lean_binary_sha256": {"$ref": "#/$defs/sha256"},
+        "repl_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "repl_binary_sha256": {"$ref": "#/$defs/sha256"},
+        "host_arch": {"type": "string", "minLength": 1},
+        "os_abi": {"type": "string", "minLength": 1},
+        "execution_image_sha256": {"$ref": "#/$defs/sha256"},
+        "project_revision": {"type": "string", "minLength": 1},
+        "project_dirty": {"const": false},
+        "lean_toolchain_sha256": {"$ref": "#/$defs/sha256"},
+        "lake_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "transitive_imports": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/named_digest"}
+        },
+        "native_plugins": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/named_digest"}
+        },
+        "resource_profile_sha256": {"$ref": "#/$defs/sha256"},
+        "hermetic_inputs_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "work": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "module_name",
+        "canonical_source_path",
+        "source_before_root_sha256",
+        "declaration_kind",
+        "theorem_name",
+        "theorem_statement_sha256",
+        "root_context_sha256",
+        "prefix_edges"
+      ],
+      "properties": {
+        "module_name": {"type": "string", "minLength": 1},
+        "canonical_source_path": {"type": "string", "minLength": 1},
+        "source_before_root_sha256": {"$ref": "#/$defs/sha256"},
+        "declaration_kind": {"enum": ["theorem", "lemma", "example"]},
+        "theorem_name": {"type": "string", "minLength": 1},
+        "theorem_statement_sha256": {"$ref": "#/$defs/sha256"},
+        "root_context_sha256": {"$ref": "#/$defs/sha256"},
+        "prefix_edges": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["index", "syntax_sha256", "lineage_id"],
+            "properties": {
+              "index": {"type": "integer", "minimum": 0},
+              "syntax_sha256": {"$ref": "#/$defs/sha256"},
+              "lineage_id": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pickle_sha256", "bytes", "created_utc"],
+      "properties": {
+        "pickle_sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "created_utc": {"type": "string", "format": "date-time"}
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["worker_id", "key_id", "signature"],
+      "properties": {
+        "worker_id": {"type": "string", "minLength": 1},
+        "key_id": {"type": "string", "minLength": 1},
+        "signature": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "named_digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "sha256"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

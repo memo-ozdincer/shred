@@ -44,6 +44,35 @@ Label statements as one of:
 
 Do not promote an observation or hypothesis to a measured result.
 
+## Novel-information law for experiments
+
+Every scientific experiment must be designed to discover something new and
+potentially decision-changing about the mechanism, workload, correctness
+boundary, or product value. Before execution, record:
+
+- the new and interesting hypothesis or uncertainty being tested;
+- why existing evidence cannot answer it;
+- at least two plausible outcomes that would lead to different decisions; and
+- the action the project will take for each outcome.
+
+Do not run an experiment whose only purpose is more seeds, a larger sample,
+narrower confidence intervals, publication-level redundancy, generic
+robustness, or repetition of an already-established result. Tests, regression
+checks, and exact reproduction needed to protect correctness may still run,
+but they are validation rather than new scientific evidence and must not be
+presented as progress or used to justify a headline.
+
+Follow-up experiments are allowed when motivated by an interesting finding and
+designed to resolve a new question: for example, identifying the boundary of a
+surprising effect, testing a newly implicated mechanism, evaluating a distinct
+authentic distribution, or measuring larger pass@ only because prior evidence
+predicts a concrete qualitative or decision-relevant change. "Better
+statistical relevance" alone is never sufficient authorization.
+
+If a proposed run cannot state its novel information gain and decision map in
+advance, stop it. Redirect effort toward a more informative dataset,
+mechanism, instrumentation, or theory question.
+
 ## Required work order
 
 1. Reproduce the frozen C0 proposal, theorem, correctness, and padding counts.
@@ -86,4 +115,3 @@ Every experiment must save:
 
 Record scientific or architectural choices in `docs/DECISIONS.md` before they
 become implicit dependencies.
-

@@ -27,6 +27,21 @@
       "name": "Lean-Prover",
       "url": "https://github.com/Lean-Prover/lean-prover.git",
       "revision": "3f18e63372060a1b29e6690500fca466c83243b0"
+    },
+    {
+      "name": "Lean REPL",
+      "url": "https://github.com/leanprover-community/repl.git",
+      "revision": "5d5c49d13dfc0c1d2df43a27c3e56e02ad81b9c3"
+    },
+    {
+      "name": "OProver",
+      "url": "https://github.com/multimodal-art-projection/OProver.git",
+      "revision": "b0cb2583b702d5040f84783ebba23d86241eac05"
+    },
+    {
+      "name": "OProofs",
+      "url": "https://huggingface.co/datasets/OProver/OProofs",
+      "revision": "3bae0c06157639c0a673679635c669d19c99e906"
     }
   ],
   "raw_data_policy": "Source repositories were inspected under ignored external-data paths. No rollout or session data was copied into Git."

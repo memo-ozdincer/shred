@@ -135,3 +135,28 @@ state from its pretty-printed goals, which D013 already showed is unsafe for
 evidence. Any proposal must first define full hidden-context identity,
 attribution, isolation, timeout behavior, eviction, and ordinary-Lean fallback,
 then demonstrate a compute-free opportunity bound from an existing artifact.
+
+## Portable checkpoint resolution after D037
+
+Lean's official REPL provides a stronger primitive than goal reconstruction:
+it serializes full command and proof snapshots and has source-level regression
+coverage for loading a partial proof in a fresh process. This makes exact
+cross-worker reuse technically plausible. SHRED's possible contribution is not
+inventing serialization; it is a safe content-addressed runtime with hermetic
+identity, trusted-producer authentication, isolation, explicit misses, and
+ordinary-kernel finalization.
+
+Two blockers now dominate. The loader is explicitly unsafe and replays
+constants without checking them, so downloaded or user-supplied artifacts are
+categorically out of scope. More importantly, the public interface cannot yet
+materialize a completed tactic state into the unchanged theorem environment.
+Without that bridge, the checkpoint cannot produce the final ordinary-Lean
+verdict required by SHRED.
+
+OProver's multi-round repair harness is the best identified authentic workload:
+its local per-round records include related candidate text, feedback, verdict,
+and verifier wall time. The public OProofs release drops those intermediate
+records and native cost data, so it cannot pass the gate. Revisit this direction
+only with an existing full run artifact or after finalization becomes safely
+available; do not create synthetic repetitions to demonstrate already-known
+cross-process loading.

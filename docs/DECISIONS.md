@@ -1024,3 +1024,63 @@ new decision establishes safe full-context identity, explicit fallback, and a
 compute-free workload gate. An existing private artifact with full sibling
 branches and per-edge verifier CPU may be screened read-only under a frozen
 manifest.
+
+## D-036 - Require novel, decision-changing information from every experiment
+
+Date: 2026-08-31
+
+Status: accepted as a governing project law
+
+Decision: authorize a scientific experiment only when it pre-registers a new
+and interesting hypothesis or uncertainty, explains why existing evidence
+cannot answer it, gives at least two plausible outcomes with different project
+decisions, and commits to the action for each outcome. Prohibit runs motivated
+only by more seeds, larger samples, narrower intervals, publication-level
+redundancy, generic robustness, or repetition of an established result.
+
+Correctness tests, regression checks, and exact reproductions may still protect
+the implementation, but they are validation rather than scientific progress
+and cannot justify a headline. Follow-ups such as larger pass@ are allowed only
+when an interesting prior finding predicts a concrete qualitative or
+decision-relevant change.
+
+Reason: compute and attention spent making known results more statistically
+polished can crowd out mechanism discovery. SHRED advances only when an
+experiment can change what the project believes or builds.
+
+Consequence: every future execution decision must include an explicit novel
+information gain and outcome-to-decision map. If it cannot, stop the run and
+redirect effort to a new mechanism, authentic distribution, instrumentation,
+or theory question. This law is also part of `AGENTS.md` so it is enforced
+before work begins.
+
+## D-037 - Design portable checkpoints but stop before implementation
+
+Date: 2026-08-31
+
+Status: accepted after pinned source and artifact audit
+
+Decision: preserve portable exact checkpoints as the leading general-purpose
+successor and freeze a fail-closed cache contract, but do not implement or
+benchmark it yet. Any future artifact must be produced by a trusted worker in
+the same hermetic deployment, authenticated before isolated loading, and used
+only for speculative execution. Ordinary Lean must kernel-check the complete
+original declaration and supply the attributable verdict.
+
+Reason: the pinned official REPL serializes complete proof snapshots and its
+regression suite transfers a partial proof through disk into a fresh process.
+But loading uses `unsafeCast`, constant replay bypasses kernel checking, scoped
+environment extensions are incomplete, and the public interface cannot yet
+materialize a completed tactic state into the original theorem environment.
+The OProver harness is an attractive authentic iterative-repair producer and
+records per-round wall time locally, but its public OProofs release contains
+only final theorem/proof records and no intermediate timing-rich trajectories.
+No audited release passes the compute-free workload gate.
+
+Consequence: the next meaningful work is a proof-materialization and
+kernel-finalization design or access to an existing full OProver-like run
+artifact with exact environments, all rounds, and verifier CPU. More D-033
+seeds, synthetic portable examples, or generic cross-machine repetitions are
+forbidden by D-036. One bounded paired experiment may be proposed only after
+the trust/finalization boundary is resolved and read-only evidence projects at
+least 2x verifier throughput under the frozen gate.
