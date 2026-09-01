@@ -430,6 +430,15 @@ latency model (2.14x), but their 2.00x CPU figure has zero overhead margin.
 Accordingly, two replicas replace three as the balanced candidate, without
 turning any of these topology calculations into measured workload evidence.
 
+The balanced point now has an exact falsification boundary (D-059): its joint
+2x-CPU and 1.5x batch-service target requires shared-prefix CPU fraction
+`2/3 + h`, for normalized reuse overhead `h`. That is 66.67% with no overhead
+and 68.67% at 2% overhead. At a 70% prefix plus 2% overhead, the pinned topology
+still projects 2.041x CPU and 1.531x service-span improvement. This makes the
+first authentic trace decision-useful even if it misses the original 80%
+illustration, while preserving the boundary between a projection and measured
+wall latency.
+
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator
 then found 17 native CPU boundary records, joined all three REPL tactics by

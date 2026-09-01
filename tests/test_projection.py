@@ -108,6 +108,21 @@ class ProjectionTests(unittest.TestCase):
             ],
             2 / 15,
         )
+        self.assertAlmostEqual(
+            result["minimum_shared_prefix_fraction_for_two_x_cpu"], 2 / 3
+        )
+        self.assertAlmostEqual(
+            result[
+                "minimum_shared_prefix_fraction_for_one_point_five_x_batch_latency"
+            ],
+            2 / 3,
+        )
+        self.assertAlmostEqual(
+            result[
+                "minimum_shared_prefix_fraction_for_joint_two_x_cpu_and_one_point_five_x_batch_latency"
+            ],
+            2 / 3,
+        )
 
         with_two_percent_overhead = affinity_schedule_projection(
             groups=44,
@@ -124,6 +139,28 @@ class ProjectionTests(unittest.TestCase):
         self.assertAlmostEqual(
             with_two_percent_overhead["projected_batch_latency_multiplier"],
             3 / 1.66,
+        )
+        self.assertAlmostEqual(
+            with_two_percent_overhead[
+                "minimum_shared_prefix_fraction_for_joint_two_x_cpu_and_one_point_five_x_batch_latency"
+            ],
+            2 / 3 + 0.02,
+        )
+        lower_prefix_sensitivity = affinity_schedule_projection(
+            groups=44,
+            attempts_per_group=8,
+            verifier_slots=135,
+            shared_prefix_cpu_fraction=0.70,
+            replicas_per_group=2,
+            overhead_cpu_fraction_per_reuse=0.02,
+        )
+        self.assertAlmostEqual(
+            lower_prefix_sensitivity["projected_cpu_throughput_multiplier"],
+            8 / 3.92,
+        )
+        self.assertAlmostEqual(
+            lower_prefix_sensitivity["projected_batch_latency_multiplier"],
+            3 / 1.96,
         )
         impossible_latency = affinity_schedule_projection(
             groups=44,

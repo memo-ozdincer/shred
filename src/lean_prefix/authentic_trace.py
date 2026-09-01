@@ -672,6 +672,12 @@ def screen_authentic_trace(
                     "projected_cpu_service_makespan_speedup": (
                         service_makespan_speedup
                     ),
+                    "joint_two_x_cpu_and_one_point_five_x_service_target_passes": (
+                        projected_speedup_for_replicas is not None
+                        and projected_speedup_for_replicas >= 2.0
+                        and service_makespan_speedup is not None
+                        and service_makespan_speedup >= 1.5
+                    ),
                 }
             )
 

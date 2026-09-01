@@ -99,6 +99,16 @@ def affinity_schedule_projection(
         threshold = None if raw_threshold > 1.0 else max(0.0, raw_threshold)
 
     reuses_per_group = attempts_per_group - replicas_per_group
+    minimum_prefix_for_two_x_cpu = None
+    if reuses_per_group:
+        raw_minimum_prefix_for_two_x_cpu = (
+            attempts_per_group / 2.0
+            + reuses_per_group * overhead_cpu_fraction_per_reuse
+        ) / reuses_per_group
+        if raw_minimum_prefix_for_two_x_cpu <= 1.0:
+            minimum_prefix_for_two_x_cpu = max(
+                0.0, raw_minimum_prefix_for_two_x_cpu
+            )
     cpu_headroom = None
     if reuses_per_group:
         zero_overhead_group_cpu = (
@@ -115,6 +125,17 @@ def affinity_schedule_projection(
             else None
         )
     reuses_on_slowest_replica = maximum_attempts_per_replica - 1
+    minimum_prefix_for_one_point_five_x_latency = None
+    if reuses_on_slowest_replica:
+        raw_minimum_prefix_for_one_point_five_x_latency = (
+            maximum_attempts_per_replica
+            + reuses_on_slowest_replica * overhead_cpu_fraction_per_reuse
+            - independent_waves / (1.5 * affinity_waves)
+        ) / reuses_on_slowest_replica
+        if raw_minimum_prefix_for_one_point_five_x_latency <= 1.0:
+            minimum_prefix_for_one_point_five_x_latency = max(
+                0.0, raw_minimum_prefix_for_one_point_five_x_latency
+            )
     latency_headroom = None
     if reuses_on_slowest_replica:
         zero_overhead_replica_time = shared_prefix_cpu_fraction + (
@@ -159,6 +180,21 @@ def affinity_schedule_projection(
         "maximum_overhead_fraction_per_reuse_for_two_x_cpu": cpu_headroom,
         "maximum_overhead_fraction_per_reuse_for_one_point_five_x_batch_latency": (
             latency_headroom
+        ),
+        "minimum_shared_prefix_fraction_for_two_x_cpu": (
+            minimum_prefix_for_two_x_cpu
+        ),
+        "minimum_shared_prefix_fraction_for_one_point_five_x_batch_latency": (
+            minimum_prefix_for_one_point_five_x_latency
+        ),
+        "minimum_shared_prefix_fraction_for_joint_two_x_cpu_and_one_point_five_x_batch_latency": (
+            max(
+                minimum_prefix_for_two_x_cpu,
+                minimum_prefix_for_one_point_five_x_latency,
+            )
+            if minimum_prefix_for_two_x_cpu is not None
+            and minimum_prefix_for_one_point_five_x_latency is not None
+            else None
         ),
     }
 

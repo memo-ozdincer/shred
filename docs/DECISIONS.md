@@ -1788,3 +1788,28 @@ the prefix fraction and long-tail schedule before execution. The 13.33% value
 is mathematical headroom under the pinned topology, not observed SHRED
 overhead, and the latency numbers remain service-time Hypotheses rather than
 measured wall time.
+
+## D-059 - Gate the balanced candidate on a joint prefix threshold
+
+Date: 2026-09-01
+
+Status: accepted source-pinned hypothesis; no workload executed
+
+Decision: require the two-replica OProver-8B candidate to clear both 2x CPU and
+1.5x idealized batch-service improvement at its registered overhead. Report the
+exact minimum shared-prefix fraction rather than treating 80% as the only
+interesting point.
+
+Reason: for 44 groups of eight attempts, two replicas, and 135 slots, both
+targets reduce to the same boundary. The required shared-prefix CPU fraction is
+`2/3 + h`, where `h` is reuse overhead as a fraction of one independent
+verification. It is 66.67% at zero overhead and 68.67% at 2% overhead. A 70%
+prefix with 2% overhead still projects 2.041x CPU throughput and 1.531x
+batch-service improvement. This shows the balanced result is not narrowly
+dependent on the illustrative 80% prefix assumption.
+
+Consequence: the next authentic trace has a simple decision-changing test. If
+its conservative cost-weighted shared prefix clears the registered `2/3 + h`
+boundary and the unequal-cost scheduler preserves both targets, the balanced
+candidate remains promising; otherwise stop or choose a different explicit
+objective. These are analytical Hypotheses, not measured latency or overhead.

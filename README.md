@@ -210,14 +210,16 @@ OProver-8B candidate uses two local-trie replicas per theorem group and splits
 eight rollouts 4/4. At the same 80% hypothesis it projects **2.50× CPU
 throughput and 1.875× lower idealized equal-cost batch latency**. Both remain at
 least 2× CPU and 1.5× latency until reuse overhead exceeds 13.33% of one
-independent verification per reuse. By comparison, the faster 3/3/2 point
-projects 2.00× CPU and 2.14× latency but has zero overhead margin for its 2× CPU
-figure. These are selectable Pareto points, not measured results; every
-replicated prefix is charged explicitly. The authentic-trace screener now
-recomputes the frontier from observed unequal per-attempt costs and declared
-verifier slots, so the next normal eligible trace can falsify the equal-cost
-headline without a benchmark sweep. Its CPU-service schedule remains a
-projection until paired batch wall time is measured.
+independent verification per reuse. Equivalently, the joint target needs only a
+66.67% shared prefix at zero overhead or 68.67% at 2% overhead. Even a 70%
+prefix plus 2% overhead projects **2.041× CPU and 1.531× latency**. By
+comparison, the faster 3/3/2 point projects 2.00× CPU and 2.14× latency but has
+zero overhead margin for its 2× CPU figure. These are selectable Pareto points,
+not measured results; every replicated prefix is charged explicitly. The
+authentic-trace screener now recomputes the frontier from observed unequal
+per-attempt costs and declared verifier slots, so the next normal eligible
+trace can falsify the equal-cost headline without a benchmark sweep. Its CPU-
+service schedule remains a projection until paired batch wall time is measured.
 
 ## Where this can matter most
 

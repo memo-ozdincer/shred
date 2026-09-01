@@ -212,7 +212,10 @@ variation and can test whether a topology headline survives beyond equal-cost
 wave arithmetic. It is still not measured wall latency: CPU-service seconds do
 not include queueing, communication, or contention. Selecting a latency point
 requires authentic wall-time evidence and a pre-registered objective rather
-than post-hoc selection of the prettiest multiplier.
+than post-hoc selection of the prettiest multiplier. A frontier point passes
+the balanced screen only when a registered overhead is present and the actual-
+cost projection simultaneously retains at least 2x CPU throughput and 1.5x
+CPU-service makespan improvement.
 
 The top-level recommendation is deliberately singular: choose portable reuse
 when its incremental gate passes; otherwise choose the process-local exact trie
