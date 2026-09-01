@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/memo-ozdincer/shred/data/authentic-checkpoint-trace.schema.json",
-  "title": "SHRED authentic existing-run checkpoint trace",
+  "title": "SHRED authentic existing-run checkpoint trace v2",
   "type": "object",
   "required": ["schema_version", "trace_kind", "workload", "telemetry", "partitions"],
   "additionalProperties": false,
   "properties": {
-    "schema_version": {"const": 1},
-    "trace_kind": {"const": "shred-authentic-checkpoint-trace-v1"},
+    "schema_version": {"const": 2},
+    "trace_kind": {"const": "shred-authentic-checkpoint-trace-v2"},
     "source_root_default": {"type": "string"},
     "workload": {
       "type": "object",
@@ -75,12 +75,13 @@
         "parent_environment_sha256": {"$ref": "#/$defs/sha256"},
         "root_context_sha256": {"$ref": "#/$defs/sha256"},
         "prefix_edges_sha256": {"$ref": "#/$defs/sha256"},
-        "checkpoint_artifact_sha256": {"$ref": "#/$defs/sha256"}
+        "checkpoint_artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "execution_scope_sha256": {"$ref": "#/$defs/sha256"}
       },
       "allOf": [
         {
           "if": {"properties": {"eligibility": {"const": "exact_checkpoint"}}},
-          "then": {"required": ["prefix_verifier_cpu_seconds", "parent_environment_sha256", "root_context_sha256", "prefix_edges_sha256", "checkpoint_artifact_sha256"]},
+          "then": {"required": ["prefix_verifier_cpu_seconds", "parent_environment_sha256", "root_context_sha256", "prefix_edges_sha256", "checkpoint_artifact_sha256", "execution_scope_sha256"]},
           "else": {"required": ["fallback_reason"]}
         }
       ],

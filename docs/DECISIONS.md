@@ -1484,3 +1484,38 @@ warning was an upstream Starlette/httpx deprecation. The full Verl client-side
 test remains static-only and is not described as passing. This is observed
 correctness validation, not a scientific experiment, authentic workload
 evidence, or performance evidence.
+
+## D-050 - Require cross-scope evidence for portable-checkpoint value
+
+Date: 2026-09-01
+
+Status: accepted after static contract audit and unit validation
+
+Decision: replace the unused authentic trace draft with schema version two.
+Require every exact-checkpoint record to carry `execution_scope_sha256`, a
+digest of the producer-owned identity of the live Lean process or lease that
+ran the complete attempt. A portable-gate group must have at least eight
+attempts spanning at least two scopes. Preserve groups confined to one scope in
+a separate process-local opportunity section, but exclude their saving from
+the portable projection and decision. For every cross-scope group, subtract
+the saving available by executing the prefix once per scope; require the
+remaining incremental cross-scope component itself to clear the frozen 60%
+CPU-share and 2x gates. OProver derives the digest from the
+rollout-group ID and its fresh REPL UUID without exporting either raw value.
+
+Reason: version one grouped only theorem, environment, prefix, and artifact
+identity. It could therefore pass the portable cross-worker gate using eight
+branches executed inside one retained Lean process. That is useful local
+fan-out, but it is already available to tactic-tree provers and cannot justify
+SHRED's more general cross-worker or cross-policy mechanism. The distinction is
+available from existing producer receipts and needs no new workload run.
+
+Consequence: missing or invalid scope identity fails closed. A single-scope
+group receives an explicit `stop_no_cross_scope_exact_checkpoint_groups`
+decision when no cross-scope group remains, while its theoretical local saving
+is still reported. A multi-scope group dominated by co-located siblings can no
+longer attribute local fan-out savings to portability. Existing version-one
+draft manifests must be re-exported or re-sealed from their immutable producer
+data; no authentic measured SHRED trace has been invalidated. This is a
+correctness and novelty-boundary improvement, not a scientific experiment or
+performance result.

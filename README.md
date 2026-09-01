@@ -100,11 +100,14 @@ shred screen-authentic-trace \
 ```
 
 The system-neutral contract counts every verdict and fallback, requires exact
-environment/context/checkpoint identity, and reports aggregate, per-theorem,
-median, and tail projections. It will not treat proof text, pretty goals, or
-agent-message similarity as executable reuse. Sealing refuses overwrite,
-reconciles the producer-declared attempt count, and creates the manifest only
-after validation. See
+environment/context/checkpoint identity, and distinguishes reuse across
+independent Lean execution scopes from ordinary fan-out inside one live REPL.
+Only incremental saving beyond an ideal process-local prefix executor can pass
+the portable-checkpoint gate. It reports aggregate, per-theorem, median, and
+tail projections; proof text, pretty goals, and agent-message similarity never
+count as executable reuse. Sealing refuses
+overwrite, reconciles the producer-declared attempt count, and creates the
+manifest only after validation. See
 [`docs/AUTHENTIC_TRACE_CONTRACT.md`](docs/AUTHENTIC_TRACE_CONTRACT.md).
 
 The first concrete producer integration target is OProver's multi-round RL

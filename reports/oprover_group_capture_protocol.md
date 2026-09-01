@@ -46,3 +46,10 @@ explicit existing-cache accounting, producer source immutability, declared
 count reconciliation, no-overwrite behavior, failure on missing executed CPU,
 and direct acceptance by `seal-authentic-trace`. This completes the static
 producer-to-sealer path; it does not validate the unavailable OProver runtime.
+
+The exporter additionally hashes the attributable rollout-group and fresh REPL
+UUID into the trace's execution-scope identity. A future screen therefore
+reports same-lease fan-out separately and permits only checkpoint identities
+spanning at least two independent leases to enter the portable-reuse gate. It
+then subtracts the ideal saving available from sharing once inside each lease;
+only the remaining incremental cross-lease component can satisfy the gate.

@@ -60,12 +60,19 @@ for the end-to-end materiality gate.
 ## Exactness boundary
 
 An `exact_checkpoint` record means the producer captured one Lean-native prefix
-from one theorem and root environment. It must provide digests for:
+from one theorem and root environment. Version two also identifies the live
+Lean execution scope that independently ran the complete attempt. It must
+provide digests for:
 
 - the unchanged proposal and theorem statement;
 - the complete parent environment and root local context;
 - the ordered Lean-native prefix edges; and
-- the checkpoint artifact itself.
+- the checkpoint artifact itself; and
+- the producer-owned execution scope, such as a fresh REPL lease or process.
+
+The scope digest is SHA-256 over a producer-defined, run-unique identity. It
+must change when attempts cannot share a live proof state without portable
+loading. Worker names, hostnames, and raw UUIDs need not leave the producer.
 
 A textual prefix, pretty-printed goal, tactic-head match, reconstructed state,
 or common agent conversation is not eligible. Such attempts must be exported as
@@ -102,7 +109,8 @@ proof text need not be exported:
   "parent_environment_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
   "root_context_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
   "prefix_edges_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-  "checkpoint_artifact_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  "checkpoint_artifact_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "execution_scope_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
 }
 ```
 
@@ -124,9 +132,10 @@ fallback:
 
 ## Projection
 
-For each exact group with at least eight attempts, let `f_i` be complete warm
-independent verifier CPU and `p_i` be CPU through the shared checkpoint. The
-zero-overhead projected group cost is:
+For each exact group with at least eight attempts spanning at least two live
+Lean execution scopes, let `f_i` be complete warm independent verifier CPU and
+`p_i` be CPU through the shared checkpoint. The zero-overhead projected group
+cost is:
 
 ```text
 max(p_i) + sum(f_i - p_i)
@@ -137,18 +146,34 @@ among independent executions. Every suffix, timeout, rejection, crash, and
 fallback remains in the denominator. A registered per-hit load/finalization
 budget is then added for each of the `n - 1` cache hits.
 
-The frozen value gate additionally requires at least 100 qualifying groups
-across at least 10 theorems, at least 60% of all verifier CPU removable by exact
-prefix reuse before overhead, registered overhead no greater than 0.2 mean
-complete verifications per eight attempts, and verifier CPU at least 25% of
-total pipeline CPU. These are applicability constraints, not requests for more
-seeds: a smaller authentic workload stops as too narrow rather than authorizing
-repetition solely to cross the threshold.
+A qualifying exact group confined to one live scope is reported separately as
+process-local fan-out opportunity. It cannot pass the portable-checkpoint gate:
+that would confuse an optimization already available to ordinary tactic-tree
+search with evidence for reuse across workers or policy iterations.
+
+For a cross-scope group, the screener also computes an ideal process-local
+counterfactual: execute the prefix once per scope, using the maximum prefix CPU
+observed in that scope. The incremental portable saving is the sum of those
+per-scope prefix costs minus the single global maximum. Thus a group split 4+4
+across two workers cannot claim all seven avoided prefixes as portable value;
+six are available from local sharing and only one is uniquely cross-worker.
+
+The frozen value gate additionally requires at least 100 cross-scope qualifying
+groups across at least 10 theorems, at least 60% of all verifier CPU removable
+incrementally across scopes after ideal process-local sharing, at least 2x
+portable speedup over that process-local counterfactual, registered overhead no
+greater than 0.2 mean complete verifications per eight attempts, and verifier
+CPU at least 25% of total pipeline CPU. These are applicability constraints,
+not requests for more seeds: a smaller authentic workload stops as too narrow
+rather than authorizing repetition solely to cross the threshold.
 
 The report includes aggregate CPU, the maximum overhead compatible with the
-target, complete verdict and fallback counts, qualifying group details,
-per-theorem results, median/p10/p90/p95/p99 theorem speedups, and an end-to-end
-Amdahl projection from the manifest's total pipeline CPU.
+target, complete verdict and fallback counts, qualifying group details and
+scope counts, separately excluded single-scope opportunity, per-theorem
+results, the ideal process-local counterfactual, incremental portable saving,
+median/p10/p90/p95/p99 theorem speedups for both total and incremental portable
+effects, and an end-to-end Amdahl projection from the manifest's total pipeline
+CPU.
 
 This is a **Hypothesis** projection from **Observed** producer telemetry. It is
 not a measured SHRED result. A passing two-times value gate permits proposing
@@ -188,7 +213,8 @@ The manifest freezes dataset, producer Git/dirty state, complete producer
 command and resolved configuration digest, Lean/Mathlib revisions, hardware,
 concurrency, timeout, memory, expected attempt count, partition hashes, and
 telemetry semantics. Each record returns exactly one attributable verdict and
-either a fully specified exact checkpoint identity or an explicit fallback.
+either a fully specified exact checkpoint plus execution-scope identity or an
+explicit fallback.
 
 Unsupported records are never discarded. Partition counts, total attempts,
 duplicate proposal IDs, digest conflicts, missing CPU, invalid verdicts, and

@@ -30,7 +30,9 @@ def digest(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()
 
 
-def exact_record(index: int, *, theorem: str = "t", group: str = "g") -> dict:
+def exact_record(
+    index: int, *, theorem: str = "t", group: str = "g", scope: str | None = None
+) -> dict:
     return {
         "proposal_id": f"p{index}",
         "proposal_sha256": digest(f"proposal-{index}"),
@@ -44,6 +46,7 @@ def exact_record(index: int, *, theorem: str = "t", group: str = "g") -> dict:
         "root_context_sha256": digest(f"context-{theorem}"),
         "prefix_edges_sha256": digest(f"prefix-{group}"),
         "checkpoint_artifact_sha256": digest(f"checkpoint-{group}"),
+        "execution_scope_sha256": digest(scope or f"scope-{index // 4}"),
     }
 
 
@@ -55,7 +58,14 @@ def gate_records() -> list[dict]:
             group = f"{theorem}-{group_index}"
             for attempt_index in range(8):
                 index = len(records)
-                records.append(exact_record(index, theorem=theorem, group=group))
+                records.append(
+                    exact_record(
+                        index,
+                        theorem=theorem,
+                        group=group,
+                        scope=f"scope-{group}-{attempt_index}",
+                    )
+                )
     return records
 
 
@@ -88,8 +98,8 @@ class AuthenticTraceTests(unittest.TestCase):
             encoding="utf-8",
         )
         manifest = {
-            "schema_version": 1,
-            "trace_kind": "shred-authentic-checkpoint-trace-v1",
+            "schema_version": 2,
+            "trace_kind": "shred-authentic-checkpoint-trace-v2",
             "source_root_default": ".",
             "workload": self.workload_metadata(records),
             "telemetry": {
@@ -131,6 +141,24 @@ class AuthenticTraceTests(unittest.TestCase):
         )
         self.assertAlmostEqual(report["verifier_cpu"]["projected_seconds"], 2470.0)
         self.assertGreater(report["verifier_cpu"]["projected_speedup"], 3.0)
+        self.assertEqual(
+            report["portable_incremental_verifier_cpu"][
+                "process_local_saved_seconds"
+            ],
+            0.0,
+        )
+        self.assertGreater(
+            report["portable_incremental_verifier_cpu"][
+                "projected_speedup_over_process_local"
+            ],
+            3.0,
+        )
+        self.assertGreater(
+            report["per_theorem_portable_incremental_speedup_quantiles"][
+                "median"
+            ],
+            3.0,
+        )
         self.assertTrue(report["gate"]["passes"])
         self.assertGreater(report["pipeline_cpu"]["projected_speedup"], 1.5)
 
@@ -149,6 +177,84 @@ class AuthenticTraceTests(unittest.TestCase):
             report["gate"]["decision"],
             "stop_no_qualifying_exact_checkpoint_groups",
         )
+
+    def test_single_execution_scope_cannot_pass_portable_gate(self):
+        records = [
+            exact_record(index, scope="one-live-repl") for index in range(8)
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), records)
+            report = screen_authentic_trace(
+                manifest,
+                overhead_budget_cpu_seconds_per_hit=0.0,
+                overhead_budget_source="zero-overhead ceiling",
+            )
+        self.assertEqual(
+            report["accounting"]["single_scope_exact_checkpoint_attempts"], 8
+        )
+        self.assertEqual(
+            report["accounting"]["single_scope_exact_checkpoint_groups"], 1
+        )
+        self.assertEqual(
+            report["gate"]["decision"],
+            "stop_no_cross_scope_exact_checkpoint_groups",
+        )
+        self.assertEqual(
+            report["within_single_execution_scope_only"]["ideal_saved_cpu_seconds"],
+            56.0,
+        )
+
+    def test_within_scope_saving_cannot_masquerade_as_portable_value(self):
+        records = gate_records()
+        for group_index in range(100):
+            for offset in range(8):
+                records[group_index * 8 + offset]["execution_scope_sha256"] = digest(
+                    f"mixed-scope-{group_index}-{offset // 4}"
+                )
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), records)
+            report = screen_authentic_trace(
+                manifest,
+                overhead_budget_cpu_seconds_per_hit=0.0,
+                overhead_budget_source="zero-overhead ceiling",
+            )
+        self.assertAlmostEqual(report["verifier_cpu"]["ideal_speedup"], 10 / 3)
+        incremental = report["portable_incremental_verifier_cpu"]
+        self.assertEqual(incremental["process_local_saved_seconds"], 4800.0)
+        self.assertEqual(incremental["incremental_saved_seconds"], 800.0)
+        self.assertAlmostEqual(
+            incremental["projected_speedup_over_process_local"], 4 / 3
+        )
+        self.assertEqual(
+            report["gate"]["decision"],
+            "stop_below_portable_incremental_cpu_gate",
+        )
+        self.assertFalse(
+            report["gate"]["criteria"]["portable_incremental_cpu_fraction"]
+        )
+
+    def test_exact_checkpoint_requires_execution_scope_identity(self):
+        record = exact_record(0)
+        record.pop("execution_scope_sha256")
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), [record])
+            with self.assertRaisesRegex(
+                AuthenticTraceError, "execution_scope_sha256"
+            ):
+                screen_authentic_trace(manifest)
+
+    def test_version_one_draft_cannot_pass_version_two_gate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest_path = self.write_trace(root, [exact_record(0)])
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["schema_version"] = 1
+            manifest["trace_kind"] = "shred-authentic-checkpoint-trace-v1"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(
+                AuthenticTraceError, "unexpected authentic trace manifest identity"
+            ):
+                screen_authentic_trace(manifest_path)
 
     def test_default_gate_rejects_too_narrow_authentic_coverage(self):
         with tempfile.TemporaryDirectory() as directory:

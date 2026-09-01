@@ -106,8 +106,8 @@ after exact named-theorem finalization succeeds in the clean environment.
 
 Hypothesis: on authentic iterative repair or cross-worker RL verification,
 trusted portable checkpoints can remove at least half of total verifier CPU
-and provide at least 2x verifier throughput while complete ordinary-Lean
-verdicts remain identical.
+and provide at least 2x verifier throughput over ideal process-local prefix
+sharing while complete ordinary-Lean verdicts remain identical.
 
 Existing evidence cannot answer this because public repair releases omit
 either intermediate attempts, Lean-native boundaries, per-attempt verifier CPU,
@@ -115,7 +115,9 @@ or all three. A future run is allowed only after an existing read-only artifact
 establishes all of the following:
 
 - at least eight attempts per qualifying theorem/checkpoint group;
-- at least 60% conservative common-prefix share of verifier CPU;
+- at least two independent live Lean execution scopes per qualifying group;
+- at least 60% conservative incremental cross-scope share of verifier CPU after
+  ideal process-local prefix sharing;
 - projected total capture and load overhead no greater than 0.2 complete
   independent verifications per eight-attempt group;
 - enough groups for aggregate, median, tail, and per-theorem reporting; and

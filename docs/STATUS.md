@@ -341,6 +341,18 @@ Full verifier-side integration validation remains a correctness gate, but it
 does not justify installing the heavy training stack or running a dataset by
 itself.
 
+The authentic trace contract is now version two after a static audit found
+that version one could not distinguish ordinary fan-out inside one live Lean
+process from portable reuse. Every exact record now carries a digest of its
+producer-owned execution scope. Groups confined to one scope are reported with
+their ideal local saving but cannot pass the portable-checkpoint gate; a group
+must contain at least eight attempts across at least two independent scopes.
+For multi-scope groups, the gate subtracts all saving available to an ideal
+process-local prefix executor and requires the remaining incremental portable
+component itself to clear the 60% and 2x thresholds.
+The OProver exporter derives this digest from its rollout-group and fresh REPL
+receipt. This closes a novelty/evidence gap without running Lean or a workload.
+
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator
 then found 17 native CPU boundary records, joined all three REPL tactics by

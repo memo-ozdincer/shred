@@ -26,6 +26,28 @@ def _sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def _execution_scope(capture: dict[str, Any], location: str) -> str:
+    """Hash the producer-owned group and fresh REPL lease identity."""
+    group_id = _required_text(capture, "group_id", location)
+    repl_uuid = _required_text(capture, "repl_uuid", location)
+    group_index = capture.get("group_index")
+    group_size = capture.get("group_size")
+    if (
+        isinstance(group_index, bool)
+        or not isinstance(group_index, int)
+        or group_index < 0
+    ):
+        raise OProverExportError(f"{location}: invalid group_index")
+    if (
+        isinstance(group_size, bool)
+        or not isinstance(group_size, int)
+        or group_size < 8
+        or group_index >= group_size
+    ):
+        raise OProverExportError(f"{location}: invalid group_size")
+    return _sha256_text(f"oprover-kimina-v1\0{group_id}\0{repl_uuid}")
+
+
 def _required_text(row: dict[str, Any], field: str, location: str) -> str:
     value = row.get(field)
     if not isinstance(value, str) or not value:
@@ -156,6 +178,7 @@ def normalize_saved_attempt(row: dict[str, Any], location: str) -> dict[str, Any
     record.update(
         {
             "eligibility": "exact_checkpoint",
+            "execution_scope_sha256": _execution_scope(capture, location),
             "prefix_verifier_cpu_seconds": float(prefix_cpu),
             "parent_environment_sha256": _digest(
                 checkpoint.get("parent_environment_sha256"),

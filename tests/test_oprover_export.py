@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -24,6 +25,10 @@ def captured_entry(proposal_id: str = "r1_p2_s0") -> dict:
         "error_type": "none",
         "shred_cpu_capture": {
             "status": "captured",
+            "group_id": "r1_p2",
+            "group_index": 0,
+            "group_size": 8,
+            "repl_uuid": "fresh-repl-uuid",
             "cpu_boundaries": [
                 "SHRED_CPU_BOUNDARY_V1\t0\t0\t0\t1\tparsing\t_anonymous",
                 "SHRED_CPU_BOUNDARY_V1\t1\t1\t1\t4\tshred tactic execution@10:14\tKind.one",
@@ -55,6 +60,12 @@ class OProverExportTests(unittest.TestCase):
         self.assertEqual(record["full_verifier_cpu_seconds"], 10 / 1_000_000_000)
         self.assertEqual(record["prefix_verifier_cpu_seconds"], 4 / 1_000_000_000)
         self.assertEqual(record["checkpoint_artifact_sha256"], DIGEST)
+        self.assertEqual(
+            record["execution_scope_sha256"],
+            hashlib.sha256(
+                b"oprover-kimina-v1\0r1_p2\0fresh-repl-uuid"
+            ).hexdigest(),
+        )
 
     def test_export_counts_existing_exact_duplicate_without_reexecuting_it(self):
         cached = captured_entry("r1_p2_s1")
@@ -91,6 +102,18 @@ class OProverExportTests(unittest.TestCase):
             "fallback_reason": "group_transport_failure_no_retry",
         }
         with self.assertRaisesRegex(OProverExportError, "lacks exact process CPU"):
+            normalize_saved_attempt(row, "fixture:1")
+
+    def test_exact_checkpoint_without_repl_scope_fails_closed(self):
+        row = captured_entry()
+        row["shred_cpu_capture"].pop("repl_uuid")
+        with self.assertRaisesRegex(OProverExportError, "repl_uuid"):
+            normalize_saved_attempt(row, "fixture:1")
+
+    def test_exact_checkpoint_with_invalid_group_scope_fails_closed(self):
+        row = captured_entry()
+        row["shred_cpu_capture"]["group_index"] = 8
+        with self.assertRaisesRegex(OProverExportError, "group_size"):
             normalize_saved_attempt(row, "fixture:1")
 
     def test_declared_count_mismatch_creates_no_output(self):

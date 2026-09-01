@@ -13,13 +13,15 @@ import tempfile
 from typing import Any, Iterable
 
 
-TRACE_KIND = "shred-authentic-checkpoint-trace-v1"
+TRACE_SCHEMA_VERSION = 2
+TRACE_KIND = "shred-authentic-checkpoint-trace-v2"
 VERDICTS = {"accepted", "rejected", "timed_out", "crashed"}
 SHA256_LENGTH = 64
 MINIMUM_QUALIFYING_GROUPS = 100
 MINIMUM_QUALIFYING_THEOREMS = 10
 MINIMUM_GROUP_ATTEMPTS = 8
-MINIMUM_REUSABLE_PREFIX_CPU_FRACTION = 0.60
+MINIMUM_EXECUTION_SCOPES = 2
+MINIMUM_PORTABLE_INCREMENTAL_CPU_FRACTION = 0.60
 MAXIMUM_OVERHEAD_EQUIVALENT_PER_EIGHT_ATTEMPTS = 0.20
 MINIMUM_PIPELINE_VERIFIER_CPU_FRACTION = 0.25
 TARGET_VERIFIER_SPEEDUP = 2.0
@@ -95,7 +97,10 @@ def _load_manifest(path: Path) -> dict[str, Any]:
         raise AuthenticTraceError(f"invalid manifest JSON: {error}") from error
     if not isinstance(value, dict):
         raise AuthenticTraceError("trace manifest must contain one JSON object")
-    if value.get("schema_version") != 1 or value.get("trace_kind") != TRACE_KIND:
+    if (
+        value.get("schema_version") != TRACE_SCHEMA_VERSION
+        or value.get("trace_kind") != TRACE_KIND
+    ):
         raise AuthenticTraceError("unexpected authentic trace manifest identity")
     allowed_fields = {
         "schema_version",
@@ -276,6 +281,7 @@ def screen_authentic_trace(
                     "root_context_sha256",
                     "prefix_edges_sha256",
                     "checkpoint_artifact_sha256",
+                    "execution_scope_sha256",
                 }.intersection(record)
                 if forbidden:
                     raise AuthenticTraceError(
@@ -303,6 +309,9 @@ def screen_authentic_trace(
                 checkpoint_sha256 = _digest(
                     record, "checkpoint_artifact_sha256", location
                 )
+                execution_scope_sha256 = _digest(
+                    record, "execution_scope_sha256", location
+                )
                 prior_identity = checkpoint_identities.setdefault(
                     checkpoint_sha256, identity
                 )
@@ -314,6 +323,7 @@ def screen_authentic_trace(
                     {
                         "prefix_cpu": prefix_cpu,
                         "checkpoint_sha256": checkpoint_sha256,
+                        "execution_scope_sha256": execution_scope_sha256,
                         "group_key": (*identity, checkpoint_sha256),
                     }
                 )
@@ -342,6 +352,7 @@ def screen_authentic_trace(
         lambda: {
             "attempts": 0,
             "baseline_cpu_seconds": 0.0,
+            "process_local_counterfactual_cpu_seconds": 0.0,
             "ideal_projected_cpu_seconds": 0.0,
             "projected_cpu_seconds": 0.0,
             "qualifying_groups": 0,
@@ -355,6 +366,7 @@ def screen_authentic_trace(
         theorem = theorem_costs[attempt["theorem_name"]]
         theorem["attempts"] += 1
         theorem["baseline_cpu_seconds"] += attempt["full_cpu"]
+        theorem["process_local_counterfactual_cpu_seconds"] += attempt["full_cpu"]
         theorem["ideal_projected_cpu_seconds"] += attempt["full_cpu"]
         theorem["projected_cpu_seconds"] += attempt["full_cpu"]
         if attempt["eligibility"] == "fallback":
@@ -366,6 +378,12 @@ def screen_authentic_trace(
 
     qualifying_groups = []
     insufficient_attempts = 0
+    single_scope_attempts = 0
+    single_scope_groups = 0
+    single_scope_baseline_cpu = 0.0
+    single_scope_ideal_saved_cpu = 0.0
+    qualifying_process_local_saved_cpu = 0.0
+    portable_incremental_saved_cpu = 0.0
     ideal_saved_cpu = 0.0
     cache_hits = 0
     qualifying_baseline_cpu = 0.0
@@ -374,8 +392,27 @@ def screen_authentic_trace(
         if len(group) < MINIMUM_GROUP_ATTEMPTS:
             insufficient_attempts += len(group)
             continue
+        execution_scopes = {item["execution_scope_sha256"] for item in group}
         prefix_sum = sum(item["prefix_cpu"] for item in group)
         shared_prefix_cpu = max(item["prefix_cpu"] for item in group)
+        scope_prefix_cpu = sum(
+            max(
+                item["prefix_cpu"]
+                for item in group
+                if item["execution_scope_sha256"] == scope
+            )
+            for scope in execution_scopes
+        )
+        if len(execution_scopes) < MINIMUM_EXECUTION_SCOPES:
+            single_scope_attempts += len(group)
+            single_scope_groups += 1
+            single_scope_baseline_cpu += sum(item["full_cpu"] for item in group)
+            single_scope_ideal_saved_cpu += prefix_sum - shared_prefix_cpu
+            continue
+        process_local_saved = prefix_sum - scope_prefix_cpu
+        portable_incremental_saved = scope_prefix_cpu - shared_prefix_cpu
+        qualifying_process_local_saved_cpu += process_local_saved
+        portable_incremental_saved_cpu += portable_incremental_saved
         saved = prefix_sum - shared_prefix_cpu
         hits = len(group) - 1
         ideal_saved_cpu += saved
@@ -383,6 +420,7 @@ def screen_authentic_trace(
         group_baseline_cpu = sum(item["full_cpu"] for item in group)
         qualifying_baseline_cpu += group_baseline_cpu
         theorem = theorem_costs[group[0]["theorem_name"]]
+        theorem["process_local_counterfactual_cpu_seconds"] -= process_local_saved
         theorem["ideal_projected_cpu_seconds"] -= saved
         theorem["projected_cpu_seconds"] -= saved
         theorem["qualifying_groups"] += 1
@@ -392,23 +430,35 @@ def screen_authentic_trace(
                 "theorem_name": group[0]["theorem_name"],
                 "checkpoint_artifact_sha256": group[0]["checkpoint_sha256"],
                 "attempts": len(group),
+                "execution_scopes": len(execution_scopes),
                 "cache_hits": hits,
                 "baseline_cpu_seconds": group_baseline_cpu,
                 "repeated_prefix_cpu_seconds": prefix_sum,
                 "shared_prefix_cpu_seconds": shared_prefix_cpu,
+                "process_local_saved_cpu_seconds": process_local_saved,
+                "portable_incremental_saved_cpu_seconds": portable_incremental_saved,
                 "ideal_saved_cpu_seconds": saved,
             }
         )
 
     ideal_projected_cpu = baseline_cpu - ideal_saved_cpu
     ideal_speedup = baseline_cpu / ideal_projected_cpu
+    process_local_projected_cpu = baseline_cpu - qualifying_process_local_saved_cpu
+    portable_incremental_cpu_fraction = portable_incremental_saved_cpu / baseline_cpu
+    portable_incremental_ideal_speedup = (
+        process_local_projected_cpu / ideal_projected_cpu
+    )
     overhead_total = None
     projected_cpu = None
     projected_speedup = None
+    portable_incremental_projected_speedup = None
     if overhead_budget_cpu_seconds_per_hit is not None:
         overhead_total = overhead_budget_cpu_seconds_per_hit * cache_hits
         projected_cpu = ideal_projected_cpu + overhead_total
         projected_speedup = baseline_cpu / projected_cpu
+        portable_incremental_projected_speedup = (
+            process_local_projected_cpu / projected_cpu
+        )
         for theorem in theorem_costs.values():
             theorem["projected_cpu_seconds"] += (
                 overhead_budget_cpu_seconds_per_hit * theorem["cache_hits"]
@@ -418,6 +468,9 @@ def screen_authentic_trace(
     for theorem_name in sorted(theorem_costs):
         values = theorem_costs[theorem_name]
         theorem_baseline = float(values["baseline_cpu_seconds"])
+        process_local_cost = float(
+            values["process_local_counterfactual_cpu_seconds"]
+        )
         ideal_cost = float(values["ideal_projected_cpu_seconds"])
         projected_cost = (
             float(values["projected_cpu_seconds"])
@@ -433,9 +486,21 @@ def screen_authentic_trace(
                     if theorem_baseline > 0 and ideal_cost > 0
                     else None
                 ),
+                "ideal_portable_incremental_speedup": (
+                    process_local_cost / ideal_cost
+                    if process_local_cost > 0 and ideal_cost > 0
+                    else None
+                ),
                 "projected_verifier_speedup": (
                     theorem_baseline / projected_cost
                     if theorem_baseline > 0
+                    and projected_cost is not None
+                    and projected_cost > 0
+                    else None
+                ),
+                "projected_portable_incremental_speedup": (
+                    process_local_cost / projected_cost
+                    if process_local_cost > 0
                     and projected_cost is not None
                     and projected_cost > 0
                     else None
@@ -457,9 +522,26 @@ def screen_authentic_trace(
             ("p99", 0.99),
         )
     }
+    portable_incremental_speedups = sorted(
+        float(row["projected_portable_incremental_speedup"])
+        for row in theorem_rows
+        if row["projected_portable_incremental_speedup"] is not None
+    )
+    portable_incremental_tails = {
+        name: _quantile(portable_incremental_speedups, fraction)
+        for name, fraction in (
+            ("p10", 0.10),
+            ("median", 0.50),
+            ("p90", 0.90),
+            ("p95", 0.95),
+            ("p99", 0.99),
+        )
+    }
 
     maximum_total_overhead_for_target = max(
-        0.0, baseline_cpu / TARGET_VERIFIER_SPEEDUP - ideal_projected_cpu
+        0.0,
+        process_local_projected_cpu / TARGET_VERIFIER_SPEEDUP
+        - ideal_projected_cpu,
     )
     maximum_overhead_per_hit = (
         maximum_total_overhead_for_target / cache_hits if cache_hits else 0.0
@@ -499,8 +581,8 @@ def screen_authentic_trace(
         "has_qualifying_groups": bool(qualifying_groups),
         "group_coverage": len(qualifying_groups) >= MINIMUM_QUALIFYING_GROUPS,
         "theorem_coverage": len(qualifying_theorems) >= MINIMUM_QUALIFYING_THEOREMS,
-        "reusable_prefix_cpu_fraction": reusable_prefix_cpu_fraction
-        >= MINIMUM_REUSABLE_PREFIX_CPU_FRACTION,
+        "portable_incremental_cpu_fraction": portable_incremental_cpu_fraction
+        >= MINIMUM_PORTABLE_INCREMENTAL_CPU_FRACTION,
         "registered_overhead_present": overhead_total is not None,
         "registered_overhead_within_limit": (
             overhead_total is not None and overhead_total <= maximum_registered_overhead
@@ -510,17 +592,19 @@ def screen_authentic_trace(
             pipeline_verifier_fraction is not None
             and pipeline_verifier_fraction >= MINIMUM_PIPELINE_VERIFIER_CPU_FRACTION
         ),
-        "target_verifier_speedup": (
-            projected_speedup is not None
-            and projected_speedup >= TARGET_VERIFIER_SPEEDUP
+        "target_portable_incremental_speedup": (
+            portable_incremental_projected_speedup is not None
+            and portable_incremental_projected_speedup >= TARGET_VERIFIER_SPEEDUP
         ),
     }
-    if not criteria["has_qualifying_groups"]:
+    if not criteria["has_qualifying_groups"] and single_scope_groups:
+        decision = "stop_no_cross_scope_exact_checkpoint_groups"
+    elif not criteria["has_qualifying_groups"]:
         decision = "stop_no_qualifying_exact_checkpoint_groups"
     elif not criteria["group_coverage"] or not criteria["theorem_coverage"]:
         decision = "stop_insufficient_authentic_coverage"
-    elif not criteria["reusable_prefix_cpu_fraction"]:
-        decision = "stop_below_reusable_prefix_cpu_gate"
+    elif not criteria["portable_incremental_cpu_fraction"]:
+        decision = "stop_below_portable_incremental_cpu_gate"
     elif not criteria["registered_overhead_present"]:
         decision = "inconclusive_missing_registered_overhead_budget"
     elif not criteria["registered_overhead_within_limit"]:
@@ -529,13 +613,13 @@ def screen_authentic_trace(
         decision = "inconclusive_missing_pipeline_cpu"
     elif not criteria["pipeline_verifier_cpu_material"]:
         decision = "stop_verifier_cpu_not_material_to_pipeline"
-    elif not criteria["target_verifier_speedup"]:
-        decision = "stop_below_target_verifier_speedup"
+    elif not criteria["target_portable_incremental_speedup"]:
+        decision = "stop_below_target_portable_incremental_speedup"
     else:
         decision = "read_only_value_gate_passed"
 
     return {
-        "analysis": "authentic-checkpoint-trace-screen-v1",
+        "analysis": "authentic-checkpoint-trace-screen-v2",
         "evidence_label": "Observed trace accounting; Hypothesis projection",
         "claim_boundary": (
             "Read-only opportunity screen, not a measured SHRED speedup or verdict-equivalence result"
@@ -547,11 +631,12 @@ def screen_authentic_trace(
         },
         "configuration": {
             "minimum_group_attempts": MINIMUM_GROUP_ATTEMPTS,
+            "minimum_execution_scopes_per_group": MINIMUM_EXECUTION_SCOPES,
             "target_verifier_speedup": TARGET_VERIFIER_SPEEDUP,
             "minimum_qualifying_groups": MINIMUM_QUALIFYING_GROUPS,
             "minimum_qualifying_theorems": MINIMUM_QUALIFYING_THEOREMS,
-            "minimum_reusable_prefix_cpu_fraction": (
-                MINIMUM_REUSABLE_PREFIX_CPU_FRACTION
+            "minimum_portable_incremental_cpu_fraction": (
+                MINIMUM_PORTABLE_INCREMENTAL_CPU_FRACTION
             ),
             "maximum_overhead_equivalent_per_eight_attempts": (
                 MAXIMUM_OVERHEAD_EQUIVALENT_PER_EIGHT_ATTEMPTS
@@ -570,6 +655,8 @@ def screen_authentic_trace(
                 group["attempts"] for group in qualifying_groups
             ),
             "insufficient_group_attempts": insufficient_attempts,
+            "single_scope_exact_checkpoint_attempts": single_scope_attempts,
+            "single_scope_exact_checkpoint_groups": single_scope_groups,
             "fallback_attempts": sum(fallback_reasons.values()),
             "fallback_reasons": dict(sorted(fallback_reasons.items())),
             "verdicts": dict(sorted(verdicts.items())),
@@ -590,8 +677,37 @@ def screen_authentic_trace(
             "maximum_overhead_seconds_per_hit_for_target": maximum_overhead_per_hit,
             "maximum_registered_overhead_seconds": maximum_registered_overhead,
         },
+        "portable_incremental_verifier_cpu": {
+            "process_local_counterfactual_seconds": process_local_projected_cpu,
+            "process_local_saved_seconds": qualifying_process_local_saved_cpu,
+            "incremental_saved_seconds": portable_incremental_saved_cpu,
+            "incremental_saved_fraction_of_independent_baseline": (
+                portable_incremental_cpu_fraction
+            ),
+            "ideal_projected_seconds": ideal_projected_cpu,
+            "ideal_speedup_over_process_local": portable_incremental_ideal_speedup,
+            "projected_seconds": projected_cpu,
+            "projected_speedup_over_process_local": (
+                portable_incremental_projected_speedup
+            ),
+            "claim_boundary": (
+                "Incremental portable value after ideal process-local prefix sharing"
+            ),
+        },
+        "within_single_execution_scope_only": {
+            "groups": single_scope_groups,
+            "attempts": single_scope_attempts,
+            "baseline_cpu_seconds": single_scope_baseline_cpu,
+            "ideal_saved_cpu_seconds": single_scope_ideal_saved_cpu,
+            "claim_boundary": (
+                "Process-local fan-out opportunity; excluded from the portable checkpoint gate"
+            ),
+        },
         "pipeline_cpu": pipeline_projection,
         "per_theorem_speedup_quantiles": tails,
+        "per_theorem_portable_incremental_speedup_quantiles": (
+            portable_incremental_tails
+        ),
         "per_theorem": theorem_rows,
         "qualifying_group_details": qualifying_groups,
         "gate": {
@@ -673,7 +789,7 @@ def seal_authentic_trace(
     output_manifest.parent.mkdir(parents=True, exist_ok=True)
     source_root_default = os.path.relpath(source_root, output_manifest.parent)
     manifest = {
-        "schema_version": 1,
+        "schema_version": TRACE_SCHEMA_VERSION,
         "trace_kind": TRACE_KIND,
         "source_root_default": source_root_default,
         "workload": dict(workload),
@@ -724,7 +840,7 @@ def seal_authentic_trace(
             temporary_path.unlink(missing_ok=True)
 
     return {
-        "analysis": "authentic-checkpoint-trace-seal-v1",
+        "analysis": "authentic-checkpoint-trace-seal-v2",
         "evidence_label": "Validated immutable producer artifact",
         "claim_boundary": "Manifest sealing only; no Lean execution or speed claim",
         "manifest": str(output_manifest),

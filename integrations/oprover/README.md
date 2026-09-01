@@ -69,6 +69,12 @@ export if any executed attempt lacks exact process CPU. No authentic value
 screen is eligible until a normal independently useful run produces such an
 artifact.
 
+The exporter hashes each producer-owned rollout group plus fresh REPL UUID into
+an `execution_scope_sha256`. This lets the screener separate opportunity inside
+one live Kimina lease from an exact checkpoint identity recurring across
+independent leases. Raw group and process identities do not enter the digest-
+only trace.
+
 Checkpoint artifact capture requires the server operator to configure
 `LEAN_SERVER_SHRED_CAPTURE_DIR`. The directory is never supplied by a client,
 artifact IDs contain only hashed group identity plus a fresh REPL UUID, leaf
