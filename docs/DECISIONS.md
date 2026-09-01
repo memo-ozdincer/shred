@@ -1657,7 +1657,9 @@ normalized waves, projects 3.33x CPU throughput, and projects 1.25x lower batch
 latency. The exact no-latency-loss threshold is 5/7, or 71.4%. The pinned
 OProver-32B defaults analogously create 336 four-rollout groups and cap the
 verifier at 800 slots: the threshold is 2/3, and the same 80% scenario projects
-2.50x CPU throughput and 1.25x lower batch latency.
+2.50x CPU throughput and 1.25x lower batch latency. However, four-rollout
+groups fail the frozen eight-attempt authentic gate. The 32B calculation is
+therefore unsupported topology sensitivity, not an executable candidate.
 
 These are topology-grounded hypotheses, not workload measurements. They assume
 uniform attempt cost, whole scheduling waves, zero trie overhead, and an
@@ -1689,8 +1691,9 @@ idle. Under OProver-8B's pinned 44-group, eight-rollout, 135-slot topology,
 three replicas occupy 132 slots and split each group 3/3/2. At the same
 unmeasured 80% exact-prefix hypothesis, this projects 2.00x CPU throughput and
 2.14x lower equal-cost batch latency, versus 3.33x and 1.25x with one replica.
-OProver-32B can use two replicas per four-rollout group, projecting 1.67x on
-both axes instead of the one-replica 2.50x CPU and 1.25x latency point.
+As unsupported sensitivity, OProver-32B could use two replicas per
+four-rollout group, projecting 1.67x on both axes instead of the one-replica
+2.50x CPU and 1.25x latency point; this cannot pass the current SHRED gate.
 
 Consequence: SHRED now has a mechanism-level Pareto frontier rather than a
 binary choice between fully independent parallelism and fully co-located
@@ -1699,4 +1702,32 @@ zero scheduling overhead, and no measured OProver prefix share. An authentic
 trace must select its objective and replica policy before execution; searching
 replica counts after a benchmark for the prettiest number is not authorized.
 Portable checkpoints remain reserved for temporally separated reuse that local
-placement and controlled replication cannot recover.
+placement and controlled replication cannot recover. Only the eight-rollout
+OProver-8B default is currently eligible for this analysis.
+
+## D-056 - Derive the replication CPU frontier from authentic attempt costs
+
+Date: 2026-09-01
+
+Status: accepted instrumentation decision; no experiment executed
+
+Decision: make the authentic trace screener calculate every common local-trie
+replica count directly from observed per-attempt process CPU. For `k` replicas,
+charge each qualifying group `min(sum(p_i), k * max(p_i))` prefix CPU, preserve
+every observed suffix and fallback cost, and charge registered local overhead
+only to the remaining `n - k` reused attempts.
+
+Reason: D-055's source-pinned equal-cost model establishes that replication can
+trade some CPU reuse for substantially more batch parallelism, but it cannot
+identify the best point on a real workload. The new bound remains conservative
+when prefix costs vary, exactly agrees with the existing local-trie projection
+at one replica, and approaches independent execution as replicas approach
+attempts. It extracts this decision-relevant frontier from a normal run's
+already-required telemetry and therefore needs no speculative benchmark sweep.
+
+Consequence: the next eligible authentic OProver-8B trace can show whether the
+headline 3.33x CPU-oriented point survives actual costs and how much CPU value
+remains at two or three replicas. The report is CPU-only. Batch-latency claims
+still require authentic wall time and batch boundaries, and the optimization
+objective must be registered before execution; choosing `k` afterward for the
+largest attractive multiplier is prohibited.

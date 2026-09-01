@@ -382,18 +382,31 @@ eight-node batch contains 336 groups of four and caps verification at 800.
 With an assumed 80% exact shared-prefix CPU share, theorem-affinity local tries
 project 3.33x and 2.50x CPU throughput respectively, while both project 1.25x
 lower equal-cost batch latency because independent verification needs an extra
-wave. The exact no-latency-loss thresholds are 71.4% and 66.7%. These are
-Hypotheses, not measured workload results. They make placement the preferred
-design if an authentic trace clears the thresholds; portability remains only
-for reuse placement cannot recover.
+wave. The exact no-latency-loss thresholds are 71.4% and 66.7%. Only the 8B
+default meets the frozen eight-attempt authentic gate; the four-rollout 32B
+case is unsupported topology sensitivity. These are Hypotheses, not measured
+workload results. Placement is preferred if an eligible authentic trace clears
+the thresholds; portability remains only for reuse placement cannot recover.
 
 The same pinned topology exposes a better practical CPU-latency frontier
 (D-055). OProver-8B has enough slots for three replicas of each 8-rollout group;
 the 3/3/2 split projects 2.00x CPU throughput and 2.14x lower idealized batch
-latency at the same 80% hypothesis. OProver-32B can use two replicas per group
-and projects 1.67x on both axes. Controlled replication pays the prefix once
-per replica and is fully accounted; it is neither a cache hit nor portable
-reuse. No workload or verifier was executed for these projections.
+latency at the same 80% hypothesis. The ineligible four-rollout OProver-32B
+sensitivity uses two replicas and projects 1.67x on both axes, but cannot
+authorize execution under the frozen gate. Controlled replication pays the
+prefix once per replica and is fully accounted; it is neither a cache hit nor
+portable reuse. No workload or verifier was executed for these projections.
+
+The authentic screener now turns that topology idea into a real-cost CPU
+frontier (D-056) without running a workload. For every common replica count it
+uses observed per-attempt prefix and full process CPU, conservatively charges
+`k` worst-observed prefixes per group, preserves suffixes and fallbacks, and
+applies the registered local overhead only to actual reused attempts. The
+one-replica point is identical to the existing local-trie screen and full
+replication returns to independent execution. This will let the next normal,
+eligible OProver-8B trace distinguish a fragile equal-cost headline from a
+robust replication frontier. It deliberately emits no latency multiplier
+without authentic batch wall-time telemetry.
 
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator

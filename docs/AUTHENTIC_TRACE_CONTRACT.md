@@ -187,6 +187,20 @@ median/p10/p90/p95/p99 theorem speedups for both total and incremental portable
 effects, and an end-to-end Amdahl projection from the manifest's total pipeline
 CPU.
 
+For qualifying process-local groups, the report also emits a controlled-
+replication CPU frontier. For each replica count `k` (capped at each group's
+attempt count), it charges each group the lesser of all independently observed
+prefix CPU and `k` times the maximum observed prefix CPU, then leaves all suffix
+and fallback CPU unchanged.
+This is conservative under observed prefix-cost variation, matches the ordinary
+one-trie projection at `k = 1`, and returns to independent execution when every
+attempt has its own replica. Registered local overhead is charged only to the
+remaining `n - k` reused attempts. This frontier makes the CPU cost of exposing
+more parallelism directly testable from an existing trace. It makes no latency
+claim: selecting a latency point requires authentic batch boundaries and wall-
+time telemetry, plus a pre-registered objective rather than post-hoc selection
+of the prettiest multiplier.
+
 The top-level recommendation is deliberately singular: choose portable reuse
 when its incremental gate passes; otherwise choose the process-local exact trie
 when its gate passes; otherwise return inconclusive or stop. A local pass never

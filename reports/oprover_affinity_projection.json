@@ -31,6 +31,7 @@
   },
   "projections": {
     "oprover_8b_default_one_node": {
+      "eligibility_under_frozen_eight_attempt_gate": true,
       "observed_source_configuration": {
         "generation_prompt_groups": 44,
         "attempts_per_group": 8,
@@ -56,6 +57,8 @@
       }
     },
     "oprover_32b_default_eight_nodes": {
+      "eligibility_under_frozen_eight_attempt_gate": false,
+      "ineligibility_reason": "The pinned default has four attempts per group; SHRED requires at least eight. This topology is sensitivity analysis only and cannot authorize execution or a claim.",
       "observed_source_configuration": {
         "generation_prompt_groups": 336,
         "attempts_per_group": 4,
@@ -82,7 +85,7 @@
     }
   },
   "scientific_finding": "For the pinned OProver defaults, independent verification already exceeds available verifier slots. Theorem-affinity local tries can therefore reduce both verifier CPU and idealized batch latency. Replicating each theorem group into otherwise idle verifier slots exposes a selectable CPU-latency Pareto frontier without portable checkpoints.",
-  "decision": "Prefer replication-aware theorem-affinity process-local execution over portable checkpoints. Select the replica count from a pre-registered CPU or latency objective after an authentic trace establishes the exact reusable prefix cost.",
+  "decision": "Advance only OProver-8B to the existing-run trace gate. Prefer replication-aware theorem-affinity process-local execution over portable checkpoints if that trace passes. Retain OProver-32B only as unsupported topology sensitivity unless a normal future configuration independently produces at least eight attempts per group.",
   "reproduction": {
     "implementation": "lean_prefix.projection.affinity_schedule_projection",
     "tests": "tests.test_projection.ProjectionTests.test_oprover_8b_affinity_projection, test_oprover_8b_replication_uses_spare_slots, test_oprover_32b_affinity_projection, and test_oprover_32b_replication_uses_spare_slots"

@@ -502,6 +502,71 @@ def screen_authentic_trace(
                 * theorem["cache_hits"]
             )
 
+    local_replication_frontier = []
+    if local_qualifying_groups:
+        maximum_replicas = max(
+            int(group["attempts"]) for group in local_qualifying_groups
+        )
+        for replicas in range(1, maximum_replicas + 1):
+            reused_attempts = sum(
+                max(0, int(group["attempts"]) - replicas)
+                for group in local_qualifying_groups
+            )
+            # Without retaining proposal-level scheduling choices, the sum of
+            # per-replica prefix maxima is bounded above by k times the global
+            # maximum (and by executing every prefix independently). Charging
+            # that upper bound makes this frontier conservative under observed
+            # prefix-cost variation while remaining exact at k=1 and k=n.
+            replicated_prefix_cpu = sum(
+                min(
+                    float(group["repeated_prefix_cpu_seconds"]),
+                    replicas * float(group["shared_prefix_cpu_seconds"]),
+                )
+                for group in local_qualifying_groups
+            )
+            repeated_prefix_cpu = sum(
+                float(group["repeated_prefix_cpu_seconds"])
+                for group in local_qualifying_groups
+            )
+            saved_cpu = repeated_prefix_cpu - replicated_prefix_cpu
+            ideal_cpu = baseline_cpu - saved_cpu
+            registered_overhead = None
+            projected_cpu_for_replicas = None
+            projected_speedup_for_replicas = None
+            if process_local_overhead_budget_cpu_seconds_per_hit is not None:
+                registered_overhead = (
+                    process_local_overhead_budget_cpu_seconds_per_hit
+                    * reused_attempts
+                )
+                projected_cpu_for_replicas = ideal_cpu + registered_overhead
+                projected_speedup_for_replicas = (
+                    baseline_cpu / projected_cpu_for_replicas
+                )
+            local_replication_frontier.append(
+                {
+                    "replicas_per_group": replicas,
+                    "independently_executed_prefixes": (
+                        sum(
+                            min(replicas, int(group["attempts"]))
+                            for group in local_qualifying_groups
+                        )
+                    ),
+                    "reused_attempts": reused_attempts,
+                    "conservative_replicated_prefix_cpu_seconds": (
+                        replicated_prefix_cpu
+                    ),
+                    "conservative_saved_cpu_seconds": saved_cpu,
+                    "conservative_saved_fraction_of_baseline": (
+                        saved_cpu / baseline_cpu
+                    ),
+                    "ideal_projected_cpu_seconds": ideal_cpu,
+                    "ideal_cpu_speedup": baseline_cpu / ideal_cpu,
+                    "registered_overhead_seconds": registered_overhead,
+                    "projected_cpu_seconds": projected_cpu_for_replicas,
+                    "projected_cpu_speedup": projected_speedup_for_replicas,
+                }
+            )
+
     local_theorem_rows = []
     for theorem_name in sorted(local_theorem_costs):
         values = local_theorem_costs[theorem_name]
@@ -974,6 +1039,22 @@ def screen_authentic_trace(
             ),
             "claim_boundary": (
                 "Exact prefix sharing inside one live Lean execution scope"
+            ),
+        },
+        "process_local_replication_frontier": {
+            "points": local_replication_frontier,
+            "prefix_cost_model": (
+                "For k replicas, charge min(sum observed prefix CPU, "
+                "k * maximum observed prefix CPU) per qualifying group; "
+                "cap replicas at that group's attempt count"
+            ),
+            "claim_boundary": (
+                "Conservative CPU-only counterfactual from observed process CPU; "
+                "no batch-latency claim without authentic wall-time and batch-boundary telemetry"
+            ),
+            "selection_rule": (
+                "Pre-register a CPU or latency objective before execution; do not "
+                "select k after a benchmark for the largest reported multiplier"
             ),
         },
         "verifier_cpu": {

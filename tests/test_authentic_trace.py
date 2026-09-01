@@ -218,6 +218,28 @@ class AuthenticTraceTests(unittest.TestCase):
         self.assertGreater(
             report["per_theorem_process_local_speedup_quantiles"]["median"], 3.0
         )
+        frontier = report["process_local_replication_frontier"]
+        self.assertEqual(len(frontier["points"]), 8)
+        one_replica = frontier["points"][0]
+        self.assertEqual(one_replica["replicas_per_group"], 1)
+        self.assertEqual(
+            one_replica["reused_attempts"],
+            report["accounting"]["process_local_cache_hits"],
+        )
+        self.assertAlmostEqual(
+            one_replica["ideal_projected_cpu_seconds"],
+            report["process_local_verifier_cpu"]["ideal_projected_seconds"],
+        )
+        self.assertAlmostEqual(
+            one_replica["projected_cpu_speedup"],
+            report["process_local_verifier_cpu"]["projected_speedup"],
+        )
+        three_replicas = frontier["points"][2]
+        self.assertAlmostEqual(three_replicas["ideal_cpu_speedup"], 2.0)
+        eight_replicas = frontier["points"][-1]
+        self.assertEqual(eight_replicas["reused_attempts"], 0)
+        self.assertAlmostEqual(eight_replicas["ideal_cpu_speedup"], 1.0)
+        self.assertAlmostEqual(eight_replicas["projected_cpu_speedup"], 1.0)
 
     def test_process_local_gate_requires_registered_overhead(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -228,6 +250,30 @@ class AuthenticTraceTests(unittest.TestCase):
             "inconclusive_missing_registered_overhead_budget",
         )
         self.assertEqual(report["recommendation"]["decision"], "inconclusive")
+
+    def test_replication_frontier_charges_observed_prefix_variation_conservatively(self):
+        records = [
+            exact_record(index, group="variable", scope="one-scope")
+            for index in range(8)
+        ]
+        for index, record in enumerate(records, start=1):
+            record["prefix_verifier_cpu_seconds"] = float(index)
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), records)
+            report = screen_authentic_trace(
+                manifest,
+                process_local_overhead_budget_cpu_seconds_per_hit=0.0,
+                process_local_overhead_budget_source="zero-overhead ceiling",
+            )
+        points = report["process_local_replication_frontier"]["points"]
+        self.assertAlmostEqual(
+            points[0]["conservative_replicated_prefix_cpu_seconds"], 8.0
+        )
+        self.assertAlmostEqual(
+            points[1]["conservative_replicated_prefix_cpu_seconds"], 16.0
+        )
+        self.assertAlmostEqual(points[1]["conservative_saved_cpu_seconds"], 20.0)
+        self.assertAlmostEqual(points[-1]["ideal_cpu_speedup"], 1.0)
 
     def test_portable_budget_does_not_authorize_process_local_gate(self):
         with tempfile.TemporaryDirectory() as directory:
