@@ -34,6 +34,7 @@
         "transitive_imports",
         "native_plugins",
         "resource_profile_sha256",
+        "kernel_finalization_profile_sha256",
         "hermetic_inputs_sha256"
       ],
       "properties": {
@@ -58,6 +59,7 @@
           "items": {"$ref": "#/$defs/named_digest"}
         },
         "resource_profile_sha256": {"$ref": "#/$defs/sha256"},
+        "kernel_finalization_profile_sha256": {"$ref": "#/$defs/sha256"},
         "hermetic_inputs_sha256": {"$ref": "#/$defs/sha256"}
       }
     },
@@ -71,6 +73,8 @@
         "declaration_kind",
         "theorem_name",
         "theorem_statement_sha256",
+        "target_declaration_sha256",
+        "parent_environment_sha256",
         "root_context_sha256",
         "prefix_edges"
       ],
@@ -78,9 +82,11 @@
         "module_name": {"type": "string", "minLength": 1},
         "canonical_source_path": {"type": "string", "minLength": 1},
         "source_before_root_sha256": {"$ref": "#/$defs/sha256"},
-        "declaration_kind": {"enum": ["theorem", "lemma", "example"]},
+        "declaration_kind": {"enum": ["theorem", "lemma"]},
         "theorem_name": {"type": "string", "minLength": 1},
         "theorem_statement_sha256": {"$ref": "#/$defs/sha256"},
+        "target_declaration_sha256": {"$ref": "#/$defs/sha256"},
+        "parent_environment_sha256": {"$ref": "#/$defs/sha256"},
         "root_context_sha256": {"$ref": "#/$defs/sha256"},
         "prefix_edges": {
           "type": "array",

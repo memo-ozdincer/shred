@@ -91,16 +91,16 @@ The first implementation must miss and independently verify when it sees:
 
 ## Finalization requirement
 
-The public REPL currently reports a completed tactic state but does not expose
-a supported operation that replaces the original `sorry` with the accumulated
-proof and returns the resulting environment. Portable SHRED is not viable as a
-verification accelerator until this bridge exists.
+The pinned REPL already extracts the root proof assignment and kernel-checks an
+anonymous opaque definition. The missing step is narrower: close the entire
+root local context, require the original theorem name, universes, and type, and
+call the kernel checker on an independently rebuilt clean pre-theorem
+environment. The complete protocol and eligibility boundary are frozen in
+`docs/KERNEL_FINALIZATION.md`.
 
-The bridge must extract or install the completed proof under the unchanged
-theorem statement, run the normal kernel check, preserve messages and resource
-limits, and return exactly one attributable verdict. Replaying constants from
-the pickle is insufficient because that path explicitly bypasses kernel
-checking.
+Replaying constants from the pickle remains insufficient because that path
+explicitly bypasses kernel checking. A shared verdict is attributable only
+after exact named-theorem finalization succeeds in the clean environment.
 
 ## Novel-information gate for any future run
 

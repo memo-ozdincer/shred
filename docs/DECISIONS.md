@@ -1084,3 +1084,64 @@ seeds, synthetic portable examples, or generic cross-machine repetitions are
 forbidden by D-036. One bounded paired experiment may be proposed only after
 the trust/finalization boundary is resolved and read-only evidence projects at
 least 2x verifier throughput under the frozen gate.
+
+## D-038 - Resolve finalization statically with exact named kernel checking
+
+Date: 2026-08-31
+
+Status: accepted after pinned Lean and REPL source tracing
+
+Decision: replace D-037's broad claim that proof materialization is absent with
+a narrower design conclusion. The current REPL already extracts a completed
+root proof and calls the Lean kernel on an anonymous opaque definition in the
+pre-theorem environment. A portable SHRED finalizer must additionally retain
+the original theorem name, universe parameters, and closed type; abstract the
+entire ordered root local context; and call `Environment.addDecl` on
+an independently rebuilt clean parent environment under the original limits.
+
+Initially support only a single ordinary theorem or lemma with one tactic-mode
+root and an error-free root command. Fall back for nested holes, term holes,
+definitions, mutual or recursive declarations, missing pre-theorem snapshots,
+downstream attribute dependence, environment disagreement, residual
+metavariables/free variables/`sorry`, unknown constants, or any kernel/process
+failure.
+
+Reason: `getProofStatus` already performs most of the proof extraction path,
+and Lean exposes all remaining closure and checking operations. Its existing
+proof-dependent abstraction can omit unused theorem parameters and its inferred
+anonymous definition is not attributable to the original theorem. Full-root
+abstraction plus the original closed theorem type removes both gaps. Checking
+against a clean parent environment also prevents replay-only constants from
+entering the acceptance boundary.
+
+Consequence: no new trusted Lean primitive appears necessary; finalization is a
+bounded protocol and metadata change rather than a fundamental blocker. Do not
+implement a synthetic probe: it would now answer only an engineering question
+already resolved by source, violating D-036. Portable checkpoints remain
+blocked solely on an authentic read-only workload artifact that passes D-037's
+value gate.
+
+## D-039 - Stop repair-trace candidates at the public artifact boundary
+
+Date: 2026-08-31
+
+Status: accepted after public metadata and schema inspection
+
+Decision: do not bulk-download FormalMath and do not reproduce the agentic
+trace-level attribution study. FormalMath publishes repair-oriented text and
+final Lean code but lacks attempt lineage, environment identity, attributable
+per-attempt verdicts, and verifier CPU. The attribution paper describes a
+high-value raw JSONL trace class, but the public conference page and an author's
+official publication page expose no code, dataset, or artifact link.
+
+Reason: neither available surface can answer whether authentic independent
+attempts preserve enough exact executable prefix to project >=2x verifier
+throughput. Reading all FormalMath rows would turn a known schema deficiency
+into a larger sample of the same missing information. Reproducing the study
+would spend compute to recreate an artifact that may already exist privately.
+
+Consequence: retain the attribution study as the strongest unavailable lead.
+If its already-generated trace is released, first freeze the revision and
+inspect its schema. Only exact lineage, exact environment identity, complete
+verdict accounting, and verifier CPU can authorize a read-only corpus screen;
+only a screen projecting >=2x can authorize implementation under D-037.

@@ -146,12 +146,14 @@ inventing serialization; it is a safe content-addressed runtime with hermetic
 identity, trusted-producer authentication, isolation, explicit misses, and
 ordinary-kernel finalization.
 
-Two blockers now dominate. The loader is explicitly unsafe and replays
-constants without checking them, so downloaded or user-supplied artifacts are
-categorically out of scope. More importantly, the public interface cannot yet
-materialize a completed tactic state into the unchanged theorem environment.
-Without that bridge, the checkpoint cannot produce the final ordinary-Lean
-verdict required by SHRED.
+The loader remains explicitly unsafe and replays constants without checking
+them, so downloaded or user-supplied artifacts are categorically out of scope.
+D038 narrows the other blocker: the REPL already extracts and kernel-checks a
+completed proof as an anonymous opaque definition. Exact finalization can use
+the original theorem identity and type, full root-local-context abstraction,
+and a clean pre-theorem environment. No new trusted Lean primitive appears
+necessary, although the protocol remains unimplemented pending authentic
+workload evidence.
 
 OProver's multi-round repair harness is the best identified authentic workload:
 its local per-round records include related candidate text, feedback, verdict,
@@ -160,3 +162,10 @@ records and native cost data, so it cannot pass the gate. Revisit this direction
 only with an existing full run artifact or after finalization becomes safely
 available; do not create synthetic repetitions to demonstrate already-known
 cross-process loading.
+
+The agentic trace-level attribution study (`ShhLinF41r`) describes an even
+closer artifact—raw model, tool, compiler, verdict, and timing traces—but does
+not currently expose the JSONL publicly. FormalMath is publicly downloadable
+and repair-oriented, but its schema omits executable lineage, environment
+identity, and verifier CPU. D-039 therefore stops both without a bulk download
+or reproduction run.

@@ -42,7 +42,17 @@
       "name": "OProofs",
       "url": "https://huggingface.co/datasets/OProver/OProofs",
       "revision": "3bae0c06157639c0a673679635c669d19c99e906"
+    },
+    {
+      "name": "FormalMath reasoning_data",
+      "url": "https://huggingface.co/datasets/formalmathatepfl/reasoning_data",
+      "revision": "7e42c6b6c637d9c0fc7cf36915200b484f98aaa5"
+    },
+    {
+      "name": "What Helps Agentic Lean Provers?",
+      "url": "https://openreview.net/forum?id=ShhLinF41r",
+      "revision": "OpenReview-ShhLinF41r"
     }
   ],
-  "raw_data_policy": "Source repositories were inspected under ignored external-data paths. No rollout or session data was copied into Git."
+  "raw_data_policy": "Source repositories and public metadata/schema surfaces were inspected read-only. No rollout or session data was copied into Git."
 }
