@@ -37,14 +37,27 @@ The OProver/Kimina patch now:
 2. enables `shred.cpuBoundaries` and `allTactics` only for capture requests;
 3. strips and retains SHRED lines before Kimina applies its existing stderr error
    policy;
-4. preserve all non-SHRED stderr verbatim;
+4. preserves all non-SHRED stderr verbatim;
 5. carries native tactics and CPU records through OProver's existing verifier
-   result, with explicit fallback when either is missing.
+   result, with explicit fallback when either is missing;
+6. groups only exact `r{round}_p{prompt}_s{rollout}` siblings whose formal
+   statements are identical, and sends every unique complete attempt in one
+   group request to one server;
+7. leases one fresh capture REPL for the whole group, runs every unchanged body
+   from environment `0`, and returns a group ID, position, size, and REPL UUID
+   with every attributable result;
+8. counts exact duplicate complete attempts as cached copies of one named
+   representative; and
+9. rejects mixed, missing, duplicate, or cross-REPL receipts as explicit
+   fallbacks. Group transport requests are never silently retried because an
+   uncertain retry could submit the same proposals twice.
 
-The remaining integration work is to group only the existing
-`r{round}_p{prompt}_s{rollout}` siblings, lease their capture REPL until exact
-comparison, pickle one representative checkpoint, freeze environment/context
-receipts, and export every attempt through `seal-authentic-trace`.
+The group protocol and its producer-side tests are checked in as source, but
+the complete OProver environment is not installed in this workspace, so this
+slice has only passed static compilation and patch round-trip validation. The
+remaining integration work is to pickle one representative checkpoint, freeze
+environment/context receipts, and export every attempt through
+`seal-authentic-trace` before any authentic value screen is eligible.
 
 This instrumentation is not a performance result. A future paired comparison
 must use identical attempts and the same instrumented Lean build on both paths,

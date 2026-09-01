@@ -14,7 +14,7 @@ sample into deployment evidence. Full-workload results apply the registered
 cost-weighted gate and direct below-gate workloads toward bounded expensive
 closing-tactic analysis rather than enabling broad certificate caching.
 
-Last updated: 2026-08-31
+Last updated: 2026-09-01
 
 ## Established
 
@@ -301,11 +301,18 @@ The first adapter slice is implemented and fixture-validated. Pinned Lean and
 REPL patches expose absolute CPU scopes and exact native byte ranges, and a
 public Python parser fails closed unless byte range and syntax kind both match.
 The patches apply cleanly to the exact OProver pins and the parser has eight
-unit tests. A third pinned patch wires the capture flag through OProver and
-Kimina, isolates instrumented REPLs from the ordinary pool, preserves non-SHRED
-stderr, and retains explicit capture fallbacks. Its Python files pass static
-compilation and the patch applies cleanly to the audited OProver commit. Kimina
-group capture and checkpoint/environment/context receipts remain next.
+unit tests. A third pinned patch wires capture through OProver and Kimina,
+isolates instrumented REPLs from the ordinary pool, preserves non-SHRED stderr,
+and now implements group-scoped capture for exact rollout siblings. One batch
+request leases one fresh REPL, executes every unique complete attempt from
+environment `0`, and returns per-proposal group receipts. Exact duplicates are
+explicitly cached; malformed IDs, theorem/header mismatches, lease loss,
+missing results, and inconsistent receipts are explicit fallbacks. The client
+never silently retries an uncertain group request. The changed source passes
+static compilation, and the producer patch round-trips exactly against the
+audited OProver commit. The OProver dependency environment was not installed,
+so the new producer tests are checked in but not executed. Representative
+checkpoint and environment/context receipts remain next.
 
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator

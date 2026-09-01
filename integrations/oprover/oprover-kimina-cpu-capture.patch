@@ -1,5 +1,5 @@
 diff --git a/components/kimina-lean-server/client/kimina_client/models.py b/components/kimina-lean-server/client/kimina_client/models.py
-index 910121e..c3452da 100644
+index 910121e..c892bb9 100644
 --- a/components/kimina-lean-server/client/kimina_client/models.py
 +++ b/components/kimina-lean-server/client/kimina_client/models.py
 @@ -69,6 +69,7 @@ class VerifyRequestBody(BaseModel):
@@ -28,23 +28,29 @@ index 910121e..c3452da 100644
      goals: str
      tactic: str
      proofState: NotRequired[int | None]
-@@ -142,6 +147,7 @@ class Diagnostics(TypedDict, total=False):
+@@ -142,6 +147,12 @@ class Diagnostics(TypedDict, total=False):
      repl_uuid: str
      cpu_max: float
      memory_max: float
 +    shred_cpu_boundaries: list[str]
++    shred_group_id: str
++    shred_group_index: int
++    shred_group_size: int
++    shred_group_status: str
++    shred_group_fallback_reason: str
  
  
  # TODO: use basemodel pydantic instead
-@@ -226,6 +232,7 @@ class BaseRequest(BaseModel):
+@@ -226,6 +237,8 @@ class BaseRequest(BaseModel):
          None,
          description="Level of detail for the info tree.",
      )
 +    capture_shred_cpu: bool = False
++    capture_shred_group: str | None = None
  
  
  class ReplRequest(BaseRequest):
-@@ -469,6 +476,7 @@ class BackwardResponse(TypedDict):
+@@ -469,6 +482,7 @@ class BackwardResponse(TypedDict):
          str | None
      ]  # TODO: check if error is required here, probably not
      response: NotRequired[ExtendedCommandResponse | ExtendedError | None]
@@ -268,18 +274,135 @@ index ca5c119..8d48741 100644
          results.append(result)
  
 diff --git a/components/kimina-lean-server/server/routers/check.py b/components/kimina-lean-server/server/routers/check.py
-index 97182ae..b8c5323 100644
+index 97182ae..8296a17 100644
 --- a/components/kimina-lean-server/server/routers/check.py
 +++ b/components/kimina-lean-server/server/routers/check.py
-@@ -31,6 +31,7 @@ async def run_checks(
+@@ -31,6 +31,8 @@ async def run_checks(
      manager: Manager,
      reuse: bool,
      infotree: Infotree | None = None,
 +    capture_shred_cpu: bool = False,
++    capture_shred_group: str | None = None,
  ) -> list[ReplResponse]:
      def _inject_default_max_heartbeats(header: str, body: str) -> tuple[str, str]:
          """
-@@ -55,7 +56,12 @@ async def run_checks(
+@@ -49,13 +51,128 @@ async def run_checks(
+             header = option_line + "\n"
+         return header, body
+ 
++    def annotate_group(
++        response: ReplResponse,
++        *,
++        index: int,
++        size: int,
++        status: str,
++        fallback_reason: str | None = None,
++    ) -> None:
++        diagnostics = response.diagnostics or {}
++        diagnostics["shred_group_id"] = capture_shred_group or ""
++        diagnostics["shred_group_index"] = index
++        diagnostics["shred_group_size"] = size
++        diagnostics["shred_group_status"] = status
++        if fallback_reason is not None:
++            diagnostics["shred_group_fallback_reason"] = fallback_reason
++        response.diagnostics = diagnostics
++
++    async def run_body(
++        snippet: Snippet,
++        body: str,
++        repl: Repl,
++        *,
++        release_after: bool,
++    ) -> tuple[ReplResponse, bool]:
++        try:
++            resp = await repl.send_timeout(
++                Snippet(id=snippet.id, code=body),
++                timeout,
++                infotree=infotree,
++                capture_shred_cpu=capture_shred_cpu,
++            )
++        except (TimeoutError, asyncio.TimeoutError):
++            error = f"Lean REPL command timed out in {timeout} seconds"
++            uuid_hex = repl.uuid.hex
++            await manager.destroy_repl(repl)
++            if db.connected:
++                await prisma.proof.create(
++                    data={
++                        "id": snippet.id,
++                        "code": body,
++                        "time": timeout,
++                        "error": error,
++                        "repl": {"connect": {"uuid": uuid_hex}},
++                    }  # type: ignore
++                )
++            resp = ReplResponse(
++                id=snippet.id,
++                error=error,
++                time=timeout,
++                diagnostics={"repl_uuid": uuid_hex},
++            )
++            logger.info(
++                "[{}] Response for [bold magenta]{}[/bold magenta] body →\n{}",
++                repl.uuid.hex[:8],
++                snippet.id,
++                json.dumps(resp.model_dump(exclude_none=True), indent=2),
++            )
++            return resp, False
++        except Exception as e:
++            logger.exception("Snippet execution failed")
++            uuid_hex = repl.uuid.hex
++            await manager.destroy_repl(repl)
++            if capture_shred_group is not None:
++                error = f"Lean REPL execution failed: {e}"
++                if db.connected:
++                    await prisma.proof.create(
++                        data={
++                            "id": snippet.id,
++                            "code": body,
++                            "time": 0.0,
++                            "error": error,
++                            "repl": {"connect": {"uuid": uuid_hex}},
++                        }  # type: ignore
++                    )
++                return (
++                    ReplResponse(
++                        id=snippet.id,
++                        error=error,
++                        diagnostics={"repl_uuid": uuid_hex},
++                    ),
++                    False,
++                )
++            raise HTTPException(500, str(e)) from e
++
++        logger.info(
++            "[{}] Response for [bold magenta]{}[/bold magenta] body →\n{}",
++            repl.uuid.hex[:8],
++            snippet.id,
++            json.dumps(resp.model_dump(exclude_none=True), indent=2),
++        )
++        if release_after:
++            await manager.release_repl(repl)
++        if db.connected:
++            await prisma.proof.create(
++                data={
++                    "id": snippet.id,
++                    "code": body,
++                    "diagnostics": json.dumps(
++                        resp.diagnostics if resp.diagnostics else None
++                    ),
++                    "response": json.dumps(resp.response if resp.response else None),
++                    "time": resp.time,
++                    "error": resp.error,
++                    "repl": {"connect": {"uuid": repl.uuid.hex}},
++                }  # type: ignore
++            )
++        if not debug and capture_shred_group is None:
++            resp.diagnostics = None
++        return resp, True
++
+     async def run_one(snippet: Snippet) -> ReplResponse:
+         repl: Repl | None = None
+         try:
              header, body = split_snippet(snippet.code)
              header, body = _inject_default_max_heartbeats(header, body)
              try:
@@ -293,31 +416,303 @@ index 97182ae..b8c5323 100644
              except NoAvailableReplError:
                  logger.exception("No available REPLs")
                  raise HTTPException(429, "No available REPLs") from None
-@@ -99,7 +105,10 @@ async def run_checks(
+@@ -97,81 +214,200 @@ async def run_checks(
+                 await manager.destroy_repl(repl)
+                 raise HTTPException(500, str(e)) from e
  
++            resp, _ = await run_body(snippet, body, repl, release_after=True)
++            return resp
++        except asyncio.CancelledError:
++            if repl:
++                await manager.destroy_repl(repl)  # Kill REPL on cancel
++            raise
++
++    async def run_one_attributable(snippet: Snippet) -> ReplResponse:
++        """Keep group fallback failures attributable instead of aborting the batch."""
++        try:
++            return await run_one(snippet)
++        except asyncio.CancelledError:
++            raise
++        except HTTPException as exc:
++            return ReplResponse(
++                id=snippet.id,
++                error=f"Independent fallback failed ({exc.status_code}): {exc.detail}",
++            )
++        except Exception as exc:
++            return ReplResponse(
++                id=snippet.id,
++                error=f"Independent fallback failed: {exc}",
++            )
++
++    async def run_group() -> list[ReplResponse]:
++        size = len(snippets)
++        prepared = []
++        for snippet in snippets:
++            header, body = split_snippet(snippet.code)
++            prepared.append(_inject_default_max_heartbeats(header, body))
++
++        fallback_reason: str | None = None
++        if not capture_shred_cpu:
++            fallback_reason = "group_capture_requires_cpu_capture"
++        elif size < 2:
++            fallback_reason = "group_capture_requires_multiple_attempts"
++        elif len({header for header, _ in prepared}) != 1:
++            fallback_reason = "group_headers_differ"
++
++        if fallback_reason is not None:
++            independent = list(
++                await asyncio.gather(*(run_one_attributable(s) for s in snippets))
++            )
++            for index, response in enumerate(independent):
++                annotate_group(
++                    response,
++                    index=index,
++                    size=size,
++                    status="fallback",
++                    fallback_reason=fallback_reason,
++                )
++            return independent
++
++        header = prepared[0][0]
++        repl: Repl | None = None
++        results: list[ReplResponse] = []
++
++        def group_failure(reason: str, error: str) -> list[ReplResponse]:
++            failed = []
++            for index, snippet in enumerate(snippets):
++                response = ReplResponse(id=snippet.id, error=error)
++                annotate_group(
++                    response,
++                    index=index,
++                    size=size,
++                    status="fallback",
++                    fallback_reason=reason,
++                )
++                failed.append(response)
++            return failed
++
++        try:
++            try:
++                repl = await manager.get_repl(
++                    header,
++                    capture_shred_group or snippets[0].id,
++                    reuse=False,
++                    capture_shred_cpu=True,
++                )
++            except NoAvailableReplError:
++                logger.exception("No available REPL for SHRED group")
++                return group_failure(
++                    "group_repl_unavailable", "No available REPL for SHRED group"
++                )
++            except Exception as e:
++                logger.exception("Failed to get SHRED group REPL: %s", e)
++                return group_failure(
++                    "group_repl_acquisition_failed",
++                    f"Failed to get SHRED group REPL: {e}",
++                )
++
              try:
-                 resp = await repl.send_timeout(
+-                resp = await repl.send_timeout(
 -                    Snippet(id=snippet.id, code=body), timeout, infotree=infotree
-+                    Snippet(id=snippet.id, code=body),
++                prep = await manager.prep(
++                    repl,
++                    capture_shred_group or snippets[0].id,
 +                    timeout,
-+                    infotree=infotree,
-+                    capture_shred_cpu=capture_shred_cpu,
++                    True,
                  )
++                if prep and prep.error:
++                    await manager.destroy_repl(repl)
++                    for index, snippet in enumerate(snippets):
++                        response = prep.model_copy(update={"id": snippet.id})
++                        annotate_group(
++                            response,
++                            index=index,
++                            size=size,
++                            status="fallback",
++                            fallback_reason="group_header_rejected",
++                        )
++                        results.append(response)
++                    return results
              except (TimeoutError, asyncio.TimeoutError):
-                 error = f"Lean REPL command timed out in {timeout} seconds"
-@@ -200,6 +209,7 @@ async def check(
+-                error = f"Lean REPL command timed out in {timeout} seconds"
+                 uuid_hex = repl.uuid.hex
+                 await manager.destroy_repl(repl)
+-                if db.connected:
+-                    await prisma.proof.create(
+-                        data={
+-                            "id": snippet.id,
+-                            "code": body,
+-                            "time": timeout,
+-                            "error": error,
+-                            "repl": {
+-                                "connect": {"uuid": uuid_hex},
+-                            },
+-                        }  # type: ignore
++                for index, snippet in enumerate(snippets):
++                    response = ReplResponse(
++                        id=snippet.id,
++                        error=f"Lean REPL header command timed out in {timeout} seconds",
++                        time=timeout,
++                        diagnostics={"repl_uuid": uuid_hex},
+                     )
+-                resp = ReplResponse(
+-                    id=snippet.id,
+-                    error=error,
+-                    time=timeout,
+-                    diagnostics={
+-                        "repl_uuid": uuid_hex,
+-                    },
+-                )
+-                logger.info(
+-                    "[{}] Response for [bold magenta]{}[/bold magenta] body →\n{}",
+-                    repl.uuid.hex[:8],
+-                    snippet.id,
+-                    json.dumps(resp.model_dump(exclude_none=True), indent=2),
+-                )
+-                return resp
++                    annotate_group(
++                        response,
++                        index=index,
++                        size=size,
++                        status="fallback",
++                        fallback_reason="group_header_timeout",
++                    )
++                    results.append(response)
++                return results
+             except Exception as e:
+-                logger.exception("Snippet execution failed")
++                uuid_hex = repl.uuid.hex
+                 await manager.destroy_repl(repl)
+-                raise HTTPException(500, str(e)) from e
+-            else:
+-                logger.info(
+-                    "[{}] Response for [bold magenta]{}[/bold magenta] body →\n{}",
+-                    repl.uuid.hex[:8],
+-                    snippet.id,
+-                    json.dumps(resp.model_dump(exclude_none=True), indent=2),
+-                )
+-                await manager.release_repl(repl)
+-                # TODO: Try catch everything DB related
+-                if db.connected:
+-                    await prisma.proof.create(
+-                        data={
+-                            "id": snippet.id,
+-                            "code": body,
+-                            "diagnostics": json.dumps(
+-                                resp.diagnostics if resp.diagnostics else None
+-                            ),
+-                            "response": json.dumps(
+-                                resp.response if resp.response else None
+-                            ),
+-                            "time": resp.time,
+-                            "error": resp.error,
+-                            "repl": {
+-                                "connect": {"uuid": repl.uuid.hex},
+-                            },
+-                        }  # type: ignore
++                for index, snippet in enumerate(snippets):
++                    response = ReplResponse(
++                        id=snippet.id,
++                        error=f"Lean REPL header execution failed: {e}",
++                        diagnostics={"repl_uuid": uuid_hex},
+                     )
+-                if not debug:
+-                    resp.diagnostics = None
+-                return resp
++                    annotate_group(
++                        response,
++                        index=index,
++                        size=size,
++                        status="fallback",
++                        fallback_reason="group_header_error",
++                    )
++                    results.append(response)
++                return results
++
++            lease_usable = True
++            for index, (snippet, (_, body)) in enumerate(zip(snippets, prepared)):
++                response, lease_usable = await run_body(
++                    snippet,
++                    body,
++                    repl,
++                    release_after=False,
++                )
++                results.append(response)
++                if not lease_usable:
++                    remaining = snippets[index + 1 :]
++                    if remaining:
++                        results.extend(
++                            await asyncio.gather(
++                                *(run_one_attributable(item) for item in remaining)
++                            )
++                        )
++                    for result_index, result in enumerate(results):
++                        annotate_group(
++                            result,
++                            index=result_index,
++                            size=size,
++                            status="fallback",
++                            fallback_reason="group_lease_lost",
++                        )
++                    return results
++
++            await manager.release_repl(repl)
++            for index, response in enumerate(results):
++                annotate_group(
++                    response,
++                    index=index,
++                    size=size,
++                    status="captured",
++                )
++            return results
+         except asyncio.CancelledError:
+             if repl:
+-                await manager.destroy_repl(repl)  # Kill REPL on cancel
++                await manager.destroy_repl(repl)
+             raise
+ 
+-    results = await asyncio.gather(*(run_one(s) for s in snippets))
++    if capture_shred_group is not None:
++        results = await run_group()
++    else:
++        results = await asyncio.gather(*(run_one(s) for s in snippets))
+     return list(results)
+ 
+ 
+@@ -200,6 +436,8 @@ async def check(
              manager,
              request.reuse,
              request.infotree,
 +            capture_shred_cpu=request.capture_shred_cpu,
++            capture_shred_group=request.capture_shred_group,
          )
      )
  
 diff --git a/components/verl/verl/utils/reward_score/lean4_verifier.py b/components/verl/verl/utils/reward_score/lean4_verifier.py
-index 702b123..2d4f4b5 100644
+index 702b123..bed13fd 100644
 --- a/components/verl/verl/utils/reward_score/lean4_verifier.py
 +++ b/components/verl/verl/utils/reward_score/lean4_verifier.py
-@@ -68,6 +68,7 @@ class Lean4Verifier:
+@@ -24,6 +24,8 @@ import re
+ import time
+ import logging
+ import hashlib
++import copy
++from collections import defaultdict
+ from typing import Dict, Optional, Tuple, List, Union
+ import requests
+ import os
+@@ -48,6 +50,10 @@ class Lean4Verifier:
+     This class is designed to be stateless and thread-safe.
+     All verification parameters are instance variables, no global state.
+     """
++
++    _SHRED_SAMPLE_ID = re.compile(
++        r"^r(?P<round>\d+)_p(?P<prompt>\d+)_s(?P<rollout>\d+)$"
++    )
+     
+     def __init__(
+         self,
+@@ -68,6 +74,7 @@ class Lean4Verifier:
          format_reward_method: str = "strict",
          # Injection options
          max_heartbeats: Optional[int] = None,
@@ -325,7 +720,7 @@ index 702b123..2d4f4b5 100644
          
          # NOTE: cache_max_entries is kept for backward compatibility, but post-verification
          # caching has been removed to avoid memory overhead. Use in-flight de-dup instead.
-@@ -198,6 +199,7 @@ class Lean4Verifier:
+@@ -198,6 +205,7 @@ class Lean4Verifier:
          self.format_reward_method = format_reward_method
          
          self.max_heartbeats = max_heartbeats
@@ -333,7 +728,7 @@ index 702b123..2d4f4b5 100644
          
          if not enable_format_reward:
              self.success_score = 1.0
-@@ -632,6 +634,35 @@ class Lean4Verifier:
+@@ -632,6 +640,425 @@ class Lean4Verifier:
  
          return "none"
  
@@ -355,21 +750,411 @@ index 702b123..2d4f4b5 100644
 +            else None
 +        )
 +        tactics = response.get("tactics") if isinstance(response, dict) else None
++        group_status = (
++            diagnostics.get("shred_group_status")
++            if isinstance(diagnostics, dict)
++            else None
++        )
++        if group_status == "fallback":
++            return {
++                "status": "fallback",
++                "fallback_reason": diagnostics.get(
++                    "shred_group_fallback_reason", "group_capture_failed"
++                ),
++                "group_id": diagnostics.get("shred_group_id"),
++            }
 +        if not isinstance(boundaries, list) or not isinstance(tactics, list):
 +            return {
 +                "status": "fallback",
 +                "fallback_reason": "missing_native_cpu_or_tactic_telemetry",
 +            }
-+        return {
++        capture = {
 +            "status": "captured",
 +            "cpu_boundaries": boundaries,
 +            "native_tactics": tactics,
 +        }
++        if group_status == "captured":
++            capture.update(
++                {
++                    "group_id": diagnostics.get("shred_group_id"),
++                    "group_index": diagnostics.get("shred_group_index"),
++                    "group_size": diagnostics.get("shred_group_size"),
++                    "repl_uuid": diagnostics.get("repl_uuid"),
++                }
++            )
++        return capture
++
++    def _finalize_extracted_verification(
++        self,
++        *,
++        response: str,
++        formal_statement: str,
++        extracted_code: str,
++        extraction_method: str,
++        verify_result: Dict,
++        capture_override: Optional[Dict] = None,
++    ) -> Dict:
++        """Apply the ordinary verifier's verdict and reward policy to one server row."""
++        result = {
++            "success": False,
++            "score": self.failure_score,
++            "extracted_code": extracted_code,
++            "error_messages": "",
++            "extraction_method": extraction_method,
++            "error_type": verify_result.get(
++                "error_type", self._infer_error_type_from_result(verify_result)
++            ),
++        }
++        verify_result["error_type"] = result["error_type"]
++        capture = capture_override
++        if capture is None:
++            capture = self._extract_shred_cpu_capture(verify_result)
++        if capture is not None:
++            result["shred_cpu_capture"] = capture
++
++        is_success = self.is_proof_successful(verify_result)
++        is_trivial = False
++        if is_success and formal_statement and response:
++            raw_code, _ = self._extract_raw_code_for_trivial_check(response)
++            if raw_code:
++                is_trivial = self.is_trivial_abbrev_solution(
++                    formal_statement, raw_code
++                )
++                if is_trivial:
++                    is_success = False
++                    result["is_trivial_solution"] = True
++        result["success"] = is_success
++
++        if self.enable_format_reward:
++            if is_success:
++                format_result = self.format_checker.check_format(response, extracted_code)
++                result["format_correct"] = format_result["format_correct"]
++                result["format_score"] = format_result["format_score"]
++                result["missing_sections"] = format_result["missing_sections"]
++            else:
++                result["format_correct"] = 0
++                result["format_score"] = 0.0
++                result["missing_sections"] = 0
++            result["lean4_score"] = self.lean4_success_score if is_success else 0.0
++            result["score"] = result["format_score"] + result["lean4_score"]
++        else:
++            result["score"] = self.success_score if is_success else self.failure_score
++            result["format_correct"] = None
++            result["format_score"] = None
++            result["lean4_score"] = result["score"]
++
++        if is_success:
++            result["error_type"] = "none"
++        elif is_trivial:
++            result["error_messages"] = (
++                "Trivial solution detected: the model defined abbrev/def by copying "
++                "the theorem condition, then proved with a trivial unfold tactic."
++            )
++            result["error_type"] = "trivial_solution"
++        else:
++            result["error_messages"] = self.format_error_messages(verify_result)
++            if result["error_type"] == "none":
++                result["error_type"] = "verification_error"
++        return result
++
++    @staticmethod
++    def _capture_fallback(reason: str, group_id: Optional[str] = None) -> Dict:
++        capture = {"status": "fallback", "fallback_reason": reason}
++        if group_id is not None:
++            capture["group_id"] = group_id
++        return capture
++
++    async def _send_shred_group_request(
++        self,
++        *,
++        group_id: str,
++        snippets: List[Dict[str, str]],
++        session: aiohttp.ClientSession,
++        server_url: str,
++    ) -> Dict:
++        """Submit a group once; silent retries could execute proposals twice."""
++        payload = {
++            "snippets": snippets,
++            "timeout": self.request_timeout,
++            "debug": True,
++            "reuse": True,
++            "capture_shred_cpu": True,
++            "capture_shred_group": group_id,
++        }
++        try:
++            timeout = aiohttp.ClientTimeout(
++                total=self.request_timeout + 30,
++                connect=30,
++                sock_read=self.request_timeout + 10,
++            )
++            async with session.post(server_url, json=payload, timeout=timeout) as reply:
++                if reply.status != 200:
++                    return {
++                        "error": f"SHRED group HTTP error {reply.status}",
++                        "error_type": "server_error",
++                        "shred_group_transport_failure": True,
++                    }
++                result = await reply.json()
++                result["error_type"] = self._infer_error_type_from_result(result)
++                return result
++        except asyncio.TimeoutError as exc:
++            return {
++                "error": f"SHRED group client-side HTTP timeout: {exc}",
++                "error_type": "http_timeout",
++                "shred_group_transport_failure": True,
++            }
++        except Exception as exc:
++            return {
++                "error": f"SHRED group request failed: {exc}",
++                "error_type": "server_error",
++                "shred_group_transport_failure": True,
++            }
++
++    async def _verify_shred_group_async(
++        self,
++        *,
++        indices: List[int],
++        responses: List[str],
++        formal_statements: List[str],
++        sample_ids: List[str],
++        group_id: str,
++        session: aiohttp.ClientSession,
++        server_url: str,
++        client_fallback_reason: Optional[str] = None,
++    ) -> Dict[int, Dict]:
++        extracted: Dict[int, Tuple[str, str]] = {}
++        completed: Dict[int, Dict] = {}
++        representatives: Dict[str, int] = {}
++        duplicates: Dict[int, int] = {}
++
++        for index in indices:
++            code, method = self.extract_lean_code(
++                responses[index], formal_statements[index]
++            )
++            if not code:
++                completed[index] = {
++                    "success": False,
++                    "score": self.failure_score,
++                    "extracted_code": "",
++                    "error_messages": f"Failed to extract Lean code: {method}",
++                    "extraction_method": method,
++                    "error_type": "extraction_error",
++                    "shred_cpu_capture": self._capture_fallback(
++                        "proposal_extraction_failed", group_id
++                    ),
++                }
++                continue
++            extracted[index] = (code, method)
++            key = self._cache_key(formal_statements[index], code)
++            if key in representatives:
++                duplicates[index] = representatives[key]
++            else:
++                representatives[key] = index
++
++        representative_indices = list(representatives.values())
++        if not representative_indices:
++            return completed
++
++        snippets = [
++            {"id": sample_ids[index], "code": extracted[index][0]}
++            for index in representative_indices
++        ]
++        verify_result = await self._send_shred_group_request(
++            group_id=group_id,
++            snippets=snippets,
++            session=session,
++            server_url=server_url,
++        )
++
++        rows = verify_result.get("results")
++        rows_by_id: Dict[str, Dict] = {}
++        receipt_reason = client_fallback_reason
++        if verify_result.get("shred_group_transport_failure"):
++            receipt_reason = receipt_reason or "group_transport_failure_no_retry"
++        elif not isinstance(rows, list):
++            receipt_reason = receipt_reason or "group_response_missing_results"
++        else:
++            expected_ids = {sample_ids[index] for index in representative_indices}
++            for row in rows:
++                row_id = row.get("id") if isinstance(row, dict) else None
++                if not isinstance(row_id, str) or row_id in rows_by_id:
++                    receipt_reason = receipt_reason or "group_response_duplicate_or_invalid_id"
++                    continue
++                rows_by_id[row_id] = row
++            if set(rows_by_id) != expected_ids:
++                receipt_reason = receipt_reason or "group_response_id_mismatch"
++
++        if receipt_reason is None:
++            receipts = []
++            for index in representative_indices:
++                row = rows_by_id[sample_ids[index]]
++                diagnostics = row.get("diagnostics")
++                receipts.append(diagnostics if isinstance(diagnostics, dict) else {})
++            captured = [r for r in receipts if r.get("shred_group_status") == "captured"]
++            fallback = [r for r in receipts if r.get("shred_group_status") == "fallback"]
++            if captured and fallback:
++                receipt_reason = "group_receipt_mixed_status"
++            elif captured:
++                repls = {r.get("repl_uuid") for r in captured}
++                indices_seen = {r.get("shred_group_index") for r in captured}
++                expected_positions = set(range(len(representative_indices)))
++                if (
++                    any(r.get("shred_group_id") != group_id for r in captured)
++                    or any(
++                        r.get("shred_group_size") != len(representative_indices)
++                        for r in captured
++                    )
++                    or indices_seen != expected_positions
++                    or len(repls) != 1
++                    or None in repls
++                ):
++                    receipt_reason = "group_receipt_mismatch"
++            elif not fallback:
++                receipt_reason = "group_receipt_missing_status"
++
++        for index in representative_indices:
++            row = rows_by_id.get(sample_ids[index])
++            if row is None:
++                single = {
++                    "error": verify_result.get("error", "Missing attributable group result"),
++                    "error_type": verify_result.get("error_type", "server_error"),
++                }
++            else:
++                single = {"results": [row]}
++                single["error_type"] = self._infer_error_type_from_result(single)
++            override = None
++            if receipt_reason is not None:
++                override = self._capture_fallback(receipt_reason, group_id)
++            completed[index] = self._finalize_extracted_verification(
++                response=responses[index],
++                formal_statement=formal_statements[index],
++                extracted_code=extracted[index][0],
++                extraction_method=extracted[index][1],
++                verify_result=single,
++                capture_override=override,
++            )
++
++        for duplicate_index, representative_index in duplicates.items():
++            copied = copy.deepcopy(completed[representative_index])
++            copied["extracted_code"] = extracted[duplicate_index][0]
++            copied["extraction_method"] = extracted[duplicate_index][1]
++            copied["shred_cpu_capture"] = {
++                "status": "cached_exact_duplicate",
++                "group_id": group_id,
++                "representative_id": sample_ids[representative_index],
++            }
++            completed[duplicate_index] = copied
++        return completed
++
++    async def _verify_shred_groups_async(
++        self,
++        responses: List[str],
++        formal_statements: List[str],
++        sample_ids: List[str],
++        max_workers_override: Optional[int] = None,
++    ) -> List[Dict]:
++        total = len(responses)
++        if not (len(formal_statements) == total == len(sample_ids)):
++            raise ValueError("responses, formal_statements, and sample_ids must align")
++
++        grouped: Dict[Tuple[str, str], List[int]] = defaultdict(list)
++        client_fallbacks: Dict[Tuple[str, str], str] = {}
++        seen_ids = set()
++        for index, sample_id in enumerate(sample_ids):
++            match = self._SHRED_SAMPLE_ID.fullmatch(sample_id or "")
++            if match is None or sample_id in seen_ids:
++                key = ("fallback", str(index))
++                grouped[key].append(index)
++                client_fallbacks[key] = (
++                    "duplicate_sample_id" if sample_id in seen_ids else "unsupported_sample_id"
++                )
++            else:
++                key = (match.group("round"), match.group("prompt"))
++                grouped[key].append(index)
++            seen_ids.add(sample_id)
++
++        for key, indices in list(grouped.items()):
++            if len({formal_statements[index] for index in indices}) != 1:
++                del grouped[key]
++                for index in indices:
++                    split_key = ("formal_fallback", str(index))
++                    grouped[split_key] = [index]
++                    client_fallbacks[split_key] = "group_formal_statements_differ"
++
++        num_servers = max(1, len(self.server_urls))
++        effective_workers = (
++            max_workers_override if max_workers_override is not None else self.max_workers
++        )
++        per_server = max(1, effective_workers // num_servers)
++        semaphores = [asyncio.Semaphore(per_server) for _ in range(num_servers)]
++        connector = aiohttp.TCPConnector(
++            limit=per_server * num_servers,
++            limit_per_host=per_server,
++            ttl_dns_cache=300,
++            force_close=False,
++        )
++        completed: Dict[int, Dict] = {}
++
++        async with aiohttp.ClientSession(connector=connector) as session:
++            async def run_group(sequence: int, key, indices):
++                server_index = sequence % num_servers
++                group_id = (
++                    f"r{key[0]}_p{key[1]}"
++                    if key[0].isdigit() and key[1].isdigit()
++                    else f"client_fallback_{indices[0]}"
++                )
++                async with semaphores[server_index]:
++                    result = await self._verify_shred_group_async(
++                        indices=indices,
++                        responses=responses,
++                        formal_statements=formal_statements,
++                        sample_ids=sample_ids,
++                        group_id=group_id,
++                        session=session,
++                        server_url=self.server_urls[server_index],
++                        client_fallback_reason=client_fallbacks.get(key),
++                    )
++                    completed.update(result)
++
++            tasks = [
++                asyncio.create_task(run_group(sequence, key, indices))
++                for sequence, (key, indices) in enumerate(grouped.items())
++            ]
++            try:
++                await asyncio.wait_for(
++                    asyncio.gather(*tasks),
++                    timeout=self.request_timeout + self.batch_timeout_buffer,
++                )
++            except asyncio.TimeoutError:
++                for task in tasks:
++                    task.cancel()
++            except Exception as exc:
++                logger.error(f"[SHRED Group] Unexpected batch error: {exc}")
++
++        final = []
++        for index in range(total):
++            if index in completed:
++                final.append(completed[index])
++            else:
++                final.append(
++                    {
++                        "success": False,
++                        "score": self.failure_score,
++                        "extracted_code": "",
++                        "error_messages": "SHRED group batch did not return an attributable result",
++                        "extraction_method": "error",
++                        "error_type": "batch_timeout",
++                        "shred_cpu_capture": self._capture_fallback(
++                            "group_batch_incomplete"
++                        ),
++                    }
++                )
++        return final
 +
      async def send_verification_request_async_with_url(
          self, 
          data_id: str, 
-@@ -645,7 +676,8 @@ class Lean4Verifier:
+@@ -645,7 +1072,8 @@ class Lean4Verifier:
              "snippets": [{"id": data_id, "code": code}],
              "timeout": self.request_timeout,
              "debug": True,
@@ -379,7 +1164,7 @@ index 702b123..2d4f4b5 100644
          }
          
          last_timeout_result = None
-@@ -749,7 +781,8 @@ class Lean4Verifier:
+@@ -749,7 +1177,8 @@ class Lean4Verifier:
              "snippets": [{"id": data_id, "code": code}],
              "timeout": self.request_timeout,
              "debug": True,
@@ -389,7 +1174,7 @@ index 702b123..2d4f4b5 100644
          }
          
          last_timeout_result = None
-@@ -808,7 +841,8 @@ class Lean4Verifier:
+@@ -808,7 +1237,8 @@ class Lean4Verifier:
              "snippets": [{"id": data_id, "code": code}],
              "timeout": self.request_timeout,
              "debug": True,
@@ -399,7 +1184,7 @@ index 702b123..2d4f4b5 100644
          }
          
          last_timeout_result = None
-@@ -1193,6 +1227,9 @@ class Lean4Verifier:
+@@ -1193,6 +1623,9 @@ class Lean4Verifier:
              # Check error type from server response
              error_type = verify_result.get('error_type', 'unknown')
              result["error_type"] = error_type
@@ -409,7 +1194,7 @@ index 702b123..2d4f4b5 100644
  
              # keep only error_type (timeout is server-side lean timeout)
              
-@@ -1327,6 +1364,9 @@ class Lean4Verifier:
+@@ -1327,6 +1760,9 @@ class Lean4Verifier:
              # Check error type from server response
              error_type = verify_result.get('error_type', 'unknown')
              result["error_type"] = error_type
@@ -419,7 +1204,7 @@ index 702b123..2d4f4b5 100644
  
              # Check if proof is successful
              is_success = self.is_proof_successful(verify_result)
-@@ -1437,6 +1477,9 @@ class Lean4Verifier:
+@@ -1437,6 +1873,9 @@ class Lean4Verifier:
              # Check error type from server response
              error_type = verify_result.get('error_type', 'unknown')
              result["error_type"] = error_type
@@ -429,3 +1214,233 @@ index 702b123..2d4f4b5 100644
              
              # Check if proof is successful
              is_success = self.is_proof_successful(verify_result)
+@@ -1526,6 +1965,18 @@ class Lean4Verifier:
+         """
+         if sample_ids is None:
+             sample_ids = [f"batch_{i}" for i in range(len(responses))]
++
++        if self.capture_shred_cpu:
++            # Capture mode requires one batch request per exact rollout sibling group.
++            # It deliberately bypasses the ordinary singleton/threaded request paths.
++            return asyncio.run(
++                self._verify_shred_groups_async(
++                    responses,
++                    formal_statements,
++                    sample_ids,
++                    max_workers_override,
++                )
++            )
+         
+         if (not use_multithreading and not self.use_async) or len(responses) < 4:
+             # Sequential verification for small batches
+diff --git a/components/kimina-lean-server/tests/test_shred_group.py b/components/kimina-lean-server/tests/test_shred_group.py
+new file mode 100644
+index 0000000..4801fb7
+--- /dev/null
++++ b/components/kimina-lean-server/tests/test_shred_group.py
+@@ -0,0 +1,123 @@
++from uuid import UUID
++
++import pytest
++from kimina_client import CommandResponse, ReplResponse, Snippet
++
++from server.errors import NoAvailableReplError
++from server.routers.check import run_checks
++
++
++class FakeCaptureRepl:
++    def __init__(self) -> None:
++        self.uuid = UUID("00000000-0000-0000-0000-000000000123")
++        self.sent: list[str] = []
++
++    async def send_timeout(self, snippet: Snippet, *args, **kwargs) -> ReplResponse:
++        self.sent.append(snippet.code)
++        return ReplResponse(
++            id=snippet.id,
++            response=CommandResponse(env=0),
++            diagnostics={
++                "repl_uuid": str(self.uuid),
++                "shred_cpu_boundaries": [
++                    "SHRED_CPU_BOUNDARY_V1\t0\t0\t1\t2\tparsing\t_anonymous"
++                ],
++            },
++        )
++
++
++class FakeCaptureManager:
++    def __init__(self) -> None:
++        self.repl = FakeCaptureRepl()
++        self.get_calls = 0
++        self.prep_calls = 0
++        self.release_calls = 0
++        self.destroy_calls = 0
++
++    async def get_repl(self, header: str, snippet_id: str, **kwargs):
++        self.get_calls += 1
++        assert kwargs == {"reuse": False, "capture_shred_cpu": True}
++        return self.repl
++
++    async def prep(self, repl, snippet_id: str, timeout: float, debug: bool):
++        self.prep_calls += 1
++        assert repl is self.repl
++        assert debug is True
++        return None
++
++    async def release_repl(self, repl) -> None:
++        assert repl is self.repl
++        self.release_calls += 1
++
++    async def destroy_repl(self, repl) -> None:
++        self.destroy_calls += 1
++
++
++@pytest.mark.asyncio
++async def test_capture_group_leases_one_repl_for_every_member() -> None:
++    manager = FakeCaptureManager()
++    snippets = [
++        Snippet(id="r1_p7_s0", code="theorem t : True := by trivial"),
++        Snippet(id="r1_p7_s1", code="theorem t : True := by exact True.intro"),
++    ]
++
++    results = await run_checks(
++        snippets,
++        timeout=10,
++        debug=True,
++        manager=manager,  # type: ignore[arg-type]
++        reuse=True,
++        capture_shred_cpu=True,
++        capture_shred_group="r1_p7",
++    )
++
++    assert manager.get_calls == 1
++    assert manager.prep_calls == 1
++    assert manager.release_calls == 1
++    assert manager.destroy_calls == 0
++    assert manager.repl.sent == [snippet.code for snippet in snippets]
++    assert [result.id for result in results] == [snippet.id for snippet in snippets]
++    assert {
++        result.diagnostics["repl_uuid"]  # type: ignore[index]
++        for result in results
++    } == {str(manager.repl.uuid)}
++    assert [
++        result.diagnostics["shred_group_index"]  # type: ignore[index]
++        for result in results
++    ] == [0, 1]
++    assert all(
++        result.diagnostics["shred_group_id"] == "r1_p7"  # type: ignore[index]
++        and result.diagnostics["shred_group_size"] == 2  # type: ignore[index]
++        and result.diagnostics["shred_group_status"] == "captured"  # type: ignore[index]
++        for result in results
++    )
++
++
++@pytest.mark.asyncio
++async def test_capture_group_repl_failure_is_attributable_to_every_member() -> None:
++    class UnavailableManager:
++        async def get_repl(self, *args, **kwargs):
++            raise NoAvailableReplError("full")
++
++    snippets = [
++        Snippet(id="r2_p3_s0", code="theorem t : True := by trivial"),
++        Snippet(id="r2_p3_s1", code="theorem t : True := by exact True.intro"),
++    ]
++    results = await run_checks(
++        snippets,
++        timeout=10,
++        debug=True,
++        manager=UnavailableManager(),  # type: ignore[arg-type]
++        reuse=True,
++        capture_shred_cpu=True,
++        capture_shred_group="r2_p3",
++    )
++
++    assert [result.id for result in results] == [snippet.id for snippet in snippets]
++    assert all(result.error for result in results)
++    assert all(
++        result.diagnostics["shred_group_status"] == "fallback"  # type: ignore[index]
++        and result.diagnostics["shred_group_fallback_reason"]  # type: ignore[index]
++        == "group_repl_unavailable"
++        for result in results
++    )
+diff --git a/components/verl/tests/utils/reward_score/test_shred_group_capture.py b/components/verl/tests/utils/reward_score/test_shred_group_capture.py
+new file mode 100644
+index 0000000..a1793c6
+--- /dev/null
++++ b/components/verl/tests/utils/reward_score/test_shred_group_capture.py
+@@ -0,0 +1,76 @@
++import pytest
++
++from verl.utils.reward_score.lean4_verifier import Lean4Verifier
++
++
++class GroupHarness(Lean4Verifier):
++    def __init__(self) -> None:
++        self.capture_shred_cpu = True
++        self.failure_score = 0.0
++        self.sent = []
++
++    def extract_lean_code(self, response, formal_statement):
++        return response, "fixture"
++
++    async def _send_shred_group_request(
++        self, *, group_id, snippets, session, server_url
++    ):
++        self.sent.append((group_id, snippets, server_url))
++        rows = []
++        for index, snippet in enumerate(snippets):
++            rows.append(
++                {
++                    "id": snippet["id"],
++                    "response": {"tactics": []},
++                    "diagnostics": {
++                        "repl_uuid": "one-repl",
++                        "shred_cpu_boundaries": [],
++                        "shred_group_id": group_id,
++                        "shred_group_index": index,
++                        "shred_group_size": len(snippets),
++                        "shred_group_status": "captured",
++                    },
++                }
++            )
++        return {"results": rows, "error_type": "none"}
++
++    def _finalize_extracted_verification(self, **kwargs):
++        capture = kwargs.get("capture_override")
++        if capture is None:
++            capture = self._extract_shred_cpu_capture(kwargs["verify_result"])
++        return {
++            "success": True,
++            "score": 1.0,
++            "extracted_code": kwargs["extracted_code"],
++            "extraction_method": kwargs["extraction_method"],
++            "error_messages": "",
++            "error_type": "none",
++            "shred_cpu_capture": capture,
++        }
++
++
++@pytest.mark.asyncio
++async def test_group_client_submits_exact_duplicates_once_and_accounts_for_them() -> None:
++    verifier = GroupHarness()
++    results = await verifier._verify_shred_group_async(
++        indices=[0, 1, 2],
++        responses=["proof-a", "proof-a", "proof-b"],
++        formal_statements=["theorem t : True := by sorry"] * 3,
++        sample_ids=["r1_p4_s0", "r1_p4_s1", "r1_p4_s2"],
++        group_id="r1_p4",
++        session=object(),  # type: ignore[arg-type]
++        server_url="http://fixture/api/check",
++    )
++
++    assert [snippet["id"] for snippet in verifier.sent[0][1]] == [
++        "r1_p4_s0",
++        "r1_p4_s2",
++    ]
++    assert set(results) == {0, 1, 2}
++    assert results[0]["shred_cpu_capture"]["status"] == "captured"
++    assert results[1]["shred_cpu_capture"] == {
++        "status": "cached_exact_duplicate",
++        "group_id": "r1_p4",
++        "representative_id": "r1_p4_s0",
++    }
++    assert results[2]["shred_cpu_capture"]["status"] == "captured"

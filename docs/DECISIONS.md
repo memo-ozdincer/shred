@@ -1337,3 +1337,44 @@ identical native tactics. The fixture also established that Lean may produce
 wrapper scopes with the same byte range but different syntax kinds, so only the
 exact `(range, syntax kind)` pair is a candidate; duplicate exact pairs still
 fall back. These are protocol/correctness facts, not performance evidence.
+
+## D-046 - Capture rollout siblings in one attributable group request
+
+Date: 2026-09-01
+
+Status: accepted after source implementation, static validation, and patch
+round-trip validation
+
+Decision: in capture mode only, parse OProver's exact
+`r{round}_p{prompt}_s{rollout}` IDs and group proposals by round and prompt.
+Require identical formal statements in a group. Send every unique complete
+attempt in one `/api/check` request pinned to one server, and have Kimina lease
+one fresh capture REPL for the request. Prepare the common import header once,
+then execute each unchanged body sequentially from REPL environment `0`.
+Return a group ID, index, size, and REPL UUID for every proposal. Copy an exact
+duplicate `(formal statement, complete extracted code)` verdict only from a
+named representative and label it cached.
+
+Fail closed and preserve attribution. Invalid IDs, theorem or header mismatch,
+singleton unique groups, unavailable or lost leases, extraction failures,
+missing/duplicate result IDs, mixed statuses, and inconsistent group receipts
+are explicit fallbacks. Do not silently retry a capture group after transport
+uncertainty because the server may already have executed it; a retry would
+violate exact submission accounting.
+
+Reason: independent HTTP requests can be routed to different servers or REPLs,
+so they cannot prove that sibling attempts were observed in one process from
+one root environment. A single bounded request gives the server ownership of
+the lease lifetime and lets the client validate a complete receipt without a
+distributed lease registry. Exact duplicate accounting retains OProver's
+existing in-flight optimization without conflating caching with prefix reuse.
+
+Consequence: the producer patch contains server and client tests for one-lease
+group execution, attributable acquisition failure, exact-duplicate submission,
+and cached accounting. All changed Python files compile statically, the patch
+applies to the pinned OProver source, and applying it reproduces the isolated
+implementation byte-for-byte. The dependency environment lacks FastAPI,
+Pydantic, aiohttp, and pytest, so those new tests have not run. This is an
+implemented protocol boundary, not measured authentic evidence. Checkpoint,
+environment/context receipt, and sealed-trace work remains before any rollout
+or performance experiment is authorized.
