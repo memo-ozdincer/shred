@@ -1,6 +1,8 @@
 # OProver capture adapter
 
-Status: source-only reference integration. No benchmark has been run.
+Status: the pinned Lean and REPL patches compile and the checked-in three-tactic
+fixture passes the capture/control protocol validator. The complete OProver
+stack has not been run, and no benchmark has been run.
 
 These patches target the exact versions used by the audited OProver stack:
 
@@ -16,7 +18,9 @@ request parsing/elaboration scopes; the option additionally tags its tactic
 scopes with exact ranges. Lean's existing RAII profiler emits tab-separated
 records containing absolute process CPU plus completed-child CPU from
 `getrusage`, an order number, nesting depth, and the tactic's exact source byte
-range. Windows fails closed because this clock is not implemented there.
+range. Records bypass Lean's redirected diagnostic stream and go directly to
+the process stderr descriptor, which is the stream Kimina retains. Windows
+fails closed because this clock is not implemented there.
 
 The REPL patch adds the original syntax kind and exact byte range to each
 `allTactics` entry. `shred.oprover_adapter` joins only equal native byte ranges;
@@ -46,3 +50,18 @@ This instrumentation is not a performance result. A future paired comparison
 must use identical attempts and the same instrumented Lean build on both paths,
 confirm agreement against the warm ordinary execution baseline, report the
 instrumentation overhead separately, and satisfy D-040 before any headline.
+
+After building the patched pins, the bounded validation command is:
+
+```bash
+PYTHONPATH=src python integrations/oprover/validate_capture.py \
+  --lake /path/to/patched-lean/build/release/stage1/bin/lake \
+  --repl /path/to/patched-repl/.lake/build/bin/repl \
+  --project-dir /path/to/patched-repl
+```
+
+It runs one fixed three-tactic theorem with capture enabled and disabled. It
+requires three exact byte-range-plus-syntax-kind matches, no telemetry inside
+Lean diagnostic messages, empty unrelated stderr, and identical native tactic
+output in the disabled control. It deliberately does not retain timing values
+or make a performance claim.

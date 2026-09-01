@@ -1,0 +1,4 @@
+{
+  "cmd": "set_option shred.cpuBoundaries true\ntheorem shred_fixture (p q : Prop) (hp : p) (hq : q) : p ∧ q := by\n  constructor\n  · exact hp\n  · exact hq",
+  "allTactics": true
+}

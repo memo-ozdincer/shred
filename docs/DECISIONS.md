@@ -1276,12 +1276,12 @@ supplies self CPU plus synchronously completed child CPU on the Linux OProver
 deployment.
 
 Consequence: the pinned Lean and REPL patches and fail-closed Python parser are
-checked in. Both patches apply to their exact source commits, and seven unit tests
-validate parsing and exact alignment. They have not been compiled or executed,
-so no statement is promoted to **Measured**. The next bounded validation is to
-compile the instrumented toolchain and test protocol/accounting on tiny fixed
-fixtures; it is correctness validation, not a scientific experiment or a
-headline. Authentic OProver execution remains governed by D-042 and D-040.
+checked in. Both patches apply to their exact source commits, and parser unit
+tests validate strict parsing and exact alignment. On 2026-09-01 the patched
+toolchain and REPL compiled and the checked-in tiny fixture passed capture and
+disabled-control validation. This remains **Observed** correctness validation,
+not a performance measurement or headline. Authentic OProver execution remains
+governed by D-042 and D-040.
 
 ## D-044 - Isolate capture-enabled OProver REPLs from ordinary verification
 
@@ -1307,6 +1307,33 @@ a new proof submission.
 
 Consequence: the pinned producer patch applies cleanly to OProver commit
 `b0cb2583b702d5040f84783ebba23d86241eac05`, and all changed Python files pass
-static compilation. The stack is still uncompiled and unexecuted. Group-scoped
+static compilation. The producer itself remains unexecuted. Group-scoped
 leasing, representative snapshot receipts, and exact environment/context
 receipts remain required before an authentic sidecar can satisfy D-040.
+
+## D-045 - Emit capture records through the process stderr descriptor
+
+Date: 2026-09-01
+
+Status: accepted after compiled fixture validation
+
+Decision: emit SHRED boundary records directly through POSIX file descriptor 2,
+under Lean's existing profiling mutex, instead of using Lean's `tout()` trace
+stream or the C++ `std::cerr` stream. Keep each record in one critical section,
+retry interrupted writes, and let incomplete output fail closed in the parser.
+Continue to use Lean's ordinary output mechanisms for all non-SHRED profiling.
+
+Reason: the compiled REPL fixture showed that both Lean's trace stream and the
+C++ stderr stream are redirected into command diagnostic messages during
+elaboration. Only parser boundaries outside elaboration reached Kimina's
+process stderr file. Direct descriptor output produced all 17 fixture records
+on stderr and removed every SHRED record from the REPL JSON diagnostics without
+changing the native tactic response.
+
+Consequence: the checked-in validator now requires all three fixture tactics to
+join by exact byte range and syntax kind, no telemetry to appear in Lean
+messages, unrelated stderr to remain empty, and the disabled control to return
+identical native tactics. The fixture also established that Lean may produce
+wrapper scopes with the same byte range but different syntax kinds, so only the
+exact `(range, syntax kind)` pair is a candidate; duplicate exact pairs still
+fall back. These are protocol/correctness facts, not performance evidence.

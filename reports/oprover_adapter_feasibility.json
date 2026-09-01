@@ -4,9 +4,10 @@
   "evidence_label": "Observed",
   "execution": {
     "bulk_dataset_download": false,
-    "lean_execution": false,
+    "lean_execution": "one_checked_in_three_tactic_fixture_plus_disabled_control",
     "model_inference": false,
-    "source_and_public_metadata_only": true
+    "source_and_public_metadata_only": false,
+    "benchmark_execution": false
   },
   "sources": {
     "lean_repl_v4_15_0": "21966799da3691a0912b5a15193585bd2dd7165d",
@@ -36,7 +37,7 @@
   },
   "missing_hooks": {
     "group_scoped_repl_lease": true,
-    "compiled_capture_stack": true,
+    "compiled_full_oprover_capture_stack": true,
     "selected_checkpoint_artifact_receipt": true,
     "exact_parent_environment_and_root_context_receipts": true
   },
@@ -44,10 +45,16 @@
     "patches_apply_to_exact_pins": true,
     "kimina_patch_applies_to_exact_pin": true,
     "kimina_python_syntax": "checked",
-    "parser_unit_tests": 7,
-    "patched_runtime_compiled": false,
-    "lean_or_model_execution": false
+    "parser_unit_tests": 8,
+    "patched_runtime_compiled": true,
+    "patched_repl_compiled": true,
+    "fixture_boundary_records": 17,
+    "fixture_exact_tactic_matches": 3,
+    "disabled_control_tactics_agree": true,
+    "lean_execution_scope": "tiny_fixed_protocol_validation_only",
+    "model_execution": false,
+    "performance_claim": false
   },
-  "decision": "wire_and_compile_capture_adapter_before_any_benchmark",
+  "decision": "add_group_capture_and_receipts_before_any_authentic_sidecar_or_benchmark",
   "benchmark_authorized": false
 }

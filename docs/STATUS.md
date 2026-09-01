@@ -297,14 +297,24 @@ datasets add scale and latency context but cannot support speedup claims because
 they omit the required exact lineage and prefix CPU. The source-supported
 adapter map is `reports/oprover_adapter_feasibility.md`.
 
-The first adapter slice is now implemented source-only. Pinned Lean and REPL
-patches expose absolute CPU scopes and exact native byte ranges, and a public
-Python parser fails closed unless byte range and syntax kind both match. The
-patches apply cleanly to the exact OProver pins and their parser has seven unit
-tests. No patched runtime has been compiled or executed, so this is engineering
-progress rather than measured evidence. Kimina group leasing, checkpoint
-receipts, and compilation remain next. A third pinned patch now wires the
-capture flag through OProver and Kimina, isolates instrumented REPLs from the
-ordinary pool, preserves non-SHRED stderr, and retains explicit capture
-fallbacks. Its Python files pass static compilation and the patch applies
-cleanly to the audited OProver commit.
+The first adapter slice is implemented and fixture-validated. Pinned Lean and
+REPL patches expose absolute CPU scopes and exact native byte ranges, and a
+public Python parser fails closed unless byte range and syntax kind both match.
+The patches apply cleanly to the exact OProver pins and the parser has eight
+unit tests. A third pinned patch wires the capture flag through OProver and
+Kimina, isolates instrumented REPLs from the ordinary pool, preserves non-SHRED
+stderr, and retains explicit capture fallbacks. Its Python files pass static
+compilation and the patch applies cleanly to the audited OProver commit. Kimina
+group capture and checkpoint/environment/context receipts remain next.
+
+**Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
+and patched REPL both compiled. The checked-in three-tactic protocol validator
+then found 17 native CPU boundary records, joined all three REPL tactics by
+exact byte range and syntax kind, kept unrelated stderr empty, and obtained
+identical native tactic output with capture disabled. The validation exposed
+and fixed two pre-integration defects: Lean's ordinary trace stream is captured
+as REPL diagnostics, so SHRED now writes directly to file descriptor 2; and
+range-only candidate counting incorrectly treated same-range tactic wrappers as
+ambiguity, so the parser now selects the exact `(range, syntax kind)` pair and
+still rejects duplicate exact pairs. This is correctness validation, not a
+performance experiment or benchmark.

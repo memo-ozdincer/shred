@@ -2,9 +2,10 @@
 
 Date: 2026-09-01
 
-Evidence label: **Observed** from pinned source and public metadata. No Lean
-execution, model inference, rollout generation, or bulk dataset download was
-performed.
+Evidence label: **Observed** from pinned source, public metadata, and one
+checked-in three-tactic protocol fixture plus its disabled control. No model
+inference, rollout generation, dataset-scale Lean verification, benchmark, or
+bulk dataset download was performed.
 
 ## New question
 
@@ -55,8 +56,9 @@ The smallest honest capture adapter has five parts:
    and lease one representative REPL until the group has been classified.
 2. Forward `allTactics: true` for unchanged complete attempts and return their
    native tactic ranges and proof-state IDs.
-3. Sample the existing process-tree CPU counter immediately before and after
-   every complete request, returning the delta rather than `cpu_max`.
+3. Use the first native parser boundary and final native elaboration boundary
+   as the unchanged complete request's process-CPU envelope rather than
+   `cpu_max`.
 4. Add a native tactic-boundary process-CPU clock. Record cumulative process
    CPU when each real tactic begins or ends; do not allocate whole-request CPU
    using wall-time shares.
@@ -65,12 +67,14 @@ The smallest honest capture adapter has five parts:
    root-context, and ordered-prefix receipts. Every non-eligible attempt remains
    an explicit fallback with its complete verdict and CPU.
 
-The source-only reference implementation now covers the hard timing boundary:
+The reference implementation now covers and fixture-validates the hard timing
+boundary:
 
 - `integrations/oprover/lean4-v4.15.0-shred-cpu-boundaries.patch` uses Lean's
   existing RAII profiling scopes to emit absolute process-plus-completed-child
   CPU for every request parsing/elaboration scope and exact tactic source byte
-  range;
+  range, writing records directly to the process stderr descriptor so Lean's
+  diagnostic capture cannot absorb them;
 - `integrations/oprover/repl-v4.15.0-native-byte-ranges.patch` adds the original
   syntax kind and byte range to `allTactics`; and
 - `shred.oprover_adapter` strips those records from stderr, preserves all other
@@ -81,11 +85,15 @@ The source-only reference implementation now covers the hard timing boundary:
   OProver, and retains either the native telemetry or an explicit capture
   fallback in the existing verification result.
 
-All three patches apply cleanly to the frozen source revisions. The Kimina and
-OProver Python changes pass static compilation, and seven parser tests cover
-successful cumulative attribution plus multi-command envelopes, malformed,
-missing, duplicate, text-only, and syntax-conflict failures. This is source
-validation, not a compiled or executed Lean result.
+All three patches apply cleanly to the frozen source revisions. The patched
+Lean toolchain and REPL compile. The checked-in validator observed 17 boundary
+records, exactly joined the fixture's three native tactics, found no unrelated
+stderr or telemetry in Lean messages, and obtained identical native tactic
+output with capture disabled. Eight parser tests cover successful cumulative
+attribution, multi-command envelopes, legitimate same-range/different-kind
+wrappers, and malformed, missing, duplicate-exact-pair, text-only, and
+syntax-conflict failures. The Kimina and OProver Python changes pass static
+compilation. This is bounded correctness validation, not performance evidence.
 
 The group lease is an efficiency measure, not an authority boundary. The
 captured artifact remains trusted producer telemetry, and any later executor
@@ -100,8 +108,7 @@ seed or larger sample changes the result. Wall time, one-second CPU sampling,
 or SHRED's earlier profiler-based CPU allocation cannot be substituted for
 same-attempt prefix process CPU.
 
-The next work is therefore group leasing, receipts, and compile/protocol
-validation. Only a
+The next work is therefore group leasing and receipts. Only a
 normal authentic run that already has a substantive RL purpose may emit the
 new sidecar. Its sealed, read-only telemetry must pass D-040 before any SHRED
 paired benchmark is proposed. No OProver reproduction run or dataset-scale

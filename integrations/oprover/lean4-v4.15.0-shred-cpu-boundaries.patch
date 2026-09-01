@@ -38,24 +38,26 @@ index ea665a9..0aa13a6 100644
  private def get_profiler (o : Options) : Bool :=
    profiler.get o
 diff --git a/src/library/time_task.cpp b/src/library/time_task.cpp
-index 8a1c2b3..5be35e7 100644
+index 8a1c2b3..5ac043e 100644
 --- a/src/library/time_task.cpp
 +++ b/src/library/time_task.cpp
-@@ -4,8 +4,13 @@ Released under Apache 2.0 license as described in the file LICENSE.
+@@ -4,8 +4,15 @@ Released under Apache 2.0 license as described in the file LICENSE.
  
  Author: Sebastian Ullrich
  */
 +#include <atomic>
++#include <cerrno>
 +#include <cstdlib>
  #include <string>
  #include <map>
 +#if !defined(LEAN_WINDOWS)
 +#include <sys/resource.h>
++#include <unistd.h>
 +#endif
  #include "library/time_task.h"
  #include "kernel/trace.h"
  
-@@ -15,6 +20,33 @@ static std::map<std::string, second_duration> * g_cum_times;
+@@ -15,6 +22,47 @@ static std::map<std::string, second_duration> * g_cum_times;
  static mutex * g_cum_times_mutex;
  LEAN_THREAD_PTR(time_task, g_current_time_task);
  
@@ -86,10 +88,24 @@ index 8a1c2b3..5be35e7 100644
 +#endif
 +}
 +
++static void shred_write_stderr(std::string const & value) {
++#if !defined(LEAN_WINDOWS)
++    char const * cursor = value.data();
++    size_t remaining = value.size();
++    while (remaining > 0) {
++        ssize_t written = ::write(STDERR_FILENO, cursor, remaining);
++        if (written < 0 && errno == EINTR) continue;
++        if (written <= 0) break;
++        cursor += written;
++        remaining -= static_cast<size_t>(written);
++    }
++#endif
++}
++
  void report_profiling_time(std::string const & category, second_duration time) {
      lock_guard<mutex> _(*g_cum_times_mutex);
      (*g_cum_times)[category] += time;
-@@ -42,7 +74,17 @@ void finalize_time_task() {
+@@ -42,7 +90,17 @@ void finalize_time_task() {
  }
  
  time_task::time_task(std::string const & category, options const & opts, name decl) :
@@ -108,7 +124,7 @@ index 8a1c2b3..5be35e7 100644
      if (get_profiler(opts)) {
          m_timeit = optional<xtimeit>(get_profiling_threshold(opts), [=](second_duration duration) mutable {
              sstream ss;
-@@ -59,6 +101,21 @@ time_task::time_task(std::string const & category, options const & opts, name de
+@@ -59,6 +117,24 @@ time_task::time_task(std::string const & category, options const & opts, name de
  }
  
  time_task::~time_task() {
@@ -124,7 +140,10 @@ index 8a1c2b3..5be35e7 100644
 +            if (m_decl) ss << m_decl;
 +            else ss << "_anonymous";
 +            ss << "\n";
-+            tout() << ss.str();
++            {
++                lock_guard<mutex> _(*g_cum_times_mutex);
++                shred_write_stderr(ss.str());
++            }
 +        }
 +    }
      if (m_timeit) {

@@ -48,7 +48,7 @@ class OProverAdapterTests(unittest.TestCase):
             + "\nSHRED_CPU_BOUNDARY_V1\t5\t3\t1300000000\t1400000000"
             + "\tshred tactic execution@10:20\tLean.Parser.Tactic.simp"
         )
-        with self.assertRaisesRegex(OProverAdapterError, "2 CPU boundary matches"):
+        with self.assertRaisesRegex(OProverAdapterError, "2 exact CPU boundary matches"):
             summarize_cpu_boundaries(
                 records,
                 [{
@@ -57,6 +57,22 @@ class OProverAdapterTests(unittest.TestCase):
                     "syntax_kind": "Lean.Parser.Tactic.simp",
                 }],
             )
+
+    def test_same_range_wrapper_with_different_kind_is_not_ambiguous(self):
+        records, _ = split_boundary_stderr(
+            LOG
+            + "\nSHRED_CPU_BOUNDARY_V1\t5\t3\t1300000000\t1400000000"
+            + "\tshred tactic execution@10:20\tLean.Parser.Tactic.tacticSeq"
+        )
+        report = summarize_cpu_boundaries(
+            records,
+            [{
+                "startByte": 10,
+                "endByte": 20,
+                "syntaxKind": "Lean.Parser.Tactic.simp",
+            }],
+        )
+        self.assertEqual(report["native_tactics"][0]["boundary_sequence"], 3)
 
     def test_missing_command_boundary_fails_closed(self):
         records, _ = split_boundary_stderr(

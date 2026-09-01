@@ -149,16 +149,21 @@ def summarize_cpu_boundaries(
     for index, unit in enumerate(native_tactics):
         byte_range = _native_range(unit, index)
         syntax_kind = _native_kind(unit, index)
-        candidates = by_range.get(byte_range, [])
+        range_candidates = by_range.get(byte_range, [])
+        candidates = [
+            candidate
+            for candidate in range_candidates
+            if candidate.declaration == syntax_kind
+        ]
         if len(candidates) != 1:
+            if range_candidates and not candidates:
+                raise OProverAdapterError(
+                    f"native tactic {index} syntax kind conflicts with CPU boundary"
+                )
             raise OProverAdapterError(
-                f"native tactic {index} has {len(candidates)} CPU boundary matches"
+                f"native tactic {index} has {len(candidates)} exact CPU boundary matches"
             )
         boundary = candidates[0]
-        if boundary.declaration != syntax_kind:
-            raise OProverAdapterError(
-                f"native tactic {index} syntax kind conflicts with CPU boundary"
-            )
         if not command_start <= boundary.start_ns <= boundary.stop_ns <= command_stop:
             raise OProverAdapterError(
                 f"native tactic {index} lies outside the command boundary"
