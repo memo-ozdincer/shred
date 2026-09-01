@@ -1631,10 +1631,10 @@ index 702b123..be7db76 100644
              # Sequential verification for small batches
 diff --git a/components/kimina-lean-server/tests/test_shred_group.py b/components/kimina-lean-server/tests/test_shred_group.py
 new file mode 100644
-index 0000000..7e55bcb
+index 0000000..02a220e
 --- /dev/null
 +++ b/components/kimina-lean-server/tests/test_shred_group.py
-@@ -0,0 +1,225 @@
+@@ -0,0 +1,235 @@
 +from uuid import UUID
 +from pathlib import Path
 +
@@ -1797,16 +1797,26 @@ index 0000000..7e55bcb
 +                    "env": 0,
 +                    "tactics": [
 +                        {
++                            "pos": first_start,
++                            "endPos": first_start + len("simp"),
 +                            "startByte": first_start,
 +                            "endByte": first_start + len("simp"),
 +                            "syntaxKind": "Lean.Parser.Tactic.simp",
++                            "goals": "⊢ True",
++                            "tactic": "simp",
 +                            "proofState": root_state,
++                            "usedConstants": [],
 +                        },
 +                        {
++                            "pos": second_start,
++                            "endPos": second_start + len(second_text),
 +                            "startByte": second_start,
 +                            "endByte": second_start + len(second_text),
 +                            "syntaxKind": "Lean.Parser.Tactic.tacticSeq1Indented",
++                            "goals": "⊢ True",
++                            "tactic": second_text,
 +                            "proofState": root_state + 1,
++                            "usedConstants": [],
 +                        },
 +                    ],
 +                },

@@ -52,10 +52,12 @@ The OProver/Kimina patch now:
    fallbacks. Group transport requests are never silently retried because an
    uncertain retry could submit the same proposals twice.
 
-The group protocol and its producer-side tests are checked in as source, but
-the complete OProver environment is not installed in this workspace, so this
-slice has only passed static compilation and patch round-trip validation. The
-same patch now also selects a checkpoint only when at least eight unique
+The group protocol and its producer-side tests are checked in as source. All
+three server-side group/checkpoint tests pass in a disposable minimal Python
+environment built from the pinned source, in addition to static compilation
+and exact patch round-trip validation. The full Verl training/verifier stack
+is not installed, so its client-side test remains static-only. The same patch
+now also selects a checkpoint only when at least eight unique
 attempts share a nonempty exact native prefix with remaining suffix work. It
 pickles a representative parent environment, root proof state, and first
 divergent proof state into a server-owned directory; hashes those artifacts;

@@ -310,8 +310,10 @@ explicitly cached; malformed IDs, theorem/header mismatches, lease loss,
 missing results, and inconsistent receipts are explicit fallbacks. The client
 never silently retries an uncertain group request. The changed source passes
 static compilation, and the producer patch round-trips exactly against the
-audited OProver commit. The OProver dependency environment was not installed,
-so the new producer tests are checked in but not executed.
+audited OProver commit. In a disposable minimal Python environment built from
+the pinned source, all three server-side group-protocol tests pass. The full
+Verl training/verifier dependency stack remains unloaded, so its client-side
+test is still static-only.
 
 The checkpoint receipt slice is now also implemented statically. Groups with a
 blank root header fail closed because Kimina would otherwise establish
@@ -323,8 +325,8 @@ root proof state, and divergent proof state. It returns immutable SHA-256
 receipts to every proposal and stores artifacts only under a server-configured
 private directory. OProver's saved all-proof output now retains original
 rollout IDs and the complete SHRED receipt. Static compilation and exact patch
-round-trip validation pass; the dependency-bound producer tests remain
-unexecuted.
+round-trip validation pass. The server-side checkpoint test is included in the
+three passing protocol tests; the full Verl client test remains unexecuted.
 
 The digest-only export boundary is now implemented and unit-validated. It
 reads OProver's saved JSONL without mutation, hashes submitted code and theorem
@@ -334,9 +336,10 @@ declared attempt count, and creates its output without overwrite. Existing
 exact-complete-proof deduplication is counted as a zero-cost baseline fallback,
 not SHRED reuse. Missing CPU for any executed proposal aborts the export rather
 than substituting wall time. A direct exporter-to-sealer fixture passes. The
-source pipeline is therefore complete enough for a future normal OProver run;
-runtime producer validation in its actual dependency environment remains the
-next correctness gate, not a dataset or performance run.
+source pipeline is therefore complete enough for a future normal OProver run.
+Full verifier-side integration validation remains a correctness gate, but it
+does not justify installing the heavy training stack or running a dataset by
+itself.
 
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator

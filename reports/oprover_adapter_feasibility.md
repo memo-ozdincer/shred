@@ -95,7 +95,11 @@ output with capture disabled. Eight parser tests cover successful cumulative
 attribution, multi-command envelopes, legitimate same-range/different-kind
 wrappers, and malformed, missing, duplicate-exact-pair, text-only, and
 syntax-conflict failures. The Kimina and OProver Python changes pass static
-compilation. This is bounded correctness validation, not performance evidence.
+compilation. All three server-side group/checkpoint protocol tests also pass in
+a disposable minimal Python environment built from the pinned source. The full
+Verl client-side test remains static-only because its training dependencies
+were deliberately not installed. This is bounded correctness validation, not
+performance evidence.
 
 The group lease is an efficiency measure, not an authority boundary. The
 captured artifact remains trusted producer telemetry, and any later executor
@@ -110,8 +114,9 @@ seed or larger sample changes the result. Wall time, one-second CPU sampling,
 or SHRED's earlier profiler-based CPU allocation cannot be substituted for
 same-attempt prefix process CPU.
 
-Group leasing and receipt production are now implemented statically. The next
-work is a digest-only producer export into the existing no-overwrite sealer.
+Group leasing, checkpoint receipts, and digest-only export into the existing
+no-overwrite sealer are now implemented. The server protocol has bounded
+runtime test coverage; full verifier-side integration remains static-only.
 Only a normal authentic run that already has a substantive RL purpose may emit
 the new sidecar. Its sealed, read-only telemetry must pass D-040 before any
 SHRED paired benchmark is proposed. No OProver reproduction run or

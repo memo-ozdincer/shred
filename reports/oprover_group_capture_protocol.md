@@ -22,21 +22,23 @@ Validation performed on 2026-09-01:
   `b0cb2583b702d5040f84783ebba23d86241eac05`;
 - applying the checked-in patch to a fresh clone reproduced the isolated source
   tree exactly; and
-- producer-side tests were added for one-lease execution, attributable REPL
-  acquisition failure, exact-duplicate submission, and cached accounting.
+- all three server-side protocol tests passed in a disposable minimal Python
+  environment built from the pinned source. They cover one-lease execution,
+  attributable REPL acquisition failure, representative checkpoint pickling,
+  shared receipt hashes, and ordered per-proposal results.
 
-The producer tests were not executed because this workspace does not contain
-the OProver Python dependency environment (FastAPI, Pydantic, aiohttp, or
-pytest). No Lean proof, dataset, rollout, model, or benchmark was run for this
-protocol slice.
+The full Verl training/verifier dependency stack was not installed. Its
+client-side group-capture test remains static-only because importing that stack
+would pull in NumPy and PyTorch. No Lean proof, dataset, rollout, model, or
+benchmark was run for this protocol slice.
 
 The source implementation now additionally captures a representative
 checkpoint only for groups with at least eight unique attempts, a real shared
 root environment, a nonempty exact native prefix, and remaining suffix work.
 It hashes the parent-environment pickle, root-proof-state pickle, checkpoint
-pickle, and canonical ordered exact source edges. This extension has passed
-static compilation and exact patch round-trip validation, but its producer-side
-test remains unexecuted for the same missing-dependency reason.
+pickle, and canonical ordered exact source edges. This extension is exercised
+by the passing server-side checkpoint test as well as static compilation and
+exact patch round-trip validation.
 
 The digest-only export is now checked in and covered by repository tests. Its
 fixture proves native full/prefix CPU conversion, exact checkpoint mapping,

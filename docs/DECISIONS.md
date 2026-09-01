@@ -1307,7 +1307,8 @@ a new proof submission.
 
 Consequence: the pinned producer patch applies cleanly to OProver commit
 `b0cb2583b702d5040f84783ebba23d86241eac05`, and all changed Python files pass
-static compilation. The producer itself remains unexecuted. Group-scoped
+static compilation. Later bounded validation under D-049 executed the
+server-side producer protocol tests. Group-scoped
 leasing, representative snapshot receipts, and exact environment/context
 receipts remain required before an authentic sidecar can satisfy D-040.
 
@@ -1373,11 +1374,11 @@ Consequence: the producer patch contains server and client tests for one-lease
 group execution, attributable acquisition failure, exact-duplicate submission,
 and cached accounting. All changed Python files compile statically, the patch
 applies to the pinned OProver source, and applying it reproduces the isolated
-implementation byte-for-byte. The dependency environment lacks FastAPI,
-Pydantic, aiohttp, and pytest, so those new tests have not run. This is an
-implemented protocol boundary, not measured authentic evidence. Checkpoint,
-environment/context receipt, and sealed-trace work remains before any rollout
-or performance experiment is authorized.
+implementation byte-for-byte. Later bounded validation under D-049 ran all
+three server-side protocol tests; the full Verl client-side test remains
+static-only. This is an implemented protocol boundary, not measured authentic
+evidence. Checkpoint, environment/context receipt, and sealed-trace work remains
+before any rollout or performance experiment is authorized.
 
 ## D-047 - Derive checkpoint receipts from native source bytes and proof states
 
@@ -1417,8 +1418,9 @@ Consequence: OProver's all-proof saver now retains original rollout IDs and the
 complete capture/checkpoint receipt. Producer tests cover representative
 environment/root/checkpoint pickling and shared receipt hashes in addition to
 the group accounting cases. Changed Python files compile, and the checked-in
-patch exactly reproduces the isolated source tree. The OProver dependencies are
-still unavailable here, so the producer tests are not reported as executed.
+patch exactly reproduces the isolated source tree. Later bounded validation
+under D-049 ran the server-side checkpoint test; the full Verl client-side test
+remains static-only.
 Digest-only trace export remains required before any authentic screen; this is
 implementation validation, not a dataset or performance experiment.
 
@@ -1454,6 +1456,31 @@ Consequence: the exporter validates native receipts, producer count, source
 immutability, and no-overwrite creation, and its output passes the existing
 no-overwrite sealer in a direct fixture. It never loads a checkpoint or runs
 Lean. Together with D-046 and D-047, this completes the static OProver-to-SHRED
-artifact path. Actual runtime validation still requires OProver's dependency
-environment; authentic value evidence still requires a normal independently
-useful run and the frozen read-only gate.
+artifact path. D-049 later validates the lightweight server runtime boundary;
+full verifier-side integration remains static-only. Authentic value evidence
+still requires a normal independently useful run and the frozen read-only gate.
+
+## D-049 - Execute only the lightweight producer protocol boundary
+
+Date: 2026-09-01
+
+Status: accepted after bounded validation
+
+Decision: validate the server-owned group and checkpoint protocol in a
+disposable minimal Python environment created from the pinned OProver source.
+Generate the Prisma client only inside that disposable tree. Do not install the
+full Verl training stack merely to collect another test result, and do not run
+Lean, proofs, datasets, models, rollouts, or benchmarks.
+
+Reason: these tests answer a concrete correctness question left open by static
+inspection: whether request parsing, fresh-lease handling, ordered attribution,
+explicit acquisition failure, representative pickle capture, and shared
+checkpoint receipts execute together. The client-side test imports the broad
+Verl package and consequently NumPy and PyTorch; loading that stack would add
+cost without resolving a distinct mechanism uncertainty at this stage.
+
+Consequence: all three server-side tests passed in 0.17 seconds. The only
+warning was an upstream Starlette/httpx deprecation. The full Verl client-side
+test remains static-only and is not described as passing. This is observed
+correctness validation, not a scientific experiment, authentic workload
+evidence, or performance evidence.
