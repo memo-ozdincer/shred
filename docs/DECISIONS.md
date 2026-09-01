@@ -1911,3 +1911,39 @@ Consequence: the first normal capture can immediately stop if its exact group
 structure cannot support the balanced candidate, before workload metadata or
 performance screening is assembled. A structurally ready receipt is explicitly
 not CPU evidence, a speedup, verdict equivalence, or authorization to build.
+
+## D-064 - Preregister exact final-tactic cohorts in existing D-030 measurements
+
+Date: 2026-09-01
+
+Status: preregistered; analysis not yet executed
+
+Hypothesis: at least one naturally defined exact Lean-native final-syntax-kind
+cohort in the completed representative D-030 study has materially stronger and
+theorem-robust certificate reuse than the full representative distribution.
+
+Why existing evidence cannot answer it: D-030 reports the full representative
+aggregate and an intentionally enriched diagnostic stratum, but it does not
+join paired costs and hit events to the already-frozen native final syntax kind.
+The full aggregate can hide a genuine mechanism-specific use case, while the
+enriched stratum is selection-biased and contains verdict disagreements.
+
+Experiment: join the immutable D-030 representative result rows to
+`artifacts/certificate_d026_inputs.jsonl.gz` by proposal ID. Group every row by
+the exact `syntaxKind` of its final native unit; do not merge, rename, or split
+kinds after inspection. Evaluate only cohorts with at least 128 proposals, 10
+theorems, and 32 observed `hit` events. Report all eligible cohorts, aggregate
+paired CPU, hit counts, verdict agreement, and minimum/p10/median/p90/maximum
+per-theorem speedup. Do not execute Lean or select individual theorems.
+
+Decision map:
+
+- If a cohort has zero verdict disagreements, at least 1.5x aggregate paired
+  CPU speedup, at least 1.25x median theorem speedup, and p10 theorem speedup at
+  least 1.0x, add it to the README as a **Measured** natural cohort and retain
+  every cohort result in the frozen report.
+- If aggregate speedup reaches 1.5x but either theorem threshold fails, record
+  it only as a heterogeneous diagnostic and do not create a headline.
+- If no eligible cohort reaches 1.5x aggregate speedup, stop tactic-family
+  mining on D-030. Do not weaken thresholds, combine kinds, select expensive
+  theorems, or repeat measurements for statistical relevance.
