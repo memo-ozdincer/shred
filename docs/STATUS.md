@@ -367,6 +367,14 @@ and a cheap local bound cannot authorize cross-process loading. Either gate may
 remain inconclusive while the other produces a decision. The CLI retains the
 old generic overhead flags only as aliases for the portable pair.
 
+A bounded public-artifact probe then evaluated OProofs without downloading its
+27.5 GB corpus (D-053). Four accessible API windows contained 400 rows, 362
+distinct exact statements, and visible duplicates only in pairs. The API failed
+at multiple release-wide offsets and exact-statement count queries timed out, so
+this is an availability boundary rather than a corpus-wide multiplicity result.
+OProofs is stopped as the immediate route unless its producers publish group
+counts or execution telemetry. No performance claim follows from this probe.
+
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator
 then found 17 native CPU boundary records, joined all three REPL tactics by

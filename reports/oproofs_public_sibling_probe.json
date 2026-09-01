@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "evidence_label": "Observed",
+  "question": "Does the public OProofs release expose exact theorem groups with at least eight complete verified proofs without bulk acquisition?",
+  "source": {
+    "dataset": "m-a-p/OProofs",
+    "revision": "d3bb4410c8715eb449206e6c2fbf8cbb1a8bd7b8",
+    "revision_last_modified": "2026-05-19T08:07:13.000Z",
+    "dataset_card_rows": 6804694,
+    "dataset_card_files": 73,
+    "dataset_card_download_bytes": 27500000000,
+    "api": "https://datasets-server.huggingface.co/rows"
+  },
+  "repository": {
+    "git_commit_before_probe": "de1ee4b65ec3a564d1848b7a213324efc0baa0d5",
+    "dirty_before_probe": true,
+    "reason_dirty": "D-053 preregistration was added before querying rows"
+  },
+  "resolved_configuration": {
+    "config": "default",
+    "split": "train",
+    "accessible_window_offsets": [0, 100000, 125000, 150000],
+    "rows_per_window": 100,
+    "retained_fields": [
+      "row offset",
+      "SHA-256 of exact formal_statement",
+      "within-window multiplicity",
+      "API partial flag",
+      "API total row count"
+    ],
+    "proof_text_retained": false
+  },
+  "aggregate": {
+    "windows_completed": 4,
+    "rows_inspected": 400,
+    "distinct_exact_statements_within_windows": 362,
+    "rows_beyond_one_per_exact_statement_within_windows": 38,
+    "maximum_within_window_multiplicity": 2,
+    "groups_with_at_least_eight_visible_rows": 0
+  },
+  "per_window": [
+    {
+      "offset": 0,
+      "returned_rows": 100,
+      "distinct_exact_statements": 100,
+      "maximum_within_window_multiplicity": 1
+    },
+    {
+      "offset": 100000,
+      "returned_rows": 100,
+      "distinct_exact_statements": 81,
+      "maximum_within_window_multiplicity": 2
+    },
+    {
+      "offset": 125000,
+      "returned_rows": 100,
+      "distinct_exact_statements": 93,
+      "maximum_within_window_multiplicity": 2
+    },
+    {
+      "offset": 150000,
+      "returned_rows": 100,
+      "distinct_exact_statements": 88,
+      "maximum_within_window_multiplicity": 2
+    }
+  ],
+  "protocol_deviation": {
+    "preregistered_release_wide_offsets_completed": false,
+    "reason": "The public rows API returned HTTP 500 for multiple offsets, including 200000, 243250, 300000, 850000, and 1000000. Exact-statement filter queries did not return within their bounded timeouts.",
+    "interpretation": "Zero visible eight-sibling groups is not a release-wide negative result. It is only an API availability boundary."
+  },
+  "decision": "stop_public_oproofs_route_without_bulk_download_or_new_group_metadata",
+  "decision_reason": "The accessible cached windows establish that exact statement duplication exists, but they do not expose an eight-sibling group or a release-wide multiplicity count. Downloading 27.5 GB merely to recover missing grouping metadata is not justified before timing and execution-scope data exist.",
+  "not_executed": [
+    "Lean",
+    "Mathlib",
+    "model inference",
+    "rollouts",
+    "proof verification",
+    "SHRED executor",
+    "performance benchmark",
+    "bulk dataset download"
+  ],
+  "performance_claim": null
+}

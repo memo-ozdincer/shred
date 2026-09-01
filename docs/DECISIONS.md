@@ -1578,3 +1578,60 @@ budget cannot authorize portability. The top-level router can still select the
 mechanism whose complete gate passes while the other remains inconclusive.
 This is static decision-model hardening, not a workload experiment; no Lean,
 dataset, model, rollout, or benchmark was run.
+
+## D-053 - Test OProofs sibling multiplicity before any bulk acquisition
+
+Date: 2026-09-01
+
+Status: completed; public route stopped as inconclusive
+
+Hypothesis: the public `m-a-p/OProofs` release retains at least eight complete,
+compiler-verified proofs for a useful number of exact theorem statements. If
+true, it is the first public OProver-family artifact known here that can satisfy
+SHRED's sibling-count prerequisite without generating new model rollouts.
+
+Why existing evidence cannot answer it: the immutable public revision reports
+6,804,694 proof rows and OProver reports roughly 1.77 million statements, but
+the resulting 3.8-row average does not reveal the multiplicity distribution.
+The dataset card exposes only statement, proof, reasoning, and prompt columns;
+it does not publish group counts, native tactic boundaries, execution scope, or
+verifier CPU.
+
+Experiment: through the public read-only dataset API, select 32 statements at
+fixed offsets spread across the 6,804,694-row release, then query the number of
+rows with the exact same `formal_statement`. Save only revision/offsets,
+statement digests, multiplicities, request metadata, and checksums; do not save
+proof text. Do not download parquet shards, execute Lean, generate proposals,
+or infer executable-prefix equality from textual resemblance.
+
+Decision map:
+
+- If at least ten sampled statements have at least eight rows, advance only to
+  a bounded, parser-aware structural inspection of those existing siblings.
+  Timing and scope remain missing, so this cannot authorize an executor or a
+  performance headline.
+- If one to nine sampled statements have at least eight rows, hand-inspect only
+  those positive groups to determine whether they represent genuine sibling
+  generation or duplicate corpus aggregation before deciding on another step.
+- If no sampled statement has at least eight rows, stop OProofs as the immediate
+  public route. Do not enlarge the sample merely for confidence; seek a
+  different artifact or producer-owned group metadata.
+
+In every outcome, the result answers a new availability question. Repetition,
+additional random seeds, or a larger sample solely for statistical precision
+is not authorized.
+
+Result: the public rows API could not execute the preregistered release-wide
+sample. It returned HTTP 500 at multiple offsets and exact-statement filter
+queries exceeded their bounded timeout. Four accessible 100-row windows
+contained 400 rows and 362 distinct exact statements; 38 rows were second
+copies, and the maximum visible within-window multiplicity was two. This proves
+that exact statement duplication exists but does not answer the release-wide
+eight-sibling question. The observed result is frozen in
+`reports/oproofs_public_sibling_probe.json`.
+
+Consequence: stop rather than download the 27.5 GB release. OProofs becomes
+actionable only if producer-owned multiplicity/group metadata or retained
+execution telemetry is published. Do not enlarge the API sample, treat the
+zero visible eight-sibling count as a corpus-wide negative, or report a
+performance projection from this probe.
