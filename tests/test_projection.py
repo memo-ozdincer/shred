@@ -2,6 +2,7 @@ import unittest
 
 from lean_prefix.projection import (
     ProjectionError,
+    affinity_schedule_projection,
     projected_speedup,
     required_reusable_fraction,
 )
@@ -22,6 +23,68 @@ class ProjectionTests(unittest.TestCase):
     def test_impossible_target_fails_closed(self):
         with self.assertRaises(ProjectionError):
             required_reusable_fraction(100.0, 2.0, 0.02)
+
+    def test_oprover_8b_affinity_projection(self):
+        result = affinity_schedule_projection(
+            groups=44,
+            attempts_per_group=8,
+            verifier_slots=135,
+            shared_prefix_cpu_fraction=0.8,
+        )
+        self.assertEqual(result["attempts"], 352)
+        self.assertEqual(result["independent_batch_waves"], 3)
+        self.assertEqual(result["affinity_group_waves"], 1)
+        self.assertAlmostEqual(result["projected_cpu_throughput_multiplier"], 10 / 3)
+        self.assertAlmostEqual(result["projected_batch_latency_multiplier"], 1.25)
+        self.assertAlmostEqual(
+            result[
+                "minimum_shared_prefix_cpu_fraction_for_no_batch_latency_loss"
+            ],
+            5 / 7,
+        )
+
+    def test_oprover_32b_affinity_projection(self):
+        result = affinity_schedule_projection(
+            groups=336,
+            attempts_per_group=4,
+            verifier_slots=800,
+            shared_prefix_cpu_fraction=0.8,
+        )
+        self.assertEqual(result["attempts"], 1344)
+        self.assertEqual(result["independent_batch_waves"], 2)
+        self.assertEqual(result["affinity_group_waves"], 1)
+        self.assertAlmostEqual(result["projected_cpu_throughput_multiplier"], 2.5)
+        self.assertAlmostEqual(result["projected_batch_latency_multiplier"], 1.25)
+        self.assertAlmostEqual(
+            result[
+                "minimum_shared_prefix_cpu_fraction_for_no_batch_latency_loss"
+            ],
+            2 / 3,
+        )
+
+    def test_affinity_projection_rejects_invalid_topology(self):
+        for kwargs in (
+            {
+                "groups": 0,
+                "attempts_per_group": 8,
+                "verifier_slots": 135,
+                "shared_prefix_cpu_fraction": 0.8,
+            },
+            {
+                "groups": 44,
+                "attempts_per_group": 1,
+                "verifier_slots": 135,
+                "shared_prefix_cpu_fraction": 0.8,
+            },
+            {
+                "groups": 44,
+                "attempts_per_group": 8,
+                "verifier_slots": 135,
+                "shared_prefix_cpu_fraction": 1.1,
+            },
+        ):
+            with self.subTest(kwargs=kwargs), self.assertRaises(ProjectionError):
+                affinity_schedule_projection(**kwargs)
 
 
 if __name__ == "__main__":

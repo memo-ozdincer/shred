@@ -191,6 +191,7 @@ are hypothesis-only throughput projections under the stated workload shape.
 |---|---:|
 | Authentic `nlinarith` certificate transfer | **325.2×** |
 | Authentic `positivity` certificate transfer | **27.1×** |
+| OProver-8B default RL batch, if an exact shared prefix costs 80% of verification | **3.33× projected** |
 | LeanPolish/Goedel late-edit repair cohort: at least 8 candidates and 80% non-trivia shared source | **at least 3.1× projected** |
 | Typical workload with 40% of verifier CPU in reusable expensive closures | **1.58×–1.61× projected** |
 | Typical workload with 60% of verifier CPU in reusable expensive closures | **2.26×–2.37× projected** |
@@ -198,7 +199,11 @@ are hypothesis-only throughput projections under the stated workload shape.
 These are bounded examples and sensitivity calculations, not general measured
 end-to-end throughput. The representative 4,096-pair certificate study measured
 1.033× CPU-equivalent throughput, and the later arithmetic-heavy RL gate
-measured 1.16× on its existing 864-proposal overlap.
+measured 1.16× on its existing 864-proposal overlap. The OProver row uses its
+source-pinned 44 groups × 8 rollouts and 135 verifier slots. Under the stated
+80% hypothesis, theorem-affinity execution also projects 1.25× lower idealized
+equal-cost batch latency; the exact no-latency-loss threshold is 71.4% shared-
+prefix CPU. No OProver workload has yet measured that prefix share.
 
 ## Where this can matter most
 

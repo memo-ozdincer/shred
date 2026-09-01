@@ -375,6 +375,18 @@ this is an availability boundary rather than a corpus-wide multiplicity result.
 OProofs is stopped as the immediate route unless its producers publish group
 counts or execution telemetry. No performance claim follows from this probe.
 
+A source-pinned scheduling analysis identifies a simpler leading mechanism
+(D-054). OProver-8B's default one-node batch contains 44 groups of eight
+rollouts but only 135 effective verifier slots; OProver-32B's default
+eight-node batch contains 336 groups of four and caps verification at 800.
+With an assumed 80% exact shared-prefix CPU share, theorem-affinity local tries
+project 3.33x and 2.50x CPU throughput respectively, while both project 1.25x
+lower equal-cost batch latency because independent verification needs an extra
+wave. The exact no-latency-loss thresholds are 71.4% and 66.7%. These are
+Hypotheses, not measured workload results. They make placement the preferred
+design if an authentic trace clears the thresholds; portability remains only
+for reuse placement cannot recover.
+
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator
 then found 17 native CPU boundary records, joined all three REPL tactics by

@@ -1635,3 +1635,39 @@ actionable only if producer-owned multiplicity/group metadata or retained
 execution telemetry is published. Do not enlarge the API sample, treat the
 zero visible eight-sibling count as a corpus-wide negative, or report a
 performance projection from this probe.
+
+## D-054 - Prefer theorem affinity before portable checkpoint loading
+
+Date: 2026-09-01
+
+Status: accepted as a source-pinned hypothesis
+
+Decision: treat theorem-affinity scheduling plus a process-local exact trie as
+the leading execution design for complete best-of-N RL batches. Keep every
+same-root rollout group on one live verifier scope when batch breadth can keep
+the verifier pool busy. Evaluate portable checkpoint loading only for reuse
+that cannot be recovered by placement, such as cross-policy or temporally
+separated attempts.
+
+Reason: the pinned OProver-8B default produces 44 prompt groups with eight
+rollouts each and exposes 135 effective verifier slots on one node. Independent
+verification of 352 equal-cost attempts therefore takes three idealized waves.
+At an 80% exact shared-prefix CPU fraction, affinity execution costs 2.4
+normalized waves, projects 3.33x CPU throughput, and projects 1.25x lower batch
+latency. The exact no-latency-loss threshold is 5/7, or 71.4%. The pinned
+OProver-32B defaults analogously create 336 four-rollout groups and cap the
+verifier at 800 slots: the threshold is 2/3, and the same 80% scenario projects
+2.50x CPU throughput and 1.25x lower batch latency.
+
+These are topology-grounded hypotheses, not workload measurements. They assume
+uniform attempt cost, whole scheduling waves, zero trie overhead, and an
+unmeasured 80% exact prefix. The formulas and source hashes are frozen in
+`reports/oprover_affinity_projection.json` and reproduced by
+`affinity_schedule_projection` tests.
+
+Consequence: an authentic OProver trace must now clear both the existing 60%
+CPU/2x value gate and the applicable 71.4% or 66.7% no-latency-loss threshold
+before SHRED claims simultaneous CPU and latency improvement. A result between
+those thresholds may still improve saturated CPU throughput but must disclose
+the batch-latency tradeoff. Do not implement portable state loading merely to
+recover reuse that theorem-aware placement can obtain more safely.

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,67 @@ DEFAULT_OVERHEAD = 0.02
 
 class ProjectionError(RuntimeError):
     """Raised when a projection input does not match the frozen evidence."""
+
+
+def affinity_schedule_projection(
+    *,
+    groups: int,
+    attempts_per_group: int,
+    verifier_slots: int,
+    shared_prefix_cpu_fraction: float,
+) -> dict[str, float | int]:
+    """Project uniform-cost theorem-affinity execution in a saturated batch.
+
+    Every independent attempt has normalized CPU cost one.  An affinity worker
+    pays the exact shared prefix once, then every unchanged suffix.  The batch
+    latency model is deliberately discrete: independent attempts and affinity
+    groups each occupy one verifier slot and complete in whole waves.
+    """
+    for name, value in (
+        ("groups", groups),
+        ("attempts_per_group", attempts_per_group),
+        ("verifier_slots", verifier_slots),
+    ):
+        if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+            raise ProjectionError(f"{name} must be a positive integer")
+    if attempts_per_group < 2:
+        raise ProjectionError("attempts_per_group must be at least two")
+    if not 0.0 <= shared_prefix_cpu_fraction <= 1.0:
+        raise ProjectionError(
+            "shared_prefix_cpu_fraction must be between zero and one"
+        )
+
+    attempts = groups * attempts_per_group
+    independent_waves = math.ceil(attempts / verifier_slots)
+    affinity_waves = math.ceil(groups / verifier_slots)
+    affinity_group_cpu = shared_prefix_cpu_fraction + attempts_per_group * (
+        1.0 - shared_prefix_cpu_fraction
+    )
+    affinity_cpu = groups * affinity_group_cpu
+    affinity_batch_time = affinity_waves * affinity_group_cpu
+    threshold = (
+        attempts_per_group - independent_waves / affinity_waves
+    ) / (attempts_per_group - 1)
+    threshold = min(1.0, max(0.0, threshold))
+
+    return {
+        "groups": groups,
+        "attempts_per_group": attempts_per_group,
+        "attempts": attempts,
+        "verifier_slots": verifier_slots,
+        "shared_prefix_cpu_fraction": shared_prefix_cpu_fraction,
+        "independent_cpu": float(attempts),
+        "affinity_cpu": affinity_cpu,
+        "projected_cpu_throughput_multiplier": attempts / affinity_cpu,
+        "independent_batch_waves": independent_waves,
+        "affinity_group_waves": affinity_waves,
+        "affinity_group_normalized_cpu": affinity_group_cpu,
+        "affinity_batch_normalized_time": affinity_batch_time,
+        "projected_batch_latency_multiplier": (
+            independent_waves / affinity_batch_time
+        ),
+        "minimum_shared_prefix_cpu_fraction_for_no_batch_latency_loss": threshold,
+    }
 
 
 def _sha256(path: Path) -> str:

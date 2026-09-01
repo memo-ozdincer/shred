@@ -1,0 +1,78 @@
+{
+  "analysis": "oprover-affinity-schedule-projection-v1",
+  "evidence_label": "Hypothesis",
+  "claim_boundary": "Source-pinned uniform-cost scheduling projection, not a measured prefix distribution, verifier benchmark, or deployment result.",
+  "source": {
+    "repository": "https://github.com/multimodal-art-projection/OProver.git",
+    "revision": "b0cb2583b702d5040f84783ebba23d86241eac05",
+    "oprover_8b_script": {
+      "path": "components/verl/examples/grpo_trainer/prover_rl_new/oprover_8b.sh",
+      "sha256": "e3898f8b8945f3b8e0ccdbbcb17cbc961e0cd9002b283d7430d19fb4884c6dd9"
+    },
+    "oprover_32b_script": {
+      "path": "components/verl/examples/grpo_trainer/prover_rl_new/oprover_32b.sh",
+      "sha256": "f77857e53443438bdb96b18db4165631c69c7e5e3a859aa6e326eb4d4ea9030e"
+    }
+  },
+  "model": {
+    "normalized_independent_attempt_cpu": 1.0,
+    "affinity_group_cpu_formula": "p + n * (1 - p)",
+    "independent_batch_waves_formula": "ceil(groups * n / verifier_slots)",
+    "affinity_batch_time_formula": "ceil(groups / verifier_slots) * (p + n * (1 - p))",
+    "cpu_throughput_multiplier_formula": "n / (p + n * (1 - p))",
+    "assumptions": [
+      "every complete attempt has equal normalized cost",
+      "every group has one exact shared prefix with CPU fraction p",
+      "one affinity group occupies one verifier slot and executes unchanged suffixes serially",
+      "independent attempts and affinity groups are work-conserving within whole waves",
+      "dispatch, trie, snapshot, and attribution overhead are zero"
+    ]
+  },
+  "projections": {
+    "oprover_8b_default_one_node": {
+      "observed_source_configuration": {
+        "generation_prompt_groups": 44,
+        "attempts_per_group": 8,
+        "complete_attempts": 352,
+        "effective_verifier_slots": 135
+      },
+      "minimum_shared_prefix_cpu_fraction_for_no_batch_latency_loss": 0.7142857142857143,
+      "at_shared_prefix_cpu_fraction_0_8": {
+        "independent_batch_waves": 3,
+        "affinity_batch_normalized_time": 2.4,
+        "projected_cpu_throughput_multiplier": 3.3333333333333335,
+        "projected_batch_latency_multiplier": 1.25
+      }
+    },
+    "oprover_32b_default_eight_nodes": {
+      "observed_source_configuration": {
+        "generation_prompt_groups": 336,
+        "attempts_per_group": 4,
+        "complete_attempts": 1344,
+        "effective_verifier_slots_after_cap": 800
+      },
+      "minimum_shared_prefix_cpu_fraction_for_no_batch_latency_loss": 0.6666666666666666,
+      "at_shared_prefix_cpu_fraction_0_8": {
+        "independent_batch_waves": 2,
+        "affinity_batch_normalized_time": 1.6,
+        "projected_cpu_throughput_multiplier": 2.5,
+        "projected_batch_latency_multiplier": 1.25
+      }
+    }
+  },
+  "scientific_finding": "For the pinned OProver defaults, independent verification already exceeds available verifier slots. Above a topology-specific prefix-cost threshold, theorem-affinity local trie execution can therefore reduce both verifier CPU and idealized batch latency; portability is not required to recover the cross-worker opportunity.",
+  "decision": "Prefer theorem-affinity process-local execution over portable checkpoints when an authentic trace clears both the existing value gate and the topology-specific no-latency-loss threshold.",
+  "reproduction": {
+    "implementation": "lean_prefix.projection.affinity_schedule_projection",
+    "tests": "tests.test_projection.ProjectionTests.test_oprover_8b_affinity_projection and tests.test_projection.ProjectionTests.test_oprover_32b_affinity_projection"
+  },
+  "not_executed": [
+    "Lean",
+    "Mathlib",
+    "model inference",
+    "rollouts",
+    "proof verification",
+    "SHRED executor",
+    "performance benchmark"
+  ]
+}
