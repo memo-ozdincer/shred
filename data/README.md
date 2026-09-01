@@ -36,6 +36,11 @@ search, or repair run. `shred screen-authentic-trace` hashes and screens those
 partitions without executing Lean or modifying the producer's data. See
 `docs/AUTHENTIC_TRACE_CONTRACT.md`.
 
+Producers do not need to construct the manifest or partition receipts by hand.
+`shred seal-authentic-trace` validates their JSONL, reconciles its physical rows
+against their separately declared attempt count, and writes a no-overwrite
+manifest only after the complete export passes contract validation.
+
 `external-repair.manifest.json` pins the compute-free APRIL and LeanPolish
 structural screen. Raw archives and converted Goedel proof sources live under
 ignored `external-data/`; only aggregate results and checksums are committed.

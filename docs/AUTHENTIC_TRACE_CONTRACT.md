@@ -14,6 +14,49 @@ The manifest schema is
 `data/authentic-checkpoint-trace.schema.json`. Partitions are immutable JSONL or
 JSONL.gz files. Source data remains read-only and may stay outside Git.
 
+## Producer flow
+
+The producer writes one JSON object per attempt to one or more `.jsonl` or
+`.jsonl.gz` partitions. It separately records workload metadata, including the
+expected attempt count. SHRED can then freeze the hashes and validate the whole
+export without rewriting those partitions:
+
+```bash
+shred seal-authentic-trace \
+  --workload-metadata workload.json \
+  --partition worker-000.jsonl.gz \
+  --partition worker-001.jsonl.gz \
+  --output existing-run.manifest.json
+```
+
+The seal operation refuses overwrite, requires the independently declared
+attempt count to equal the physical row count, and creates the manifest only
+after every record passes the same validation used by the screener. It does not
+execute Lean. Workload metadata has this shape:
+
+```json
+{
+  "name": "grpo-verification-run",
+  "dataset_revision": "immutable-dataset-revision",
+  "producer_git_commit": "producer-git-commit",
+  "producer_git_dirty": false,
+  "producer_command": "complete resolved producer command",
+  "resolved_configuration_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "lean_revision": "exact Lean revision",
+  "mathlib_revision": "exact Mathlib revision",
+  "hardware": "CPU model and deployment identity",
+  "concurrency": 8,
+  "timeout_seconds": 300,
+  "memory_limit_bytes": 51539607552,
+  "expected_attempts": 800,
+  "pipeline_total_cpu_seconds": 12345.6
+}
+```
+
+`expected_attempts` must come from the producer's run accounting; the sealer
+does not infer it and then call that inference complete. Pipeline CPU is needed
+for the end-to-end materiality gate.
+
 ## Exactness boundary
 
 An `exact_checkpoint` record means the producer captured one Lean-native prefix
@@ -32,6 +75,42 @@ The telemetry declaration is intentionally rigid: process CPU, a warm complete
 independent baseline, prefix CPU measured through the same exact checkpoint,
 and ordinary Lean verdict authority. Missing or differently defined telemetry
 fails closed instead of being coerced into the contract.
+
+An eligible record contains only digests, attribution, verdict, and cost; raw
+proof text need not be exported:
+
+```json
+{
+  "proposal_id": "run-17/theorem-4/attempt-6",
+  "proposal_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "theorem_name": "MyProject.target",
+  "theorem_statement_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "verdict": "accepted",
+  "full_verifier_cpu_seconds": 1.72,
+  "eligibility": "exact_checkpoint",
+  "prefix_verifier_cpu_seconds": 1.31,
+  "parent_environment_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "root_context_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "prefix_edges_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "checkpoint_artifact_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+}
+```
+
+If any exact field is unavailable, the attempt remains present and becomes a
+fallback:
+
+```json
+{
+  "proposal_id": "run-17/theorem-4/attempt-7",
+  "proposal_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "theorem_name": "MyProject.target",
+  "theorem_statement_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "verdict": "timed_out",
+  "full_verifier_cpu_seconds": 300.0,
+  "eligibility": "fallback",
+  "fallback_reason": "checkpoint_identity_not_recorded"
+}
+```
 
 ## Projection
 
@@ -79,6 +158,19 @@ shred screen-authentic-trace \
 Omit both overhead arguments to compute only the zero-overhead ceiling. The
 decision then remains `inconclusive_missing_registered_overhead_budget`, even
 if the ceiling exceeds two-times.
+
+The sealer is also available through the public Python API:
+
+```python
+from pathlib import Path
+from shred import seal_authentic_trace
+
+receipt = seal_authentic_trace(
+    Path("existing-run.manifest.json"),
+    workload=workload_metadata,
+    partitions=[Path("worker-000.jsonl.gz")],
+)
+```
 
 ## Producer checklist
 

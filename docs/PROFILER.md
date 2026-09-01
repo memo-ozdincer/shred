@@ -48,6 +48,11 @@ process CPU, use `shred screen-authentic-trace` instead of rerunning Lean. The
 neutral JSONL contract, conservative cost equation, complete accounting rules,
 and claim boundary are documented in `docs/AUTHENTIC_TRACE_CONTRACT.md`.
 
+Use `shred seal-authentic-trace` first when the producer has JSONL telemetry but
+not a SHRED manifest. It computes receipts and validates the export while
+leaving producer files untouched. The expected attempt count is intentionally
+producer-declared, so a truncated export cannot validate itself as complete.
+
 This path never creates performance evidence by itself. Its output is an
 Observed-input/Hypothesis projection that can stop a workload or justify
 proposing one bounded paired implementation test.

@@ -1177,3 +1177,29 @@ theorems, 60% removable verifier CPU, overhead no greater than 0.2 mean complete
 verifications per eight attempts, and verifier CPU at least 25% of pipeline
 CPU. Even a passing >=2x report is a Hypothesis value gate, not a measured
 headline; it only permits proposing one bounded paired experiment under D-036.
+
+## D-041 - Make authentic-trace ingestion producer-owned and no-overwrite
+
+Date: 2026-08-31
+
+Status: accepted after integration-friction audit
+
+Decision: add `shred seal-authentic-trace` and a matching public Python API.
+The producer writes JSONL or JSONL.gz and independently declares its expected
+attempt count. SHRED reads those partitions without modification, validates
+every record, reconciles physical and declared accounting, computes immutable
+partition receipts, injects the frozen telemetry declaration, and creates the
+manifest without overwrite only after validation succeeds.
+
+Reason: D-040 made the analysis system-neutral but still required every
+producer to construct source roots, record counts, hashes, and rigid telemetry
+metadata by hand. That is avoidable integration work and creates opportunities
+for accidental incomplete accounting. Inferring the expected count from the
+same partitions would not detect an incomplete export, so that field remains
+an independent producer declaration.
+
+Consequence: an RL, tree-search, or repair system can integrate by emitting one
+small digest-and-cost record per attempt; it need not adopt SHRED's executor,
+copy raw proof text, rerun Lean, or implement manifest logic. Sealing is artifact
+validation, not a scientific experiment, performance result, or authorization
+to weaken D-040's frozen value gate.

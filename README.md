@@ -83,9 +83,15 @@ immutable workload with `--full`. SHRED counts unsupported syntax, timeouts,
 errors, and fallbacks instead of silently dropping them.
 
 Already have Lean-native checkpoint and process-CPU telemetry from an RL,
-search, or repair run? Screen that immutable artifact without running Lean:
+search, or repair run? Freeze producer-owned JSONL without changing it, then
+screen that immutable artifact without running Lean:
 
 ```bash
+shred seal-authentic-trace \
+  --workload-metadata workload.json \
+  --partition worker-000.jsonl.gz \
+  --output existing-run.manifest.json
+
 shred screen-authentic-trace \
   --manifest existing-run.manifest.json \
   --overhead-budget-cpu-seconds-per-hit 0.01 \
@@ -96,7 +102,9 @@ shred screen-authentic-trace \
 The system-neutral contract counts every verdict and fallback, requires exact
 environment/context/checkpoint identity, and reports aggregate, per-theorem,
 median, and tail projections. It will not treat proof text, pretty goals, or
-agent-message similarity as executable reuse. See
+agent-message similarity as executable reuse. Sealing refuses overwrite,
+reconciles the producer-declared attempt count, and creates the manifest only
+after validation. See
 [`docs/AUTHENTIC_TRACE_CONTRACT.md`](docs/AUTHENTIC_TRACE_CONTRACT.md).
 
 ### 2. Act on the diagnosis

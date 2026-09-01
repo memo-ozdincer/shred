@@ -8,7 +8,11 @@ import sys
 
 from lean_prefix.audit import AuditError, audit_manifest
 from lean_prefix.analysis import analyze_exact
-from lean_prefix.authentic_trace import AuthenticTraceError, screen_authentic_trace
+from lean_prefix.authentic_trace import (
+    AuthenticTraceError,
+    screen_authentic_trace,
+    seal_authentic_trace,
+)
 from lean_prefix.certificate_probe import (
     CertificateProbeError,
     summarize_certificate_probe,
@@ -82,6 +86,13 @@ def _parser() -> argparse.ArgumentParser:
     trace_screen.add_argument("--output", type=Path, required=True)
     trace_screen.add_argument("--overhead-budget-cpu-seconds-per-hit", type=float)
     trace_screen.add_argument("--overhead-budget-source")
+    trace_seal = commands.add_parser(
+        "seal-authentic-trace",
+        help="freeze and validate producer-owned checkpoint trace partitions",
+    )
+    trace_seal.add_argument("--workload-metadata", type=Path, required=True)
+    trace_seal.add_argument("--partition", type=Path, action="append", required=True)
+    trace_seal.add_argument("--output", type=Path, required=True)
     audit = commands.add_parser("audit", help="verify an immutable rollout manifest")
     audit.add_argument("--manifest", type=Path, required=True)
     audit.add_argument("--source-root", type=Path)
@@ -259,6 +270,23 @@ def main(argv: list[str] | None = None) -> int:
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(rendered, encoding="utf-8")
             sys.stdout.write(rendered)
+            return 0
+        if args.command == "seal-authentic-trace":
+            try:
+                workload = json.loads(
+                    args.workload_metadata.read_text(encoding="utf-8")
+                )
+            except json.JSONDecodeError as error:
+                raise AuthenticTraceError(
+                    f"invalid workload metadata JSON: {error}"
+                ) from error
+            report = seal_authentic_trace(
+                args.output,
+                workload=workload,
+                partitions=args.partition,
+            )
+            report["command"] = shlex.join(["shred", *raw_argv])
+            sys.stdout.write(json.dumps(report, indent=2, sort_keys=True) + "\n")
             return 0
         if args.command == "audit":
             report = audit_manifest(args.manifest, args.source_root)

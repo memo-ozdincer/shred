@@ -7,7 +7,9 @@ import gzip
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
+import tempfile
 from typing import Any, Iterable
 
 
@@ -95,6 +97,19 @@ def _load_manifest(path: Path) -> dict[str, Any]:
         raise AuthenticTraceError("trace manifest must contain one JSON object")
     if value.get("schema_version") != 1 or value.get("trace_kind") != TRACE_KIND:
         raise AuthenticTraceError("unexpected authentic trace manifest identity")
+    allowed_fields = {
+        "schema_version",
+        "trace_kind",
+        "source_root_default",
+        "workload",
+        "telemetry",
+        "partitions",
+    }
+    unexpected = set(value).difference(allowed_fields)
+    if unexpected:
+        raise AuthenticTraceError(
+            f"unexpected authentic trace manifest fields: {sorted(unexpected)}"
+        )
     return value
 
 
@@ -138,6 +153,11 @@ def _validate_manifest(manifest: dict[str, Any]) -> tuple[int, list[dict[str, An
         "prefix_cpu_semantics": "same_attempt_through_exact_checkpoint",
         "verdict_authority": "ordinary_lean",
     }
+    unexpected_telemetry = set(telemetry).difference(required_telemetry)
+    if unexpected_telemetry:
+        raise AuthenticTraceError(
+            f"unexpected telemetry fields: {sorted(unexpected_telemetry)}"
+        )
     for field, expected_value in required_telemetry.items():
         if telemetry.get(field) != expected_value:
             raise AuthenticTraceError(
@@ -196,6 +216,14 @@ def screen_authentic_trace(
     for partition in partitions:
         if not isinstance(partition, dict):
             raise AuthenticTraceError("partition entries must be objects")
+        unexpected_partition_fields = set(partition).difference(
+            {"path", "sha256", "records"}
+        )
+        if unexpected_partition_fields:
+            raise AuthenticTraceError(
+                "unexpected partition fields: "
+                f"{sorted(unexpected_partition_fields)}"
+            )
         path = (root / _string(partition, "path", "manifest partition")).resolve()
         if not path.is_relative_to(root):
             raise AuthenticTraceError(f"trace partition escapes source root: {path}")
@@ -576,4 +604,132 @@ def screen_authentic_trace(
                 else "do not run a SHRED implementation benchmark"
             ),
         },
+    }
+
+
+def seal_authentic_trace(
+    output_manifest: Path,
+    *,
+    workload: dict[str, Any],
+    partitions: list[Path],
+) -> dict[str, Any]:
+    """Freeze and validate producer-owned JSONL without modifying it.
+
+    The producer must declare ``expected_attempts`` independently in workload
+    metadata. Partition counts are observed while sealing and must match that
+    declaration. The output is created without overwrite only after the same
+    fail-closed validation used by the opportunity screener succeeds.
+    """
+    if not isinstance(workload, dict):
+        raise AuthenticTraceError("workload metadata must be one JSON object")
+    if "expected_attempts" not in workload:
+        raise AuthenticTraceError(
+            "workload metadata must independently declare expected_attempts"
+        )
+    if not partitions:
+        raise AuthenticTraceError("at least one trace partition is required")
+
+    output_manifest = output_manifest.resolve()
+    if output_manifest.exists():
+        raise AuthenticTraceError(f"refusing to overwrite manifest: {output_manifest}")
+
+    resolved_partitions = [partition.resolve() for partition in partitions]
+    if len(set(resolved_partitions)) != len(resolved_partitions):
+        raise AuthenticTraceError("trace partitions must be unique")
+    for partition in resolved_partitions:
+        if not partition.is_file():
+            raise AuthenticTraceError(f"missing trace partition: {partition}")
+        if not (
+            partition.name.endswith(".jsonl")
+            or partition.name.endswith(".jsonl.gz")
+        ):
+            raise AuthenticTraceError(
+                f"trace partition must end in .jsonl or .jsonl.gz: {partition}"
+            )
+
+    source_root = Path(
+        os.path.commonpath([str(partition.parent) for partition in resolved_partitions])
+    )
+    partition_entries = []
+    physical_attempts = 0
+    for partition in resolved_partitions:
+        records = sum(1 for _line_number, _record in _records(partition))
+        physical_attempts += records
+        partition_entries.append(
+            {
+                "path": str(partition.relative_to(source_root)),
+                "sha256": _sha256(partition),
+                "records": records,
+            }
+        )
+
+    declared_attempts = workload.get("expected_attempts")
+    if declared_attempts != physical_attempts:
+        raise AuthenticTraceError(
+            "producer-declared expected_attempts does not match physical records: "
+            f"{declared_attempts!r} != {physical_attempts}"
+        )
+
+    output_manifest.parent.mkdir(parents=True, exist_ok=True)
+    source_root_default = os.path.relpath(source_root, output_manifest.parent)
+    manifest = {
+        "schema_version": 1,
+        "trace_kind": TRACE_KIND,
+        "source_root_default": source_root_default,
+        "workload": dict(workload),
+        "telemetry": {
+            "lineage_kind": "lean_native_exact_prefix",
+            "cpu_clock": "process_cpu",
+            "full_cpu_semantics": "warm_independent_complete_attempt",
+            "prefix_cpu_semantics": "same_attempt_through_exact_checkpoint",
+            "verdict_authority": "ordinary_lean",
+        },
+        "partitions": partition_entries,
+    }
+    try:
+        rendered = json.dumps(
+            manifest,
+            indent=2,
+            sort_keys=True,
+            allow_nan=False,
+        ) + "\n"
+    except (TypeError, ValueError) as error:
+        raise AuthenticTraceError(
+            f"workload metadata is not strict JSON: {error}"
+        ) from error
+
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=output_manifest.parent,
+            prefix=".shred-authentic-manifest-",
+            suffix=".json",
+            delete=False,
+        ) as stream:
+            stream.write(rendered)
+            stream.flush()
+            os.fsync(stream.fileno())
+            temporary_path = Path(stream.name)
+        validation = screen_authentic_trace(temporary_path)
+        try:
+            os.link(temporary_path, output_manifest)
+        except FileExistsError as error:
+            raise AuthenticTraceError(
+                f"refusing to overwrite manifest: {output_manifest}"
+            ) from error
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+
+    return {
+        "analysis": "authentic-checkpoint-trace-seal-v1",
+        "evidence_label": "Validated immutable producer artifact",
+        "claim_boundary": "Manifest sealing only; no Lean execution or speed claim",
+        "manifest": str(output_manifest),
+        "manifest_sha256": _sha256(output_manifest),
+        "expected_attempts": physical_attempts,
+        "partitions": partition_entries,
+        "validation_decision": validation["gate"]["decision"],
     }

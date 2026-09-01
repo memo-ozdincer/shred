@@ -4,7 +4,11 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from lean_prefix.authentic_trace import AuthenticTraceError, screen_authentic_trace
+from lean_prefix.authentic_trace import (
+    AuthenticTraceError,
+    screen_authentic_trace,
+    seal_authentic_trace,
+)
 
 
 DIGESTS = {
@@ -56,6 +60,27 @@ def gate_records() -> list[dict]:
 
 
 class AuthenticTraceTests(unittest.TestCase):
+    def workload_metadata(self, records: list[dict]) -> dict:
+        return {
+            "name": "existing-run",
+            "dataset_revision": "dataset-commit",
+            "producer_git_commit": "producer-commit",
+            "producer_git_dirty": False,
+            "producer_command": "run-existing-workload --frozen",
+            "resolved_configuration_sha256": DIGESTS["config"],
+            "lean_revision": "v4.test",
+            "mathlib_revision": "mathlib-commit",
+            "hardware": "test cpu",
+            "concurrency": 1,
+            "timeout_seconds": 30.0,
+            "memory_limit_bytes": 1024,
+            "expected_attempts": len(records),
+            "pipeline_total_cpu_seconds": sum(
+                record["full_verifier_cpu_seconds"] for record in records
+            )
+            * 2,
+        }
+
     def write_trace(self, root: Path, records: list[dict]) -> Path:
         partition = root / "trace.jsonl"
         partition.write_text(
@@ -66,25 +91,7 @@ class AuthenticTraceTests(unittest.TestCase):
             "schema_version": 1,
             "trace_kind": "shred-authentic-checkpoint-trace-v1",
             "source_root_default": ".",
-            "workload": {
-                "name": "existing-run",
-                "dataset_revision": "dataset-commit",
-                "producer_git_commit": "producer-commit",
-                "producer_git_dirty": False,
-                "producer_command": "run-existing-workload --frozen",
-                "resolved_configuration_sha256": DIGESTS["config"],
-                "lean_revision": "v4.test",
-                "mathlib_revision": "mathlib-commit",
-                "hardware": "test cpu",
-                "concurrency": 1,
-                "timeout_seconds": 30.0,
-                "memory_limit_bytes": 1024,
-                "expected_attempts": len(records),
-                "pipeline_total_cpu_seconds": sum(
-                    record["full_verifier_cpu_seconds"] for record in records
-                )
-                * 2,
-            },
+            "workload": self.workload_metadata(records),
             "telemetry": {
                 "lineage_kind": "lean_native_exact_prefix",
                 "cpu_clock": "process_cpu",
@@ -186,6 +193,16 @@ class AuthenticTraceTests(unittest.TestCase):
             with self.assertRaisesRegex(AuthenticTraceError, "lineage_kind"):
                 screen_authentic_trace(manifest_path)
 
+    def test_unrecognized_manifest_fields_fail_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest_path = self.write_trace(root, [exact_record(0)])
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["projection_override"] = 100.0
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(AuthenticTraceError, "unexpected.*fields"):
+                screen_authentic_trace(manifest_path)
+
     def test_missing_overhead_budget_stays_inconclusive(self):
         with tempfile.TemporaryDirectory() as directory:
             manifest = self.write_trace(Path(directory), gate_records())
@@ -263,6 +280,77 @@ class AuthenticTraceTests(unittest.TestCase):
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             with self.assertRaisesRegex(AuthenticTraceError, "escapes source root"):
                 screen_authentic_trace(manifest_path)
+
+    def test_seal_freezes_and_validates_without_changing_partition(self):
+        records = gate_records()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            partition = root / "producer.jsonl"
+            partition.write_text(
+                "".join(json.dumps(record) + "\n" for record in records),
+                encoding="utf-8",
+            )
+            original_bytes = partition.read_bytes()
+            output = root / "sealed" / "manifest.json"
+            receipt = seal_authentic_trace(
+                output,
+                workload=self.workload_metadata(records),
+                partitions=[partition],
+            )
+            report = screen_authentic_trace(output)
+            sealed = json.loads(output.read_text(encoding="utf-8"))
+            after_bytes = partition.read_bytes()
+        self.assertEqual(after_bytes, original_bytes)
+        self.assertEqual(receipt["expected_attempts"], 800)
+        self.assertEqual(
+            receipt["validation_decision"],
+            "inconclusive_missing_registered_overhead_budget",
+        )
+        self.assertEqual(
+            sealed["telemetry"]["lineage_kind"], "lean_native_exact_prefix"
+        )
+        self.assertEqual(report["accounting"]["physical_attempts"], 800)
+
+    def test_seal_requires_independent_attempt_count_and_creates_no_output(self):
+        records = [exact_record(index) for index in range(8)]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            partition = root / "producer.jsonl"
+            partition.write_text(
+                "".join(json.dumps(record) + "\n" for record in records),
+                encoding="utf-8",
+            )
+            output = root / "manifest.json"
+            workload = self.workload_metadata(records)
+            workload["expected_attempts"] = 9
+            with self.assertRaisesRegex(
+                AuthenticTraceError, "does not match physical records"
+            ):
+                seal_authentic_trace(
+                    output,
+                    workload=workload,
+                    partitions=[partition],
+                )
+            self.assertFalse(output.exists())
+
+    def test_seal_refuses_overwrite(self):
+        records = [exact_record(index) for index in range(8)]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            partition = root / "producer.jsonl"
+            partition.write_text(
+                "".join(json.dumps(record) + "\n" for record in records),
+                encoding="utf-8",
+            )
+            output = root / "manifest.json"
+            output.write_text("owned by producer\n", encoding="utf-8")
+            with self.assertRaisesRegex(AuthenticTraceError, "refusing to overwrite"):
+                seal_authentic_trace(
+                    output,
+                    workload=self.workload_metadata(records),
+                    partitions=[partition],
+                )
+            self.assertEqual(output.read_text(encoding="utf-8"), "owned by producer\n")
 
 
 if __name__ == "__main__":
