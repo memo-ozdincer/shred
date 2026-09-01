@@ -408,6 +408,18 @@ eligible OProver-8B trace distinguish a fragile equal-cost headline from a
 robust replication frontier. It deliberately emits no latency multiplier
 without authentic batch wall-time telemetry.
 
+The screener now also removes equal-cost wave arithmetic from that frontier
+(D-057). If the manifest independently declares effective verifier slots, it
+assigns actual observed suffix costs across each replica set and schedules the
+resulting jobs plus every unchanged attempt and fallback across those slots.
+The independent baseline uses the same deterministic scheduling rule. A
+checked-in OProver-8B topology fixture derives 30 CPU-service units for
+independent verification, 24 with one trie (1.25x), and 14 with three replicas
+(2.14x); the latter retains the 2.00x CPU-work projection. This validates the
+model and its connection to D-055, not the workload hypothesis. An authentic
+trace can now reveal long-tail sensitivity directly, while measured batch wall
+latency remains required for any latency headline.
+
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator
 then found 17 native CPU boundary records, joined all three REPL tactics by

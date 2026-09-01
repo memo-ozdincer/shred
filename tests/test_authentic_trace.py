@@ -275,6 +275,59 @@ class AuthenticTraceTests(unittest.TestCase):
         self.assertAlmostEqual(points[1]["conservative_saved_cpu_seconds"], 20.0)
         self.assertAlmostEqual(points[-1]["ideal_cpu_speedup"], 1.0)
 
+    def test_real_cost_service_schedule_reproduces_oprover_8b_topology(self):
+        records = []
+        for group_index in range(44):
+            for _attempt_index in range(8):
+                index = len(records)
+                records.append(
+                    exact_record(
+                        index,
+                        theorem=f"t{group_index % 10}",
+                        group=f"g{group_index}",
+                        scope=f"scope-g{group_index}",
+                    )
+                )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = self.write_trace(root, records)
+            manifest_value = json.loads(manifest.read_text(encoding="utf-8"))
+            manifest_value["workload"]["verifier_slots"] = 135
+            manifest.write_text(json.dumps(manifest_value), encoding="utf-8")
+            report = screen_authentic_trace(
+                manifest,
+                process_local_overhead_budget_cpu_seconds_per_hit=0.0,
+                process_local_overhead_budget_source="zero-overhead ceiling",
+            )
+        frontier = report["process_local_replication_frontier"]
+        self.assertAlmostEqual(
+            frontier["independent_lpt_cpu_service_makespan_seconds"], 30.0
+        )
+        one_replica = frontier["points"][0]
+        self.assertAlmostEqual(
+            one_replica["projected_cpu_service_makespan_seconds"], 24.0
+        )
+        self.assertAlmostEqual(
+            one_replica["projected_cpu_service_makespan_speedup"], 1.25
+        )
+        three_replicas = frontier["points"][2]
+        self.assertAlmostEqual(three_replicas["projected_cpu_speedup"], 2.0)
+        self.assertAlmostEqual(
+            three_replicas["projected_cpu_service_makespan_seconds"], 14.0
+        )
+        self.assertAlmostEqual(
+            three_replicas["projected_cpu_service_makespan_speedup"], 30.0 / 14.0
+        )
+
+    def test_verifier_slots_must_be_a_positive_integer(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), [exact_record(0)])
+            value = json.loads(manifest.read_text(encoding="utf-8"))
+            value["workload"]["verifier_slots"] = True
+            manifest.write_text(json.dumps(value), encoding="utf-8")
+            with self.assertRaisesRegex(AuthenticTraceError, "verifier_slots"):
+                screen_authentic_trace(manifest)
+
     def test_portable_budget_does_not_authorize_process_local_gate(self):
         with tempfile.TemporaryDirectory() as directory:
             manifest = self.write_trace(Path(directory), process_local_gate_records())

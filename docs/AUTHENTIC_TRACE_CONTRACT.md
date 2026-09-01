@@ -46,6 +46,7 @@ execute Lean. Workload metadata has this shape:
   "mathlib_revision": "exact Mathlib revision",
   "hardware": "CPU model and deployment identity",
   "concurrency": 8,
+  "verifier_slots": 135,
   "timeout_seconds": 300,
   "memory_limit_bytes": 51539607552,
   "expected_attempts": 800,
@@ -55,7 +56,10 @@ execute Lean. Workload metadata has this shape:
 
 `expected_attempts` must come from the producer's run accounting; the sealer
 does not infer it and then call that inference complete. Pipeline CPU is needed
-for the end-to-end materiality gate.
+for the end-to-end materiality gate. `verifier_slots` is optional but, when
+present, must be the independently resolved maximum number of concurrent Lean
+verification jobs for this workload—not GPU count or general pipeline
+concurrency. Without it, the report omits the topology-aware service projection.
 
 ## Exactness boundary
 
@@ -196,10 +200,19 @@ This is conservative under observed prefix-cost variation, matches the ordinary
 one-trie projection at `k = 1`, and returns to independent execution when every
 attempt has its own replica. Registered local overhead is charged only to the
 remaining `n - k` reused attempts. This frontier makes the CPU cost of exposing
-more parallelism directly testable from an existing trace. It makes no latency
-claim: selecting a latency point requires authentic batch boundaries and wall-
-time telemetry, plus a pre-registered objective rather than post-hoc selection
-of the prettiest multiplier.
+more parallelism directly testable from an existing trace.
+
+When `verifier_slots` is declared, the screener additionally constructs an
+achievable CPU-service schedule. Within each group it greedily assigns observed
+suffix costs to `k` replicas while charging the maximum observed prefix in each
+replica; it then longest-processing-time schedules every resulting replica job,
+unchanged nonqualifying attempt, and fallback across the declared slots. The
+independent baseline is scheduled by the same rule. This uses actual cost
+variation and can test whether a topology headline survives beyond equal-cost
+wave arithmetic. It is still not measured wall latency: CPU-service seconds do
+not include queueing, communication, or contention. Selecting a latency point
+requires authentic wall-time evidence and a pre-registered objective rather
+than post-hoc selection of the prettiest multiplier.
 
 The top-level recommendation is deliberately singular: choose portable reuse
 when its incremental gate passes; otherwise choose the process-local exact trie

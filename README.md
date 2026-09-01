@@ -210,7 +210,11 @@ verifier slots for three local-trie replicas per theorem group. Splitting eight
 rollouts 3/3/2 at the same 80% hypothesis projects **2.00× CPU throughput and
 2.14× lower idealized equal-cost batch latency**. This is a selectable
 CPU-latency Pareto point, not a measured result; every replicated prefix is
-charged explicitly.
+charged explicitly. The authentic-trace screener now recomputes this frontier
+from observed unequal per-attempt costs and declared verifier slots, so the
+next normal eligible trace can falsify the equal-cost headline without a
+benchmark sweep. Its CPU-service schedule remains a projection until paired
+batch wall time is measured.
 
 ## Where this can matter most
 

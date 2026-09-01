@@ -1731,3 +1731,33 @@ remains at two or three replicas. The report is CPU-only. Batch-latency claims
 still require authentic wall time and batch boundaries, and the optimization
 objective must be registered before execution; choosing `k` afterward for the
 largest attractive multiplier is prohibited.
+
+## D-057 - Replace equal-cost waves with an achievable authentic-cost schedule
+
+Date: 2026-09-01
+
+Status: accepted instrumentation decision; synthetic contract validation only
+
+Decision: when an existing-run manifest independently declares effective Lean
+verifier slots, construct a deterministic achievable schedule at every replica
+point. Assign each group's observed suffix costs across its replicas, charge
+the largest assigned prefix once per replica, include registered reuse overhead,
+and longest-processing-time schedule all resulting and unchanged jobs across
+the same slots. Compare against independent attempts scheduled by the identical
+rule.
+
+Reason: whole equal-cost waves made the D-055 latency hypothesis legible but
+could hide sensitivity to long-tail proof costs. The new calculation consumes
+the authentic full and prefix process CPU already required by the trace. Its
+schedule is executable rather than an unattainable lower bound, and it retains
+all nonqualifying and fallback work. A checked-in 44-group, eight-attempt,
+135-slot contract fixture reproduces the source-pinned frontier: 30 CPU-service
+units independently, 24 with one replica (1.25x), and 14 with three replicas
+(2.14x), while three-replica total CPU remains 2.00x.
+
+Consequence: a normal eligible OProver-8B trace can now falsify or preserve both
+attractive multipliers under its actual cost distribution without a parameter
+sweep or SHRED execution. The result remains a Hypothesis CPU-service
+projection, not measured wall latency. No latency headline is authorized until
+an identical-input implementation comparison measures batch wall time and
+verdict agreement.

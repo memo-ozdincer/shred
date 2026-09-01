@@ -91,6 +91,61 @@ def _quantile(sorted_values: list[float], fraction: float) -> float | None:
     return sorted_values[int(fraction * (len(sorted_values) - 1))]
 
 
+def _lpt_makespan(jobs: list[float], slots: int) -> float:
+    """Return one achievable longest-processing-time schedule makespan."""
+    loads = [0.0] * min(slots, max(1, len(jobs)))
+    for cost in sorted(jobs, reverse=True):
+        target = min(range(len(loads)), key=lambda index: (loads[index], index))
+        loads[target] += cost
+    return max(loads)
+
+
+def _replica_service_jobs(
+    group: list[dict[str, Any]],
+    replicas: int,
+    overhead_per_reuse: float,
+) -> list[float]:
+    """Construct an achievable cost-aware assignment to local trie replicas."""
+    bins = [
+        {"prefix": 0.0, "suffix": 0.0, "attempts": 0}
+        for _ in range(min(replicas, len(group)))
+    ]
+    ordered = sorted(
+        group,
+        key=lambda attempt: (
+            float(attempt["full_cpu"]),
+            float(attempt["prefix_cpu"]),
+            str(attempt["proposal_id"]),
+        ),
+        reverse=True,
+    )
+    for attempt in ordered:
+        prefix = float(attempt["prefix_cpu"])
+        suffix = float(attempt["full_cpu"]) - prefix
+
+        def resulting_cost(index: int) -> tuple[float, int]:
+            bucket = bins[index]
+            attempts = int(bucket["attempts"]) + 1
+            return (
+                max(float(bucket["prefix"]), prefix)
+                + float(bucket["suffix"])
+                + suffix
+                + overhead_per_reuse * max(0, attempts - 1),
+                index,
+            )
+
+        target = min(range(len(bins)), key=resulting_cost)
+        bins[target]["prefix"] = max(float(bins[target]["prefix"]), prefix)
+        bins[target]["suffix"] = float(bins[target]["suffix"]) + suffix
+        bins[target]["attempts"] = int(bins[target]["attempts"]) + 1
+    return [
+        float(bucket["prefix"])
+        + float(bucket["suffix"])
+        + overhead_per_reuse * max(0, int(bucket["attempts"]) - 1)
+        for bucket in bins
+    ]
+
+
 def _load_manifest(path: Path) -> dict[str, Any]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -148,6 +203,13 @@ def _validate_manifest(manifest: dict[str, Any]) -> tuple[int, list[dict[str, An
         or concurrency < 1
     ):
         raise AuthenticTraceError("workload concurrency must be positive")
+    verifier_slots = workload.get("verifier_slots")
+    if verifier_slots is not None and (
+        isinstance(verifier_slots, bool)
+        or not isinstance(verifier_slots, int)
+        or verifier_slots < 1
+    ):
+        raise AuthenticTraceError("workload verifier_slots must be positive")
     _seconds(workload, "timeout_seconds", "manifest workload")
     memory = workload.get("memory_limit_bytes")
     if isinstance(memory, bool) or not isinstance(memory, int) or memory < 1:
@@ -438,6 +500,7 @@ def screen_authentic_trace(
             ].append(attempt)
 
     local_qualifying_groups = []
+    local_qualifying_attempt_groups = []
     local_insufficient_attempts = 0
     local_saved_cpu = 0.0
     local_cache_hits = 0
@@ -484,6 +547,7 @@ def screen_authentic_trace(
                 "ideal_saved_cpu_seconds": saved,
             }
         )
+        local_qualifying_attempt_groups.append(group)
 
     local_ideal_projected_cpu = baseline_cpu - local_saved_cpu
     local_ideal_speedup = baseline_cpu / local_ideal_projected_cpu
@@ -503,6 +567,14 @@ def screen_authentic_trace(
             )
 
     local_replication_frontier = []
+    workload = manifest["workload"]
+    verifier_slots = workload.get("verifier_slots")
+    independent_service_makespan = None
+    if verifier_slots is not None:
+        independent_service_makespan = _lpt_makespan(
+            [float(attempt["full_cpu"]) for attempt in attempts],
+            verifier_slots,
+        )
     if local_qualifying_groups:
         maximum_replicas = max(
             int(group["attempts"]) for group in local_qualifying_groups
@@ -542,6 +614,37 @@ def screen_authentic_trace(
                 projected_speedup_for_replicas = (
                     baseline_cpu / projected_cpu_for_replicas
                 )
+            service_makespan = None
+            service_makespan_speedup = None
+            service_jobs = None
+            if verifier_slots is not None:
+                qualifying_ids = {
+                    str(attempt["proposal_id"])
+                    for group in local_qualifying_attempt_groups
+                    for attempt in group
+                }
+                overhead_per_reuse = (
+                    process_local_overhead_budget_cpu_seconds_per_hit or 0.0
+                )
+                jobs = [
+                    float(attempt["full_cpu"])
+                    for attempt in attempts
+                    if str(attempt["proposal_id"]) not in qualifying_ids
+                ]
+                for group in local_qualifying_attempt_groups:
+                    jobs.extend(
+                        _replica_service_jobs(
+                            group,
+                            replicas,
+                            overhead_per_reuse,
+                        )
+                    )
+                service_jobs = len(jobs)
+                service_makespan = _lpt_makespan(jobs, verifier_slots)
+                if independent_service_makespan and service_makespan > 0:
+                    service_makespan_speedup = (
+                        independent_service_makespan / service_makespan
+                    )
             local_replication_frontier.append(
                 {
                     "replicas_per_group": replicas,
@@ -564,6 +667,11 @@ def screen_authentic_trace(
                     "registered_overhead_seconds": registered_overhead,
                     "projected_cpu_seconds": projected_cpu_for_replicas,
                     "projected_cpu_speedup": projected_speedup_for_replicas,
+                    "scheduled_service_jobs": service_jobs,
+                    "projected_cpu_service_makespan_seconds": service_makespan,
+                    "projected_cpu_service_makespan_speedup": (
+                        service_makespan_speedup
+                    ),
                 }
             )
 
@@ -1043,18 +1151,23 @@ def screen_authentic_trace(
         },
         "process_local_replication_frontier": {
             "points": local_replication_frontier,
+            "verifier_slots": verifier_slots,
+            "independent_lpt_cpu_service_makespan_seconds": (
+                independent_service_makespan
+            ),
             "prefix_cost_model": (
                 "For k replicas, charge min(sum observed prefix CPU, "
                 "k * maximum observed prefix CPU) per qualifying group; "
                 "cap replicas at that group's attempt count"
             ),
             "claim_boundary": (
-                "Conservative CPU-only counterfactual from observed process CPU; "
-                "no batch-latency claim without authentic wall-time and batch-boundary telemetry"
+                "CPU-work and achievable LPT CPU-service counterfactuals from "
+                "observed process CPU; service makespan is not measured wall latency"
             ),
             "selection_rule": (
-                "Pre-register a CPU or latency objective before execution; do not "
-                "select k after a benchmark for the largest reported multiplier"
+                "Pre-register a CPU-work or CPU-service-makespan objective before "
+                "execution; do not select k after a benchmark for the largest "
+                "reported multiplier"
             ),
         },
         "verifier_cpu": {
