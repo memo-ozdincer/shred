@@ -296,3 +296,15 @@ unit/protocol validation, not a benchmark. The public OProofs and ai4math-lean
 datasets add scale and latency context but cannot support speedup claims because
 they omit the required exact lineage and prefix CPU. The source-supported
 adapter map is `reports/oprover_adapter_feasibility.md`.
+
+The first adapter slice is now implemented source-only. Pinned Lean and REPL
+patches expose absolute CPU scopes and exact native byte ranges, and a public
+Python parser fails closed unless byte range and syntax kind both match. The
+patches apply cleanly to the exact OProver pins and their parser has seven unit
+tests. No patched runtime has been compiled or executed, so this is engineering
+progress rather than measured evidence. Kimina group leasing, checkpoint
+receipts, and compilation remain next. A third pinned patch now wires the
+capture flag through OProver and Kimina, isolates instrumented REPLs from the
+ordinary pool, preserves non-SHRED stderr, and retains explicit capture
+fallbacks. Its Python files pass static compilation and the patch applies
+cleanly to the audited OProver commit.

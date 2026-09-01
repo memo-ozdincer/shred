@@ -1246,3 +1246,67 @@ implementation work is a group-scoped OProver/Kimina capture protocol and
 native boundary CPU clock, followed by unit and protocol validation only. An
 authentic value screen—not adapter completion—decides whether portable
 execution or a paired performance experiment is ever built.
+
+## D-043 - Instrument Lean's existing native profiling scopes, not proof text
+
+Date: 2026-09-01
+
+Status: accepted after pinned-source implementation and static validation
+
+Decision: obtain exact prefix CPU by adding an opt-in counter to Lean 4.15's
+existing RAII `profileit` scopes. The `LEAN_SHRED_CPU_BOUNDARIES=1` process flag
+records absolute process-plus-completed-child CPU for every parsing and
+elaboration scope in the request; `shred.cpuBoundaries` additionally tags each
+tactic scope with its original syntax byte range. Extend
+the pinned REPL's `allTactics` result with the same byte range and syntax kind. Join a
+boundary only when both native fields match exactly; otherwise fall back.
+
+Keep the feature disabled by default. Preserve all non-SHRED stderr and treat a
+malformed SHRED-prefixed line as fatal telemetry corruption. Windows is
+unsupported until it has an equivalent clock. Timeouts or crashes without
+complete command boundaries remain ordinary accounted fallbacks.
+
+Reason: post-hoc wall-share allocation is not exact process CPU, while wrapping
+or replaying individual tactics changes the execution being measured. Lean
+already constructs an exception-safe native scope around every call to
+`evalTactic`; instrumenting that boundary captures the unchanged complete
+attempt and its real nested tactic execution. Exact byte ranges remove the
+syntax-kind ambiguity in the earlier D-014 profiler alignment. `getrusage`
+supplies self CPU plus synchronously completed child CPU on the Linux OProver
+deployment.
+
+Consequence: the pinned Lean and REPL patches and fail-closed Python parser are
+checked in. Both patches apply to their exact source commits, and seven unit tests
+validate parsing and exact alignment. They have not been compiled or executed,
+so no statement is promoted to **Measured**. The next bounded validation is to
+compile the instrumented toolchain and test protocol/accounting on tiny fixed
+fixtures; it is correctness validation, not a scientific experiment or a
+headline. Authentic OProver execution remains governed by D-042 and D-040.
+
+## D-044 - Isolate capture-enabled OProver REPLs from ordinary verification
+
+Date: 2026-09-01
+
+Status: accepted after producer-side source implementation
+
+Decision: add an opt-in `capture_shred_cpu` request through OProver and Kimina.
+Capture-enabled REPLs form a separate manager pool keyed by both import header
+and capture mode; ordinary requests can never reuse an instrumented process.
+Only capture requests prepend the instrumentation option and request
+`allTactics`. Kimina removes well-formed boundary records before applying its
+existing stderr error policy, preserves every other line, and returns the raw
+records and native tactics in diagnostics. OProver retains those fields or an
+explicit capture fallback in the existing per-attempt result.
+
+Reason: setting the runtime flag on the shared pool would add instrumentation
+work to ordinary verification and could cause boundary output to be mistaken
+for an error. A separate pool protects the warm baseline and makes capture mode
+part of the process identity. Carrying telemetry through the existing result
+preserves OProver's round/prompt/rollout attribution without a second request or
+a new proof submission.
+
+Consequence: the pinned producer patch applies cleanly to OProver commit
+`b0cb2583b702d5040f84783ebba23d86241eac05`, and all changed Python files pass
+static compilation. The stack is still uncompiled and unexecuted. Group-scoped
+leasing, representative snapshot receipts, and exact environment/context
+receipts remain required before an authentic sidecar can satisfy D-040.

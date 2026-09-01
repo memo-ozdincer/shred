@@ -1,0 +1,47 @@
+diff --git a/REPL/JSON.lean b/REPL/JSON.lean
+index d5c5ba2..51e6f39 100644
+--- a/REPL/JSON.lean
++++ b/REPL/JSON.lean
+@@ -100,6 +100,9 @@ def Sorry.of (goal : String) (pos endPos : Lean.Position) (proofState : Option N
+ structure Tactic where
+   pos : Pos
+   endPos : Pos
++  startByte : Nat
++  endByte : Nat
++  syntaxKind : Name
+   goals : String
+   tactic : String
+   proofState : Option Nat
+@@ -107,9 +110,12 @@ structure Tactic where
+ deriving ToJson, FromJson
+ 
+ /-- Construct the JSON representation of a Lean tactic. -/
+-def Tactic.of (goals tactic : String) (pos endPos : Lean.Position) (proofState : Option Nat) (usedConstants : Array Name) : Tactic :=
++def Tactic.of (goals tactic : String) (pos endPos : Lean.Position)
++    (startByte endByte : Nat) (syntaxKind : Name) (proofState : Option Nat)
++    (usedConstants : Array Name) : Tactic :=
+   { pos := ⟨pos.line, pos.column⟩,
+     endPos := ⟨endPos.line, endPos.column⟩,
++    startByte, endByte, syntaxKind,
+     goals,
+     tactic,
+     proofState,
+diff --git a/REPL/Main.lean b/REPL/Main.lean
+index a4b97c3..3cb7da9 100644
+--- a/REPL/Main.lean
++++ b/REPL/Main.lean
+@@ -120,10 +120,13 @@ def tactics (trees : List InfoTree) : M m (List Tactic) :=
+   trees.flatMap InfoTree.tactics |>.mapM
+     fun ⟨ctx, stx, goals, pos, endPos, ns⟩ => do
+       let proofState := some (← ProofSnapshot.create ctx none none goals)
++      let startByte := stx.getPos?.map (·.byteIdx) |>.getD 0
++      let endByte := stx.getTailPos?.map (·.byteIdx) |>.getD startByte
++      let syntaxKind := stx.getKind
+       let goals := s!"{(← ctx.ppGoals goals)}".trim
+       let tactic := Format.pretty (← ppTactic ctx stx)
+       let proofStateId ← proofState.mapM recordProofSnapshot
+-      return Tactic.of goals tactic pos endPos proofStateId ns
++      return Tactic.of goals tactic pos endPos startByte endByte syntaxKind proofStateId ns
+ 
+ /-- Record a `ProofSnapshot` and generate a JSON response for it. -/
+ def createProofStepReponse (proofState : ProofSnapshot) (old? : Option ProofSnapshot := none) :

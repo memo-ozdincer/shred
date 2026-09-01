@@ -1,0 +1,150 @@
+diff --git a/src/Lean/Elab/Tactic/Basic.lean b/src/Lean/Elab/Tactic/Basic.lean
+index 067513b..c568325 100644
+--- a/src/Lean/Elab/Tactic/Basic.lean
++++ b/src/Lean/Elab/Tactic/Basic.lean
+@@ -153,7 +153,15 @@ structure EvalTacticFailure where
+   state : SavedState
+ 
+ partial def evalTactic (stx : Syntax) : TacticM Unit := do
+-  profileitM Exception "tactic execution" (decl := stx.getKind) (← getOptions) <|
++  let opts ← getOptions
++  let category :=
++    if shred.cpuBoundaries.get opts then
++      let startByte := stx.getPos?.map (·.byteIdx) |>.getD 0
++      let endByte := stx.getTailPos?.map (·.byteIdx) |>.getD startByte
++      s!"shred tactic execution@{startByte}:{endByte}"
++    else
++      "tactic execution"
++  profileitM Exception category (decl := stx.getKind) opts <|
+   withRef stx <| withIncRecDepth <| withFreshMacroScope <| match stx with
+     | .node _ k _    =>
+       if k == nullKind then
+diff --git a/src/Lean/Util/Profile.lean b/src/Lean/Util/Profile.lean
+index ea665a9..0aa13a6 100644
+--- a/src/Lean/Util/Profile.lean
++++ b/src/Lean/Util/Profile.lean
+@@ -23,6 +23,13 @@ register_builtin_option profiler.threshold : Nat := {
+   descr    := "threshold in milliseconds, profiling times under threshold will not be reported individually"
+ }
+ 
++register_builtin_option shred.cpuBoundaries : Bool := {
++  defValue := false
++  group    := "profiler"
++  descr    :=
++    "attach exact source byte ranges to tactic profiling scopes for SHRED CPU telemetry; has no effect unless the runtime is also launched with LEAN_SHRED_CPU_BOUNDARIES=1"
++}
++
+ @[export lean_get_profiler]
+ private def get_profiler (o : Options) : Bool :=
+   profiler.get o
+diff --git a/src/library/time_task.cpp b/src/library/time_task.cpp
+index 8a1c2b3..5be35e7 100644
+--- a/src/library/time_task.cpp
++++ b/src/library/time_task.cpp
+@@ -4,8 +4,13 @@ Released under Apache 2.0 license as described in the file LICENSE.
+ 
+ Author: Sebastian Ullrich
+ */
++#include <atomic>
++#include <cstdlib>
+ #include <string>
+ #include <map>
++#if !defined(LEAN_WINDOWS)
++#include <sys/resource.h>
++#endif
+ #include "library/time_task.h"
+ #include "kernel/trace.h"
+ 
+@@ -15,6 +20,33 @@ static std::map<std::string, second_duration> * g_cum_times;
+ static mutex * g_cum_times_mutex;
+ LEAN_THREAD_PTR(time_task, g_current_time_task);
+ 
++static std::atomic<uint64_t> g_shred_sequence {0};
++static thread_local unsigned g_shred_depth = 0;
++
++static bool shred_boundary_category(std::string const & category) {
++    return category == "parsing" || category == "elaboration" ||
++        category.rfind("shred tactic execution@", 0) == 0;
++}
++
++static bool shred_cpu_now(uint64_t & result) {
++#if defined(LEAN_WINDOWS)
++    return false;
++#else
++    struct rusage self_usage;
++    struct rusage child_usage;
++    if (getrusage(RUSAGE_SELF, &self_usage) != 0 ||
++        getrusage(RUSAGE_CHILDREN, &child_usage) != 0)
++        return false;
++    auto micros = [](struct timeval const & value) -> uint64_t {
++        return static_cast<uint64_t>(value.tv_sec) * 1000000ULL +
++            static_cast<uint64_t>(value.tv_usec);
++    };
++    result = (micros(self_usage.ru_utime) + micros(self_usage.ru_stime) +
++        micros(child_usage.ru_utime) + micros(child_usage.ru_stime)) * 1000ULL;
++    return true;
++#endif
++}
++
+ void report_profiling_time(std::string const & category, second_duration time) {
+     lock_guard<mutex> _(*g_cum_times_mutex);
+     (*g_cum_times)[category] += time;
+@@ -42,7 +74,17 @@ void finalize_time_task() {
+ }
+ 
+ time_task::time_task(std::string const & category, options const & opts, name decl) :
+-        m_category(category) {
++        m_category(category), m_decl(decl), m_parent_task(nullptr) {
++    char const * enabled = std::getenv("LEAN_SHRED_CPU_BOUNDARIES");
++    if (enabled && std::string(enabled) == "1" && shred_boundary_category(category)) {
++        uint64_t start;
++        if (shred_cpu_now(start)) {
++            m_shred_cpu = true;
++            m_shred_start_cpu_ns = start;
++            m_shred_sequence = g_shred_sequence.fetch_add(1);
++            m_shred_depth = g_shred_depth++;
++        }
++    }
+     if (get_profiler(opts)) {
+         m_timeit = optional<xtimeit>(get_profiling_threshold(opts), [=](second_duration duration) mutable {
+             sstream ss;
+@@ -59,6 +101,21 @@ time_task::time_task(std::string const & category, options const & opts, name de
+ }
+ 
+ time_task::~time_task() {
++    if (m_shred_cpu) {
++        uint64_t stop;
++        bool valid = shred_cpu_now(stop) && stop >= m_shred_start_cpu_ns;
++        --g_shred_depth;
++        if (valid) {
++            sstream ss;
++            ss << "SHRED_CPU_BOUNDARY_V1\t" << m_shred_sequence << "\t"
++               << m_shred_depth << "\t" << m_shred_start_cpu_ns << "\t"
++               << stop << "\t" << m_category << "\t";
++            if (m_decl) ss << m_decl;
++            else ss << "_anonymous";
++            ss << "\n";
++            tout() << ss.str();
++        }
++    }
+     if (m_timeit) {
+         g_current_time_task = m_parent_task;
+         report_profiling_time(m_category, m_timeit->get_elapsed());
+diff --git a/src/library/time_task.h b/src/library/time_task.h
+index 992ece6..1ee2410 100644
+--- a/src/library/time_task.h
++++ b/src/library/time_task.h
+@@ -17,8 +17,13 @@ LEAN_EXPORT void display_cumulative_profiling_times(std::ostream & out);
+ /** Measure time of some task and report it for the final cumulative profile. */
+ class LEAN_EXPORT time_task {
+     std::string     m_category;
++    name            m_decl;
+     optional<xtimeit> m_timeit;
+     time_task *     m_parent_task;
++    bool            m_shred_cpu {false};
++    uint64_t        m_shred_start_cpu_ns {0};
++    uint64_t        m_shred_sequence {0};
++    unsigned        m_shred_depth {0};
+ public:
+     time_task(std::string const & category, options const & opts, name decl = name());
+     ~time_task();

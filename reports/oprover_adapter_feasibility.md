@@ -65,6 +65,28 @@ The smallest honest capture adapter has five parts:
    root-context, and ordered-prefix receipts. Every non-eligible attempt remains
    an explicit fallback with its complete verdict and CPU.
 
+The source-only reference implementation now covers the hard timing boundary:
+
+- `integrations/oprover/lean4-v4.15.0-shred-cpu-boundaries.patch` uses Lean's
+  existing RAII profiling scopes to emit absolute process-plus-completed-child
+  CPU for every request parsing/elaboration scope and exact tactic source byte
+  range;
+- `integrations/oprover/repl-v4.15.0-native-byte-ranges.patch` adds the original
+  syntax kind and byte range to `allTactics`; and
+- `shred.oprover_adapter` strips those records from stderr, preserves all other
+  stderr, and joins a tactic only when both its native byte range and syntax
+  kind match exactly.
+- `integrations/oprover/oprover-kimina-cpu-capture.patch` creates a separate
+  capture-enabled REPL pool, forwards the opt-in request through Kimina and
+  OProver, and retains either the native telemetry or an explicit capture
+  fallback in the existing verification result.
+
+All three patches apply cleanly to the frozen source revisions. The Kimina and
+OProver Python changes pass static compilation, and seven parser tests cover
+successful cumulative attribution plus multi-command envelopes, malformed,
+missing, duplicate, text-only, and syntax-conflict failures. This is source
+validation, not a compiled or executed Lean result.
+
 The group lease is an efficiency measure, not an authority boundary. The
 captured artifact remains trusted producer telemetry, and any later executor
 must still perform the named clean-environment kernel finalization specified in
@@ -78,7 +100,8 @@ seed or larger sample changes the result. Wall time, one-second CPU sampling,
 or SHRED's earlier profiler-based CPU allocation cannot be substituted for
 same-attempt prefix process CPU.
 
-The next work is therefore the adapter plus unit/protocol validation. Only a
+The next work is therefore group leasing, receipts, and compile/protocol
+validation. Only a
 normal authentic run that already has a substantive RL purpose may emit the
 new sidecar. Its sealed, read-only telemetry must pass D-040 before any SHRED
 paired benchmark is proposed. No OProver reproduction run or dataset-scale

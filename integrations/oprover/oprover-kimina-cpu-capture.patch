@@ -1,0 +1,431 @@
+diff --git a/components/kimina-lean-server/client/kimina_client/models.py b/components/kimina-lean-server/client/kimina_client/models.py
+index 910121e..c3452da 100644
+--- a/components/kimina-lean-server/client/kimina_client/models.py
++++ b/components/kimina-lean-server/client/kimina_client/models.py
+@@ -69,6 +69,7 @@ class VerifyRequestBody(BaseModel):
+     timeout: int = 300
+     infotree_type: Infotree | None = None
+     disable_cache: bool = False
++    capture_shred_cpu: bool = False
+ 
+ 
+ class Snippet(BaseModel):
+@@ -95,6 +96,7 @@ class Command(TypedDict):
+     env: NotRequired[int | None]
+     infotree: NotRequired[Infotree]
+     gc: NotRequired[bool]
++    allTactics: NotRequired[bool]
+ 
+ 
+ class Pos(TypedDict):
+@@ -132,6 +134,9 @@ class ProofStep(TypedDict):
+ class Tactic(TypedDict):
+     pos: int
+     endPos: int
++    startByte: int
++    endByte: int
++    syntaxKind: str
+     goals: str
+     tactic: str
+     proofState: NotRequired[int | None]
+@@ -142,6 +147,7 @@ class Diagnostics(TypedDict, total=False):
+     repl_uuid: str
+     cpu_max: float
+     memory_max: float
++    shred_cpu_boundaries: list[str]
+ 
+ 
+ # TODO: use basemodel pydantic instead
+@@ -226,6 +232,7 @@ class BaseRequest(BaseModel):
+         None,
+         description="Level of detail for the info tree.",
+     )
++    capture_shred_cpu: bool = False
+ 
+ 
+ class ReplRequest(BaseRequest):
+@@ -469,6 +476,7 @@ class BackwardResponse(TypedDict):
+         str | None
+     ]  # TODO: check if error is required here, probably not
+     response: NotRequired[ExtendedCommandResponse | ExtendedError | None]
++    diagnostics: NotRequired[Diagnostics | None]
+ 
+ 
+ def backward_response_from_repl(repl_response: ReplResponse) -> BackwardResponse:
+diff --git a/components/kimina-lean-server/server/manager.py b/components/kimina-lean-server/server/manager.py
+index 3f1487a..c4785c9 100644
+--- a/components/kimina-lean-server/server/manager.py
++++ b/components/kimina-lean-server/server/manager.py
+@@ -67,6 +67,7 @@ class Manager:
+         snippet_id: str = "",
+         timeout: float = settings.max_wait,
+         reuse: bool = True,
++        capture_shred_cpu: bool = False,
+     ) -> Repl:
+         """
+         Async-safe way to get a `Repl` instance for a given header.
+@@ -83,6 +84,7 @@ class Manager:
+                     for i, r in enumerate(self._free):
+                         if (
+                             r.header == header
++                            and r.capture_shred_cpu == capture_shred_cpu
+                         ):  # repl shouldn't be exhausted (max uses to check)
+                             repl = self._free.pop(i)
+                             self._busy.add(repl)
+@@ -121,7 +123,7 @@ class Manager:
+         if repl_to_destroy is not None:
+             asyncio.create_task(close_verbose(repl_to_destroy))
+ 
+-        return await self.start_new(header)
++        return await self.start_new(header, capture_shred_cpu=capture_shred_cpu)
+ 
+     async def destroy_repl(self, repl: Repl) -> None:
+         async with self._cond:
+@@ -153,9 +155,12 @@ class Manager:
+             logger.info(f"\\[{repl.uuid.hex[:8]}] Released!")
+             self._cond.notify(1)
+ 
+-    async def start_new(self, header: str) -> Repl:
++    async def start_new(self, header: str, capture_shred_cpu: bool = False) -> Repl:
+         repl = await Repl.create(
+-            header, max_repl_uses=self.max_repl_uses, max_repl_mem=self.max_repl_mem
++            header,
++            max_repl_uses=self.max_repl_uses,
++            max_repl_mem=self.max_repl_mem,
++            capture_shred_cpu=capture_shred_cpu,
+         )
+         self._busy.add(repl)
+         return repl
+diff --git a/components/kimina-lean-server/server/repl.py b/components/kimina-lean-server/server/repl.py
+index 27e4f98..d0738f1 100644
+--- a/components/kimina-lean-server/server/repl.py
++++ b/components/kimina-lean-server/server/repl.py
+@@ -64,6 +64,7 @@ class Repl:
+         *,
+         max_repl_mem: int,
+         max_repl_uses: int,
++        capture_shred_cpu: bool = False,
+     ) -> None:
+         self.uuid = uuid
+         self.header = header
+@@ -78,6 +79,7 @@ class Repl:
+         self.error_file = tempfile.TemporaryFile("w+")
+         self.max_memory_bytes = max_repl_mem * 1024 * 1024
+         self.max_repl_uses = max_repl_uses
++        self.capture_shred_cpu = capture_shred_cpu
+ 
+         self._loop: asyncio.AbstractEventLoop | None = None
+ 
+@@ -94,7 +96,13 @@ class Repl:
+         self._mem_task: asyncio.Task[None] | None = None
+ 
+     @classmethod
+-    async def create(cls, header: str, max_repl_uses: int, max_repl_mem: int) -> "Repl":
++    async def create(
++        cls,
++        header: str,
++        max_repl_uses: int,
++        max_repl_mem: int,
++        capture_shred_cpu: bool = False,
++    ) -> "Repl":
+         if db.connected:
+             record = await prisma.repl.create(
+                 data={
+@@ -109,6 +117,7 @@ class Repl:
+                 header=record.header,
+                 max_repl_uses=record.max_repl_uses,
+                 max_repl_mem=record.max_repl_mem,
++                capture_shred_cpu=capture_shred_cpu,
+             )
+         return cls(
+             uuid=uuid4(),
+@@ -116,6 +125,7 @@ class Repl:
+             header=header,
+             max_repl_uses=max_repl_uses,
+             max_repl_mem=max_repl_mem,
++            capture_shred_cpu=capture_shred_cpu,
+         )
+ 
+     @property
+@@ -146,12 +156,15 @@ class Repl:
+ 
+             os.setsid()
+ 
++        repl_env = os.environ.copy()
++        if self.capture_shred_cpu:
++            repl_env["LEAN_SHRED_CPU_BOUNDARIES"] = "1"
+         self.proc = await asyncio.create_subprocess_exec(
+             "lake",
+             "env",
+             settings.repl_path,
+             cwd=settings.project_dir,
+-            env=os.environ,
++            env=repl_env,
+             stdin=asyncio.subprocess.PIPE,
+             stdout=asyncio.subprocess.PIPE,
+             stderr=self.error_file,
+@@ -211,6 +224,7 @@ class Repl:
+         timeout: float,
+         is_header: bool = False,
+         infotree: Infotree | None = None,
++        capture_shred_cpu: bool = False,
+     ) -> ReplResponse:
+         cmd_response = None
+         elapsed_time = (
+@@ -220,7 +234,12 @@ class Repl:
+ 
+         try:
+             cmd_response, elapsed_time, diagnostics = await asyncio.wait_for(
+-                self.send(snippet, is_header=is_header, infotree=infotree),
++                self.send(
++                    snippet,
++                    is_header=is_header,
++                    infotree=infotree,
++                    capture_shred_cpu=capture_shred_cpu,
++                ),
+                 timeout=timeout,
+             )
+         except (TimeoutError, asyncio.TimeoutError) as e:
+@@ -249,6 +268,7 @@ class Repl:
+         snippet: Snippet,
+         is_header: bool = False,
+         infotree: Infotree | None = None,
++        capture_shred_cpu: bool = False,
+     ) -> tuple[CommandResponse | Error, float, Diagnostics]:
+         await log_snippet(self.uuid, snippet.id, snippet.code)
+ 
+@@ -266,7 +286,12 @@ class Repl:
+         if self.proc.stdout is None:
+             raise ReplError("stdout pipe not initialized")
+ 
+-        input: Command = {"cmd": snippet.code}
++        command = snippet.code
++        if capture_shred_cpu:
++            command = "set_option shred.cpuBoundaries true\n" + command
++        input: Command = {"cmd": command}
++        if capture_shred_cpu:
++            input["allTactics"] = True
+ 
+         if self.use_count != 0 and not is_header:  # remove is_header
+             input["env"] = 0
+@@ -301,6 +326,16 @@ class Repl:
+         self.error_file.seek(0)
+         self.error_file.truncate(0)
+ 
++        shred_cpu_boundaries: list[str] = []
++        if err:
++            lines = err.splitlines()
++            shred_cpu_boundaries = [
++                line for line in lines if line.startswith("SHRED_CPU_BOUNDARY_V1\t")
++            ]
++            err = "\n".join(
++                line for line in lines if not line.startswith("SHRED_CPU_BOUNDARY_V1\t")
++            ).strip()
++
+         # Filter out known warnings that are safe to ignore
+         if err:
+             lines = err.splitlines()
+@@ -324,6 +359,8 @@ class Repl:
+             "cpu_max": self._cpu_max,
+             "memory_max": self._mem_max,
+         }
++        if capture_shred_cpu:
++            diagnostics["shred_cpu_boundaries"] = shred_cpu_boundaries
+ 
+         self.cpu_per_exec[self.use_count] = self._cpu_max
+         self.mem_per_exec[self.use_count] = self._mem_max
+diff --git a/components/kimina-lean-server/server/routers/backward.py b/components/kimina-lean-server/server/routers/backward.py
+index ca5c119..8d48741 100644
+--- a/components/kimina-lean-server/server/routers/backward.py
++++ b/components/kimina-lean-server/server/routers/backward.py
+@@ -28,12 +28,18 @@ async def one_pass_verify_batch(
+     ]
+ 
+     timeout = body.timeout
+-    debug = False
++    debug = body.capture_shred_cpu
+     reuse = not body.disable_cache
+     infotree = body.infotree_type
+ 
+     check_responses = await run_checks(
+-        snippets, float(timeout), debug, manager, reuse, infotree
++        snippets,
++        float(timeout),
++        debug,
++        manager,
++        reuse,
++        infotree,
++        capture_shred_cpu=body.capture_shred_cpu,
+     )
+ 
+     results: list[BackwardResponse] = []
+@@ -45,6 +51,7 @@ async def one_pass_verify_batch(
+             custom_id=check_response.id,
+             error=check_response.error,
+             response=extended_response,
++            diagnostics=check_response.diagnostics,
+         )
+         results.append(result)
+ 
+diff --git a/components/kimina-lean-server/server/routers/check.py b/components/kimina-lean-server/server/routers/check.py
+index 97182ae..b8c5323 100644
+--- a/components/kimina-lean-server/server/routers/check.py
++++ b/components/kimina-lean-server/server/routers/check.py
+@@ -31,6 +31,7 @@ async def run_checks(
+     manager: Manager,
+     reuse: bool,
+     infotree: Infotree | None = None,
++    capture_shred_cpu: bool = False,
+ ) -> list[ReplResponse]:
+     def _inject_default_max_heartbeats(header: str, body: str) -> tuple[str, str]:
+         """
+@@ -55,7 +56,12 @@ async def run_checks(
+             header, body = split_snippet(snippet.code)
+             header, body = _inject_default_max_heartbeats(header, body)
+             try:
+-                repl = await manager.get_repl(header, snippet.id, reuse=reuse)
++                repl = await manager.get_repl(
++                    header,
++                    snippet.id,
++                    reuse=reuse,
++                    capture_shred_cpu=capture_shred_cpu,
++                )
+             except NoAvailableReplError:
+                 logger.exception("No available REPLs")
+                 raise HTTPException(429, "No available REPLs") from None
+@@ -99,7 +105,10 @@ async def run_checks(
+ 
+             try:
+                 resp = await repl.send_timeout(
+-                    Snippet(id=snippet.id, code=body), timeout, infotree=infotree
++                    Snippet(id=snippet.id, code=body),
++                    timeout,
++                    infotree=infotree,
++                    capture_shred_cpu=capture_shred_cpu,
+                 )
+             except (TimeoutError, asyncio.TimeoutError):
+                 error = f"Lean REPL command timed out in {timeout} seconds"
+@@ -200,6 +209,7 @@ async def check(
+             manager,
+             request.reuse,
+             request.infotree,
++            capture_shred_cpu=request.capture_shred_cpu,
+         )
+     )
+ 
+diff --git a/components/verl/verl/utils/reward_score/lean4_verifier.py b/components/verl/verl/utils/reward_score/lean4_verifier.py
+index 702b123..2d4f4b5 100644
+--- a/components/verl/verl/utils/reward_score/lean4_verifier.py
++++ b/components/verl/verl/utils/reward_score/lean4_verifier.py
+@@ -68,6 +68,7 @@ class Lean4Verifier:
+         format_reward_method: str = "strict",
+         # Injection options
+         max_heartbeats: Optional[int] = None,
++        capture_shred_cpu: bool = False,
+         
+         # NOTE: cache_max_entries is kept for backward compatibility, but post-verification
+         # caching has been removed to avoid memory overhead. Use in-flight de-dup instead.
+@@ -198,6 +199,7 @@ class Lean4Verifier:
+         self.format_reward_method = format_reward_method
+         
+         self.max_heartbeats = max_heartbeats
++        self.capture_shred_cpu = capture_shred_cpu
+         
+         if not enable_format_reward:
+             self.success_score = 1.0
+@@ -632,6 +634,35 @@ class Lean4Verifier:
+ 
+         return "none"
+ 
++    def _extract_shred_cpu_capture(self, verify_result: Dict) -> Optional[Dict]:
++        if not self.capture_shred_cpu:
++            return None
++        rows = verify_result.get("results")
++        if not isinstance(rows, list) or len(rows) != 1:
++            return {
++                "status": "fallback",
++                "fallback_reason": "missing_single_attributable_server_result",
++            }
++        row = rows[0]
++        diagnostics = row.get("diagnostics") if isinstance(row, dict) else None
++        response = row.get("response") if isinstance(row, dict) else None
++        boundaries = (
++            diagnostics.get("shred_cpu_boundaries")
++            if isinstance(diagnostics, dict)
++            else None
++        )
++        tactics = response.get("tactics") if isinstance(response, dict) else None
++        if not isinstance(boundaries, list) or not isinstance(tactics, list):
++            return {
++                "status": "fallback",
++                "fallback_reason": "missing_native_cpu_or_tactic_telemetry",
++            }
++        return {
++            "status": "captured",
++            "cpu_boundaries": boundaries,
++            "native_tactics": tactics,
++        }
++
+     async def send_verification_request_async_with_url(
+         self, 
+         data_id: str, 
+@@ -645,7 +676,8 @@ class Lean4Verifier:
+             "snippets": [{"id": data_id, "code": code}],
+             "timeout": self.request_timeout,
+             "debug": True,
+-            "reuse": True
++            "reuse": True,
++            "capture_shred_cpu": self.capture_shred_cpu,
+         }
+         
+         last_timeout_result = None
+@@ -749,7 +781,8 @@ class Lean4Verifier:
+             "snippets": [{"id": data_id, "code": code}],
+             "timeout": self.request_timeout,
+             "debug": True,
+-            "reuse": True
++            "reuse": True,
++            "capture_shred_cpu": self.capture_shred_cpu,
+         }
+         
+         last_timeout_result = None
+@@ -808,7 +841,8 @@ class Lean4Verifier:
+             "snippets": [{"id": data_id, "code": code}],
+             "timeout": self.request_timeout,
+             "debug": True,
+-            "reuse": True
++            "reuse": True,
++            "capture_shred_cpu": self.capture_shred_cpu,
+         }
+         
+         last_timeout_result = None
+@@ -1193,6 +1227,9 @@ class Lean4Verifier:
+             # Check error type from server response
+             error_type = verify_result.get('error_type', 'unknown')
+             result["error_type"] = error_type
++            capture = self._extract_shred_cpu_capture(verify_result)
++            if capture is not None:
++                result["shred_cpu_capture"] = capture
+ 
+             # keep only error_type (timeout is server-side lean timeout)
+             
+@@ -1327,6 +1364,9 @@ class Lean4Verifier:
+             # Check error type from server response
+             error_type = verify_result.get('error_type', 'unknown')
+             result["error_type"] = error_type
++            capture = self._extract_shred_cpu_capture(verify_result)
++            if capture is not None:
++                result["shred_cpu_capture"] = capture
+ 
+             # Check if proof is successful
+             is_success = self.is_proof_successful(verify_result)
+@@ -1437,6 +1477,9 @@ class Lean4Verifier:
+             # Check error type from server response
+             error_type = verify_result.get('error_type', 'unknown')
+             result["error_type"] = error_type
++            capture = self._extract_shred_cpu_capture(verify_result)
++            if capture is not None:
++                result["shred_cpu_capture"] = capture
+             
+             # Check if proof is successful
+             is_success = self.is_proof_successful(verify_result)

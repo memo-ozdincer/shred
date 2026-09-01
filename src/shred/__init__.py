@@ -7,6 +7,12 @@ from lean_prefix.authentic_trace import (
     seal_authentic_trace,
 )
 from shred.manifest import ManifestError, create_manifest
+from shred.oprover_adapter import (
+    CpuBoundary,
+    OProverAdapterError,
+    split_boundary_stderr,
+    summarize_cpu_boundaries,
+)
 from shred.profiler import (
     ProfileConfig,
     ProfileResult,
@@ -25,6 +31,10 @@ __all__ = [
     "profile_workload",
     "recommend_profile",
     "create_manifest",
+    "CpuBoundary",
+    "OProverAdapterError",
     "screen_authentic_trace",
     "seal_authentic_trace",
+    "split_boundary_stderr",
+    "summarize_cpu_boundaries",
 ]

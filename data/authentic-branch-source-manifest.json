@@ -39,6 +39,11 @@
       "revision": "21966799da3691a0912b5a15193585bd2dd7165d"
     },
     {
+      "name": "Lean 4 v4.15.0 (OProver toolchain)",
+      "url": "https://github.com/leanprover/lean4.git",
+      "revision": "11651562caae0a0b3973811508db2ab8903d3854"
+    },
+    {
       "name": "OProver",
       "url": "https://github.com/multimodal-art-projection/OProver.git",
       "revision": "b0cb2583b702d5040f84783ebba23d86241eac05"
