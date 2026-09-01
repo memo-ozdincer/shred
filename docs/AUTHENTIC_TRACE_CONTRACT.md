@@ -140,7 +140,9 @@ attempts. Its projected cost is the maximum observed prefix CPU once plus every
 unchanged suffix. The process-local gate independently requires at least 100
 qualifying scope groups across 10 theorems, at least 60% of all verifier CPU
 removable before overhead, at least 2x projected verifier throughput, the same
-registered overhead ceiling, and material pipeline verifier CPU.
+strict overhead limit, and material pipeline verifier CPU. Its registered
+per-hit budget is specific to local trie dispatch, snapshot branching, and
+accounting; it is not borrowed from the portable loader.
 
 For each exact group with at least eight attempts spanning at least two live
 Lean execution scopes, let `f_i` be complete warm independent verifier CPU and
@@ -201,14 +203,20 @@ README speed claim.
 ```bash
 shred screen-authentic-trace \
   --manifest existing-run.manifest.json \
-  --overhead-budget-cpu-seconds-per-hit 0.01 \
-  --overhead-budget-source "registered deployment design ceiling" \
+  --process-local-overhead-budget-cpu-seconds-per-hit 0.002 \
+  --process-local-overhead-budget-source "registered trie dispatch ceiling" \
+  --portable-overhead-budget-cpu-seconds-per-hit 0.01 \
+  --portable-overhead-budget-source "registered checkpoint load ceiling" \
   --output checkpoint-screen.json
 ```
 
-Omit both overhead arguments to compute only the zero-overhead ceiling. The
-decision then remains `inconclusive_missing_registered_overhead_budget`, even
-if the ceiling exceeds two-times.
+Each mechanism's amount and source must be supplied together. Omit one pair to
+compute that mechanism's zero-overhead ceiling while leaving only that decision
+`inconclusive_missing_registered_overhead_budget`. A registered portable budget
+never authorizes the local gate, and a local budget never authorizes portability.
+The shorter historical `--overhead-budget-*` flags remain aliases for the
+portable pair. The Python API likewise retains `overhead_budget_*` as portable-
+only aliases and rejects mixing the old and explicit keyword pairs.
 
 The sealer is also available through the public Python API:
 

@@ -180,13 +180,35 @@ def screen_authentic_trace(
     source_root: Path | None = None,
     overhead_budget_cpu_seconds_per_hit: float | None = None,
     overhead_budget_source: str | None = None,
+    portable_overhead_budget_cpu_seconds_per_hit: float | None = None,
+    portable_overhead_budget_source: str | None = None,
+    process_local_overhead_budget_cpu_seconds_per_hit: float | None = None,
+    process_local_overhead_budget_source: str | None = None,
 ) -> dict[str, Any]:
     """Validate an immutable existing-run trace and project exact checkpoint reuse.
 
     The projection executes each qualifying prefix once at the maximum observed
-    prefix CPU in its group, preserves every suffix cost, and adds the registered
-    per-hit overhead budget. It never executes Lean or changes a verdict.
+    prefix CPU in its group, preserves every suffix cost, and adds independent
+    registered budgets for process-local branching and portable loading. The
+    historical ``overhead_budget_*`` keywords alias only the portable budget.
+    It never executes Lean or changes a verdict.
     """
+    if (
+        overhead_budget_cpu_seconds_per_hit is not None
+        or overhead_budget_source is not None
+    ) and (
+        portable_overhead_budget_cpu_seconds_per_hit is not None
+        or portable_overhead_budget_source is not None
+    ):
+        raise AuthenticTraceError(
+            "use either portable overhead arguments or their historical aliases"
+        )
+    if portable_overhead_budget_cpu_seconds_per_hit is not None:
+        overhead_budget_cpu_seconds_per_hit = (
+            portable_overhead_budget_cpu_seconds_per_hit
+        )
+    if portable_overhead_budget_source is not None:
+        overhead_budget_source = portable_overhead_budget_source
     if (overhead_budget_cpu_seconds_per_hit is None) != (
         overhead_budget_source is None
     ):
@@ -196,13 +218,42 @@ def screen_authentic_trace(
     if (
         overhead_budget_cpu_seconds_per_hit is not None
         and (
-            not math.isfinite(overhead_budget_cpu_seconds_per_hit)
+            isinstance(overhead_budget_cpu_seconds_per_hit, bool)
+            or not isinstance(overhead_budget_cpu_seconds_per_hit, (int, float))
+            or not math.isfinite(overhead_budget_cpu_seconds_per_hit)
             or overhead_budget_cpu_seconds_per_hit < 0
         )
     ):
         raise AuthenticTraceError("overhead budget must be non-negative")
     if overhead_budget_source is not None and not overhead_budget_source.strip():
         raise AuthenticTraceError("overhead budget source must be non-empty")
+    if (process_local_overhead_budget_cpu_seconds_per_hit is None) != (
+        process_local_overhead_budget_source is None
+    ):
+        raise AuthenticTraceError(
+            "process-local overhead budget and its source must be supplied together"
+        )
+    if (
+        process_local_overhead_budget_cpu_seconds_per_hit is not None
+        and (
+            isinstance(process_local_overhead_budget_cpu_seconds_per_hit, bool)
+            or not isinstance(
+                process_local_overhead_budget_cpu_seconds_per_hit, (int, float)
+            )
+            or not math.isfinite(
+                process_local_overhead_budget_cpu_seconds_per_hit
+            )
+            or process_local_overhead_budget_cpu_seconds_per_hit < 0
+        )
+    ):
+        raise AuthenticTraceError("process-local overhead budget must be non-negative")
+    if (
+        process_local_overhead_budget_source is not None
+        and not process_local_overhead_budget_source.strip()
+    ):
+        raise AuthenticTraceError(
+            "process-local overhead budget source must be non-empty"
+        )
 
     manifest_path = manifest_path.resolve()
     manifest = _load_manifest(manifest_path)
@@ -439,15 +490,16 @@ def screen_authentic_trace(
     local_overhead_total = None
     local_projected_cpu = None
     local_projected_speedup = None
-    if overhead_budget_cpu_seconds_per_hit is not None:
+    if process_local_overhead_budget_cpu_seconds_per_hit is not None:
         local_overhead_total = (
-            overhead_budget_cpu_seconds_per_hit * local_cache_hits
+            process_local_overhead_budget_cpu_seconds_per_hit * local_cache_hits
         )
         local_projected_cpu = local_ideal_projected_cpu + local_overhead_total
         local_projected_speedup = baseline_cpu / local_projected_cpu
         for theorem in local_theorem_costs.values():
             theorem["projected_cpu_seconds"] += (
-                overhead_budget_cpu_seconds_per_hit * theorem["cache_hits"]
+                process_local_overhead_budget_cpu_seconds_per_hit
+                * theorem["cache_hits"]
             )
 
     local_theorem_rows = []
@@ -457,7 +509,7 @@ def screen_authentic_trace(
         ideal_cost = float(values["ideal_projected_cpu_seconds"])
         projected_cost = (
             float(values["projected_cpu_seconds"])
-            if overhead_budget_cpu_seconds_per_hit is not None
+            if process_local_overhead_budget_cpu_seconds_per_hit is not None
             else None
         )
         local_theorem_rows.append(
@@ -865,8 +917,16 @@ def screen_authentic_trace(
             "minimum_pipeline_verifier_cpu_fraction": (
                 MINIMUM_PIPELINE_VERIFIER_CPU_FRACTION
             ),
-            "overhead_budget_cpu_seconds_per_hit": overhead_budget_cpu_seconds_per_hit,
-            "overhead_budget_source": overhead_budget_source,
+            "portable_overhead_budget_cpu_seconds_per_hit": (
+                overhead_budget_cpu_seconds_per_hit
+            ),
+            "portable_overhead_budget_source": overhead_budget_source,
+            "process_local_overhead_budget_cpu_seconds_per_hit": (
+                process_local_overhead_budget_cpu_seconds_per_hit
+            ),
+            "process_local_overhead_budget_source": (
+                process_local_overhead_budget_source
+            ),
         },
         "accounting": {
             "expected_attempts": expected_attempts,

@@ -85,8 +85,21 @@ def _parser() -> argparse.ArgumentParser:
     trace_screen.add_argument("--manifest", type=Path, required=True)
     trace_screen.add_argument("--source-root", type=Path)
     trace_screen.add_argument("--output", type=Path, required=True)
-    trace_screen.add_argument("--overhead-budget-cpu-seconds-per-hit", type=float)
-    trace_screen.add_argument("--overhead-budget-source")
+    trace_screen.add_argument(
+        "--portable-overhead-budget-cpu-seconds-per-hit",
+        "--overhead-budget-cpu-seconds-per-hit",
+        dest="portable_overhead_budget_cpu_seconds_per_hit",
+        type=float,
+    )
+    trace_screen.add_argument(
+        "--portable-overhead-budget-source",
+        "--overhead-budget-source",
+        dest="portable_overhead_budget_source",
+    )
+    trace_screen.add_argument(
+        "--process-local-overhead-budget-cpu-seconds-per-hit", type=float
+    )
+    trace_screen.add_argument("--process-local-overhead-budget-source")
     trace_seal = commands.add_parser(
         "seal-authentic-trace",
         help="freeze and validate producer-owned checkpoint trace partitions",
@@ -268,10 +281,18 @@ def main(argv: list[str] | None = None) -> int:
             report = screen_authentic_trace(
                 args.manifest,
                 source_root=args.source_root,
-                overhead_budget_cpu_seconds_per_hit=(
-                    args.overhead_budget_cpu_seconds_per_hit
+                portable_overhead_budget_cpu_seconds_per_hit=(
+                    args.portable_overhead_budget_cpu_seconds_per_hit
                 ),
-                overhead_budget_source=args.overhead_budget_source,
+                portable_overhead_budget_source=(
+                    args.portable_overhead_budget_source
+                ),
+                process_local_overhead_budget_cpu_seconds_per_hit=(
+                    args.process_local_overhead_budget_cpu_seconds_per_hit
+                ),
+                process_local_overhead_budget_source=(
+                    args.process_local_overhead_budget_source
+                ),
             )
             report["command"] = shlex.join(["shred", *raw_argv])
             rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"

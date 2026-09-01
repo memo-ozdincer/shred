@@ -145,8 +145,8 @@ class AuthenticTraceTests(unittest.TestCase):
             manifest = self.write_trace(Path(directory), gate_records())
             report = screen_authentic_trace(
                 manifest,
-                overhead_budget_cpu_seconds_per_hit=0.1,
-                overhead_budget_source="registered design ceiling",
+                portable_overhead_budget_cpu_seconds_per_hit=0.1,
+                portable_overhead_budget_source="registered portable design ceiling",
             )
         self.assertEqual(report["accounting"]["physical_attempts"], 800)
         self.assertEqual(report["accounting"]["cache_hits"], 700)
@@ -195,8 +195,8 @@ class AuthenticTraceTests(unittest.TestCase):
             manifest = self.write_trace(Path(directory), process_local_gate_records())
             report = screen_authentic_trace(
                 manifest,
-                overhead_budget_cpu_seconds_per_hit=0.1,
-                overhead_budget_source="registered design ceiling",
+                process_local_overhead_budget_cpu_seconds_per_hit=0.1,
+                process_local_overhead_budget_source="registered local design ceiling",
             )
         self.assertTrue(report["process_local_gate"]["passes"])
         self.assertEqual(
@@ -229,13 +229,83 @@ class AuthenticTraceTests(unittest.TestCase):
         )
         self.assertEqual(report["recommendation"]["decision"], "inconclusive")
 
+    def test_portable_budget_does_not_authorize_process_local_gate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), process_local_gate_records())
+            report = screen_authentic_trace(
+                manifest,
+                overhead_budget_cpu_seconds_per_hit=0.1,
+                overhead_budget_source="portable-only ceiling",
+            )
+        self.assertEqual(
+            report["process_local_gate"]["decision"],
+            "inconclusive_missing_registered_overhead_budget",
+        )
+
+    def test_process_local_budget_does_not_authorize_portable_gate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), gate_records())
+            report = screen_authentic_trace(
+                manifest,
+                process_local_overhead_budget_cpu_seconds_per_hit=0.1,
+                process_local_overhead_budget_source="local-only ceiling",
+            )
+        self.assertEqual(
+            report["gate"]["decision"],
+            "inconclusive_missing_registered_overhead_budget",
+        )
+
+    def test_process_local_budget_requires_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), process_local_gate_records())
+            with self.assertRaisesRegex(
+                AuthenticTraceError, "process-local overhead budget and its source"
+            ):
+                screen_authentic_trace(
+                    manifest,
+                    process_local_overhead_budget_cpu_seconds_per_hit=0.1,
+                )
+
+    def test_portable_budget_aliases_cannot_be_mixed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), gate_records())
+            with self.assertRaisesRegex(
+                AuthenticTraceError,
+                "either portable overhead arguments or their historical aliases",
+            ):
+                screen_authentic_trace(
+                    manifest,
+                    overhead_budget_cpu_seconds_per_hit=0.1,
+                    overhead_budget_source="historical",
+                    portable_overhead_budget_cpu_seconds_per_hit=0.1,
+                    portable_overhead_budget_source="current",
+                )
+
+    def test_boolean_overhead_budgets_fail_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), gate_records())
+            with self.assertRaisesRegex(AuthenticTraceError, "must be non-negative"):
+                screen_authentic_trace(
+                    manifest,
+                    portable_overhead_budget_cpu_seconds_per_hit=True,
+                    portable_overhead_budget_source="invalid",
+                )
+            with self.assertRaisesRegex(
+                AuthenticTraceError, "process-local overhead budget must be non-negative"
+            ):
+                screen_authentic_trace(
+                    manifest,
+                    process_local_overhead_budget_cpu_seconds_per_hit=True,
+                    process_local_overhead_budget_source="invalid",
+                )
+
     def test_process_local_gate_rejects_excessive_overhead(self):
         with tempfile.TemporaryDirectory() as directory:
             manifest = self.write_trace(Path(directory), process_local_gate_records())
             report = screen_authentic_trace(
                 manifest,
-                overhead_budget_cpu_seconds_per_hit=1.0,
-                overhead_budget_source="measured upper bound",
+                process_local_overhead_budget_cpu_seconds_per_hit=1.0,
+                process_local_overhead_budget_source="measured local upper bound",
             )
         self.assertEqual(
             report["process_local_gate"]["decision"],

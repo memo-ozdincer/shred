@@ -94,8 +94,10 @@ shred seal-authentic-trace \
 
 shred screen-authentic-trace \
   --manifest existing-run.manifest.json \
-  --overhead-budget-cpu-seconds-per-hit 0.01 \
-  --overhead-budget-source "registered deployment design ceiling" \
+  --process-local-overhead-budget-cpu-seconds-per-hit 0.002 \
+  --process-local-overhead-budget-source "registered trie dispatch ceiling" \
+  --portable-overhead-budget-cpu-seconds-per-hit 0.01 \
+  --portable-overhead-budget-source "registered checkpoint load ceiling" \
   --output checkpoint-screen.json
 ```
 

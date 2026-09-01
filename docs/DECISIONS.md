@@ -1552,3 +1552,29 @@ of cross-scope evidence. The inverse fixture, with each attempt in its own
 scope, passes portability without fabricating a local group. These are model
 validation fixtures, not workload projections or measured speedups. No Lean,
 dataset, model, rollout, or benchmark was run.
+
+## D-052 - Register local and portable overhead independently
+
+Date: 2026-09-01
+
+Status: accepted after API, CLI, and unit validation
+
+Decision: give the process-local and portable authentic-trace gates separate
+per-hit overhead amounts and evidence sources. Local overhead covers trie
+dispatch, snapshot branching, and attribution inside one live Lean scope.
+Portable overhead covers trusted checkpoint loading and finalization across
+scopes. Require each amount/source pair together and leave only the associated
+gate inconclusive when it is absent. Preserve the historical generic CLI flags
+and Python keywords as aliases for the portable pair, and reject mixed use.
+
+Reason: applying one favorable number to both mechanisms could let a cheap
+in-process branch operation justify an expensive portable load, or make a
+promising local trie look unattractive because it inherited a portable-loader
+ceiling. They are different interventions and need independently attributable
+cost assumptions before any run.
+
+Consequence: a portable budget cannot authorize the local gate, and a local
+budget cannot authorize portability. The top-level router can still select the
+mechanism whose complete gate passes while the other remains inconclusive.
+This is static decision-model hardening, not a workload experiment; no Lean,
+dataset, model, rollout, or benchmark was run.

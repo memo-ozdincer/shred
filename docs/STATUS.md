@@ -361,6 +361,12 @@ passing portable mechanism, otherwise selects a passing local exact trie, and
 otherwise remains inconclusive or stops. This makes normal one-REPL OProver
 rollout groups decision-useful without mislabeling them cross-worker evidence.
 
+The two gates now require separate pre-registered overhead budgets. Local trie
+dispatch/branching cost cannot be filled with a portable checkpoint-load bound,
+and a cheap local bound cannot authorize cross-process loading. Either gate may
+remain inconclusive while the other produces a decision. The CLI retains the
+old generic overhead flags only as aliases for the portable pair.
+
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator
 then found 17 native CPU boundary records, joined all three REPL tactics by
