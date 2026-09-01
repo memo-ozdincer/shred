@@ -92,6 +92,13 @@ class OProverExportTests(unittest.TestCase):
             self.assertEqual(summary["records"], 2)
             self.assertEqual(summary["exact_checkpoint"], 1)
             self.assertEqual(summary["cached_exact_duplicate"], 1)
+            self.assertEqual(summary["batch_readiness"]["verification_batches"], 1)
+            self.assertEqual(
+                summary["batch_readiness"][
+                    "process_local_groups_with_at_least_eight_exact_attempts"
+                ],
+                0,
+            )
             self.assertEqual(source.read_text(encoding="utf-8"), original)
             rows = [json.loads(line) for line in output.read_text().splitlines()]
             self.assertEqual(rows[1]["full_verifier_cpu_seconds"], 0.0)
@@ -113,6 +120,70 @@ class OProverExportTests(unittest.TestCase):
         }
         with self.assertRaisesRegex(OProverExportError, "lacks exact process CPU"):
             normalize_saved_attempt(row, "fixture:1")
+
+    def test_export_reports_digest_only_batch_group_readiness(self):
+        rows = []
+        for index in range(8):
+            row = captured_entry(f"r1_p2_s{index}")
+            row["shred_cpu_capture"]["group_index"] = index
+            rows.append(row)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "producer.jsonl"
+            source.write_text(
+                "".join(json.dumps(row) + "\n" for row in rows),
+                encoding="utf-8",
+            )
+            output = root / "digest-only.jsonl"
+            summary = export_saved_attempts([source], output, expected_attempts=8)
+        readiness = summary["batch_readiness"]
+        self.assertEqual(readiness["verification_batches"], 1)
+        self.assertEqual(
+            readiness["process_local_groups_with_at_least_eight_exact_attempts"],
+            1,
+        )
+        self.assertEqual(readiness["maximum_exact_process_local_group_size"], 8)
+        self.assertEqual(readiness["attempts_per_batch"]["minimum"], 8)
+        self.assertEqual(
+            readiness["qualifying_process_local_groups_per_batch"]["p10"], 1
+        )
+
+    def test_export_identifies_structurally_ready_pinned_batch(self):
+        rows = []
+        for group_index in range(44):
+            group_digest = hashlib.sha256(f"group-{group_index}".encode()).hexdigest()
+            for attempt_index in range(8):
+                proposal_id = f"r1_p{group_index}_s{attempt_index}"
+                row = captured_entry(proposal_id)
+                capture = row["shred_cpu_capture"]
+                capture["group_id"] = f"r1_p{group_index}"
+                capture["group_index"] = attempt_index
+                capture["repl_uuid"] = f"repl-{group_index}"
+                capture["checkpoint"]["prefix_edges_sha256"] = group_digest
+                capture["checkpoint"]["checkpoint_artifact_sha256"] = group_digest
+                if group_index >= 38 and attempt_index > 0:
+                    row["shred_cpu_capture"] = {
+                        "status": "cached_exact_duplicate",
+                        "representative_id": f"r1_p{group_index}_s0",
+                    }
+                rows.append(row)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "producer.jsonl"
+            source.write_text(
+                "".join(json.dumps(row) + "\n" for row in rows),
+                encoding="utf-8",
+            )
+            output = root / "digest-only.jsonl"
+            summary = export_saved_attempts([source], output, expected_attempts=352)
+        readiness = summary["batch_readiness"]
+        candidate = readiness["pinned_oprover_8b_balanced_candidate"]
+        self.assertEqual(
+            readiness["process_local_groups_with_at_least_eight_exact_attempts"],
+            38,
+        )
+        self.assertEqual(candidate["structurally_ready_batches"], 1)
+        self.assertEqual(candidate["structurally_ready_batch_fraction"], 1.0)
 
     def test_exact_checkpoint_without_repl_scope_fails_closed(self):
         row = captured_entry()

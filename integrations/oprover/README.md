@@ -107,6 +107,14 @@ metadata to `shred seal-authentic-trace`. Both stages refuse overwrite and
 reconcile the producer-declared count. Existing exact-complete-proof cache hits
 remain explicit zero-cost fallbacks and never become SHRED opportunity.
 
+The export receipt itself reports digest-only structural readiness before any
+screen: batch count, attempt-count quantiles, maximum exact local group size,
+and minimum/p10/median/p90/maximum qualifying ≥8-attempt groups per batch. For
+the pinned OProver-8B balanced candidate it additionally counts batches with
+exactly 352 attributed attempts and at least 38 qualifying local groups. This
+only establishes that the required structure exists; it does not inspect CPU
+value, authorize execution, or support a speedup claim.
+
 This instrumentation is not a performance result. A future paired comparison
 must use identical attempts and the same instrumented Lean build on both paths,
 confirm agreement against the warm ordinary execution baseline, report the

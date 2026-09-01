@@ -464,6 +464,13 @@ nine strong batches keep aggregate CPU above 2x and aggregate service above
 1.5x, while one fully independent batch makes p10 equal 1.0x on both axes. The
 headline correctly fails despite 90% of batches passing.
 
+OProver export receipts now expose structural readiness without another pass or
+any raw proof data (D-063). They report batch and ≥8-attempt exact-local-group
+distributions and directly count pinned 8B batches with 352 attempts and at
+least 38 qualifying groups. A 352-record contract fixture with exactly 38 such
+groups passes this availability check. CPU value, service tails, and execution
+authorization remain downstream gates.
+
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator
 then found 17 native CPU boundary records, joined all three REPL tactics by

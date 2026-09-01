@@ -1888,3 +1888,26 @@ Consequence: one slow tail batch among ten prevents a balanced headline; larger
 traces may tolerate fewer than 10% failing batches only when the computed p10
 still clears both targets. This is validation of evidence discipline, not a
 claim about OProver's unknown authentic batch distribution.
+
+## D-063 - Make OProver export receipts expose structural readiness
+
+Date: 2026-09-01
+
+Status: accepted instrumentation decision; no workload executed
+
+Decision: while normalizing saved OProver output, count digest-only exact local
+groups and verification batches. Report attempt and qualifying-group batch
+quantiles, maximum exact group size, and the number of pinned 8B batches with
+352 attempts and at least 38 qualifying eight-attempt groups.
+
+Reason: the D-060 coverage gate should fail as early and cheaply as possible.
+The exporter already validates every record and has batch, theorem, exact-prefix,
+checkpoint, and execution-scope digests in memory. Counting those identities
+adds no Lean work, raw-proof retention, or second data pass. A checked-in
+352-attempt fixture with exactly 38 qualifying groups is recognized as one
+structurally ready batch.
+
+Consequence: the first normal capture can immediately stop if its exact group
+structure cannot support the balanced candidate, before workload metadata or
+performance screening is assembled. A structurally ready receipt is explicitly
+not CPU evidence, a speedup, verdict equivalence, or authorization to build.

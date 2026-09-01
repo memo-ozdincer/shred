@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 import gzip
 import hashlib
 import json
@@ -26,6 +27,12 @@ class OProverExportError(RuntimeError):
 OPROVER_PROPOSAL_ID = re.compile(
     r"^r(?P<round>\d+)_p(?P<prompt>\d+)_s(?P<rollout>\d+)$"
 )
+
+
+def _quantile(sorted_values: list[int], fraction: float) -> int | None:
+    if not sorted_values:
+        return None
+    return sorted_values[int(fraction * (len(sorted_values) - 1))]
 
 
 def _sha256_text(value: str) -> str:
@@ -266,6 +273,8 @@ def export_saved_attempts(
 
     destination.parent.mkdir(parents=True, exist_ok=True)
     count = exact = fallback = cached = 0
+    batch_counts: Counter[str] = Counter()
+    local_group_counts: Counter[tuple[str, ...]] = Counter()
     temporary_name: str | None = None
     try:
         with tempfile.NamedTemporaryFile(
@@ -286,9 +295,24 @@ def export_saved_attempts(
                         + "\n"
                     )
                     count += 1
+                    batch = str(record["verification_batch_sha256"])
+                    batch_counts[batch] += 1
                     exact += record["eligibility"] == "exact_checkpoint"
                     fallback += record["eligibility"] == "fallback"
                     cached += record.get("baseline_execution") == "cached_exact_duplicate"
+                    if record["eligibility"] == "exact_checkpoint":
+                        local_group_counts[
+                            (
+                                batch,
+                                str(record["theorem_name"]),
+                                str(record["theorem_statement_sha256"]),
+                                str(record["parent_environment_sha256"]),
+                                str(record["root_context_sha256"]),
+                                str(record["prefix_edges_sha256"]),
+                                str(record["checkpoint_artifact_sha256"]),
+                                str(record["execution_scope_sha256"]),
+                            )
+                        ] += 1
                 after = path.stat()
                 if (
                     before.st_dev,
@@ -317,10 +341,65 @@ def export_saved_attempts(
     finally:
         if temporary_name is not None:
             Path(temporary_name).unlink(missing_ok=True)
+    qualifying_groups_by_batch: Counter[str] = Counter()
+    for group, group_count in local_group_counts.items():
+        if group_count >= 8:
+            qualifying_groups_by_batch[group[0]] += 1
+    batch_attempt_values = sorted(batch_counts.values())
+    batch_qualifying_values = sorted(
+        qualifying_groups_by_batch.get(batch, 0) for batch in batch_counts
+    )
+    pinned_balanced_ready_batches = sum(
+        attempts == 352 and qualifying_groups_by_batch.get(batch, 0) >= 38
+        for batch, attempts in batch_counts.items()
+    )
+    exact_group_sizes = sorted(local_group_counts.values())
     return {
         "output": str(destination),
         "records": count,
         "exact_checkpoint": exact,
         "fallback": fallback,
         "cached_exact_duplicate": cached,
+        "batch_readiness": {
+            "verification_batches": len(batch_counts),
+            "process_local_groups_with_at_least_eight_exact_attempts": sum(
+                count >= 8 for count in local_group_counts.values()
+            ),
+            "maximum_exact_process_local_group_size": (
+                max(exact_group_sizes) if exact_group_sizes else 0
+            ),
+            "attempts_per_batch": {
+                name: _quantile(batch_attempt_values, fraction)
+                for name, fraction in (
+                    ("minimum", 0.0),
+                    ("median", 0.5),
+                    ("p90", 0.9),
+                    ("maximum", 1.0),
+                )
+            },
+            "qualifying_process_local_groups_per_batch": {
+                name: _quantile(batch_qualifying_values, fraction)
+                for name, fraction in (
+                    ("minimum", 0.0),
+                    ("p10", 0.1),
+                    ("median", 0.5),
+                    ("p90", 0.9),
+                    ("maximum", 1.0),
+                )
+            },
+            "pinned_oprover_8b_balanced_candidate": {
+                "required_attempts_per_batch": 352,
+                "required_qualifying_groups_per_batch": 38,
+                "structurally_ready_batches": pinned_balanced_ready_batches,
+                "structurally_ready_batch_fraction": (
+                    pinned_balanced_ready_batches / len(batch_counts)
+                    if batch_counts
+                    else None
+                ),
+            },
+            "claim_boundary": (
+                "Digest-only structural availability; no CPU opportunity, "
+                "speedup, or verdict-equivalence claim"
+            ),
+        },
     }
