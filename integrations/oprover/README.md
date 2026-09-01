@@ -55,9 +55,37 @@ The OProver/Kimina patch now:
 The group protocol and its producer-side tests are checked in as source, but
 the complete OProver environment is not installed in this workspace, so this
 slice has only passed static compilation and patch round-trip validation. The
-remaining integration work is to pickle one representative checkpoint, freeze
-environment/context receipts, and export every attempt through
-`seal-authentic-trace` before any authentic value screen is eligible.
+same patch now also selects a checkpoint only when at least eight unique
+attempts share a nonempty exact native prefix with remaining suffix work. It
+pickles a representative parent environment, root proof state, and first
+divergent proof state into a server-owned directory; hashes those artifacts;
+and hashes the ordered `(syntax kind, exact UTF-8 source bytes)` edges. Partial
+or failed pickles are removed and every result receives an explicit checkpoint
+fallback. The checked-in digest-only exporter now converts saved all-proof
+records into the existing `seal-authentic-trace` input and fails the whole
+export if any executed attempt lacks exact process CPU. No authentic value
+screen is eligible until a normal independently useful run produces such an
+artifact.
+
+Checkpoint artifact capture requires the server operator to configure
+`LEAN_SERVER_SHRED_CAPTURE_DIR`. The directory is never supplied by a client,
+artifact IDs contain only hashed group identity plus a fresh REPL UUID, leaf
+directories use mode `0700`, and artifact files are changed to mode `0600`.
+
+After a normal capture-enabled run has finished saving all-proof JSONL, export
+without modifying those producer files:
+
+```bash
+shred export-oprover-trace \
+  --input /path/to/all_proofs_stepN_roundR.jsonl \
+  --output /new/path/oprover-shred-digests.jsonl \
+  --expected-attempts PRODUCER_DECLARED_COUNT
+```
+
+Then pass that new digest-only partition and independently resolved workload
+metadata to `shred seal-authentic-trace`. Both stages refuse overwrite and
+reconcile the producer-declared count. Existing exact-complete-proof cache hits
+remain explicit zero-cost fallbacks and never become SHRED opportunity.
 
 This instrumentation is not a performance result. A future paired comparison
 must use identical attempts and the same instrumented Lean build on both paths,

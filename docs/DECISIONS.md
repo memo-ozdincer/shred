@@ -1378,3 +1378,82 @@ Pydantic, aiohttp, and pytest, so those new tests have not run. This is an
 implemented protocol boundary, not measured authentic evidence. Checkpoint,
 environment/context receipt, and sealed-trace work remains before any rollout
 or performance experiment is authorized.
+
+## D-047 - Derive checkpoint receipts from native source bytes and proof states
+
+Date: 2026-09-01
+
+Status: accepted after source implementation, static validation, and exact
+patch round-trip validation
+
+Decision: permit checkpoint capture only for a group with a nonblank common
+header, at least eight independently executed unique attempts, a nonempty exact
+native tactic prefix, and at least one remaining tactic in every attempt.
+Compare each edge by its native syntax kind and the exact UTF-8 bytes selected
+by Lean's native byte range in the command actually executed. Never use the
+pretty-printed tactic or goal. Pickle environment `0`, the representative first
+tactic's proof state, and the representative first post-prefix tactic's proof
+state. Hash the three artifacts and a canonical ordered edge receipt, then
+return the same receipt on every attributable group result.
+
+The artifact root is server configuration, never client input. Address a leaf
+by the hash of the group ID plus the fresh REPL UUID, create it without
+overwrite at mode `0700`, change artifact files to `0600`, and delete named
+partial files after capture failure. An unset artifact root, insufficient
+group, missing native edge/state, zero shared prefix, completed shortest proof,
+or pickle failure is an explicit checkpoint fallback and does not change any
+ordinary Lean verdict.
+
+Reason: with a blank Kimina header, the first complete theorem creates
+environment `0`; later siblings would then build from that theorem rather than
+from a common root. Rejecting that case closes a semantic hole in the initial
+group protocol. Native source slices distinguish exact executable edges without
+trusting pretty-printer normalization. Pickled proof states bind the root and
+checkpoint to the actual complete-attempt info tree retained by the pinned
+REPL. The eight-attempt minimum matches the frozen authentic-value gate and
+avoids producing large speculative artifacts for groups that cannot qualify.
+
+Consequence: OProver's all-proof saver now retains original rollout IDs and the
+complete capture/checkpoint receipt. Producer tests cover representative
+environment/root/checkpoint pickling and shared receipt hashes in addition to
+the group accounting cases. Changed Python files compile, and the checked-in
+patch exactly reproduces the isolated source tree. The OProver dependencies are
+still unavailable here, so the producer tests are not reported as executed.
+Digest-only trace export remains required before any authentic screen; this is
+implementation validation, not a dataset or performance experiment.
+
+## D-048 - Export OProver receipts without filling missing CPU
+
+Date: 2026-09-01
+
+Status: accepted after unit and direct-sealer validation
+
+Decision: preserve the producer's saved all-proof JSONL as read-only source and
+create a separate digest-only JSONL partition without overwrite. Require an
+independently declared attempt count. Hash the exact submitted Lean code and
+formal statement, derive full and prefix CPU only with the checked-in native
+boundary parser, and map captured checkpoint receipts directly into the frozen
+authentic trace fields. Abort the complete export when any executed attempt
+lacks an exact process-CPU envelope.
+
+OProver's pre-existing in-flight cache may suppress an exact duplicate complete
+attempt. Preserve such an input as an explicit zero-verifier-CPU fallback named
+`existing_exact_duplicate_cache` with its representative ID. It is baseline
+caching, supplies no SHRED opportunity, and must not be silently treated as an
+independently executed attempt. Never substitute wall latency, timeout limits,
+sampled CPU percentage, or representative CPU for missing executed cost.
+
+Reason: the previous all-proof saver discarded SHRED receipts and replaced the
+rollout ID with a generic sample index, which would have broken attribution
+after a real run. Saving the original ID and receipt closes that gap. Treating
+an existing exact duplicate cache hit as zero is the actual baseline work and
+is conservative for SHRED, while inventing CPU for an executed telemetry
+failure would violate D-040.
+
+Consequence: the exporter validates native receipts, producer count, source
+immutability, and no-overwrite creation, and its output passes the existing
+no-overwrite sealer in a direct fixture. It never loads a checkpoint or runs
+Lean. Together with D-046 and D-047, this completes the static OProver-to-SHRED
+artifact path. Actual runtime validation still requires OProver's dependency
+environment; authentic value evidence still requires a normal independently
+useful run and the frozen read-only gate.

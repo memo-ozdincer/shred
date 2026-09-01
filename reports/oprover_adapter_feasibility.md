@@ -82,8 +82,10 @@ boundary:
   kind match exactly.
 - `integrations/oprover/oprover-kimina-cpu-capture.patch` creates a separate
   capture-enabled REPL pool, forwards the opt-in request through Kimina and
-  OProver, and retains either the native telemetry or an explicit capture
-  fallback in the existing verification result.
+  OProver, leases one fresh REPL per exact rollout group, pickles a qualifying
+  representative checkpoint plus parent/root receipts, and retains either the
+  native telemetry or an explicit capture/checkpoint fallback in the existing
+  verification result.
 
 All three patches apply cleanly to the frozen source revisions. The patched
 Lean toolchain and REPL compile. The checked-in validator observed 17 boundary
@@ -108,11 +110,12 @@ seed or larger sample changes the result. Wall time, one-second CPU sampling,
 or SHRED's earlier profiler-based CPU allocation cannot be substituted for
 same-attempt prefix process CPU.
 
-The next work is therefore group leasing and receipts. Only a
-normal authentic run that already has a substantive RL purpose may emit the
-new sidecar. Its sealed, read-only telemetry must pass D-040 before any SHRED
-paired benchmark is proposed. No OProver reproduction run or dataset-scale
-verification is authorized solely to populate the gate.
+Group leasing and receipt production are now implemented statically. The next
+work is a digest-only producer export into the existing no-overwrite sealer.
+Only a normal authentic run that already has a substantive RL purpose may emit
+the new sidecar. Its sealed, read-only telemetry must pass D-040 before any
+SHRED paired benchmark is proposed. No OProver reproduction run or
+dataset-scale verification is authorized solely to populate the gate.
 
 ## Other public data distributions
 

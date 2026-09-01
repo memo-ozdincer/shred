@@ -13,6 +13,11 @@ from shred.oprover_adapter import (
     split_boundary_stderr,
     summarize_cpu_boundaries,
 )
+from shred.oprover_export import (
+    OProverExportError,
+    export_saved_attempts,
+    normalize_saved_attempt,
+)
 from shred.profiler import (
     ProfileConfig,
     ProfileResult,
@@ -33,8 +38,11 @@ __all__ = [
     "create_manifest",
     "CpuBoundary",
     "OProverAdapterError",
+    "OProverExportError",
     "screen_authentic_trace",
     "seal_authentic_trace",
     "split_boundary_stderr",
     "summarize_cpu_boundaries",
+    "export_saved_attempts",
+    "normalize_saved_attempt",
 ]

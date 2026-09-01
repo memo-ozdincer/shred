@@ -1,5 +1,5 @@
 diff --git a/components/kimina-lean-server/client/kimina_client/models.py b/components/kimina-lean-server/client/kimina_client/models.py
-index 910121e..c892bb9 100644
+index 910121e..c53997f 100644
 --- a/components/kimina-lean-server/client/kimina_client/models.py
 +++ b/components/kimina-lean-server/client/kimina_client/models.py
 @@ -69,6 +69,7 @@ class VerifyRequestBody(BaseModel):
@@ -28,7 +28,7 @@ index 910121e..c892bb9 100644
      goals: str
      tactic: str
      proofState: NotRequired[int | None]
-@@ -142,6 +147,12 @@ class Diagnostics(TypedDict, total=False):
+@@ -142,6 +147,20 @@ class Diagnostics(TypedDict, total=False):
      repl_uuid: str
      cpu_max: float
      memory_max: float
@@ -38,19 +38,29 @@ index 910121e..c892bb9 100644
 +    shred_group_size: int
 +    shred_group_status: str
 +    shred_group_fallback_reason: str
++    shred_checkpoint_status: str
++    shred_checkpoint_fallback_reason: str
++    shred_checkpoint_prefix_length: int
++    shred_prefix_edges_sha256: str
++    shred_parent_environment_sha256: str
++    shred_root_context_sha256: str
++    shred_checkpoint_artifact_sha256: str
++    shred_checkpoint_artifact_id: str
  
  
  # TODO: use basemodel pydantic instead
-@@ -226,6 +237,8 @@ class BaseRequest(BaseModel):
+@@ -226,6 +245,10 @@ class BaseRequest(BaseModel):
          None,
          description="Level of detail for the info tree.",
      )
 +    capture_shred_cpu: bool = False
 +    capture_shred_group: str | None = None
++    capture_shred_checkpoint: bool = False
++    capture_shred_checkpoint_min_attempts: int = Field(8, ge=2)
  
  
  class ReplRequest(BaseRequest):
-@@ -469,6 +482,7 @@ class BackwardResponse(TypedDict):
+@@ -469,6 +492,7 @@ class BackwardResponse(TypedDict):
          str | None
      ]  # TODO: check if error is required here, probably not
      response: NotRequired[ExtendedCommandResponse | ExtendedError | None]
@@ -103,10 +113,19 @@ index 3f1487a..c4785c9 100644
          self._busy.add(repl)
          return repl
 diff --git a/components/kimina-lean-server/server/repl.py b/components/kimina-lean-server/server/repl.py
-index 27e4f98..d0738f1 100644
+index 27e4f98..6d55b24 100644
 --- a/components/kimina-lean-server/server/repl.py
 +++ b/components/kimina-lean-server/server/repl.py
-@@ -64,6 +64,7 @@ class Repl:
+@@ -4,6 +4,8 @@ import os
+ import platform
+ import signal
+ import tempfile
++from pathlib import Path
++from typing import Any
+ from asyncio.subprocess import Process
+ from datetime import datetime
+ from uuid import UUID, uuid4
+@@ -64,6 +66,7 @@ class Repl:
          *,
          max_repl_mem: int,
          max_repl_uses: int,
@@ -114,7 +133,7 @@ index 27e4f98..d0738f1 100644
      ) -> None:
          self.uuid = uuid
          self.header = header
-@@ -78,6 +79,7 @@ class Repl:
+@@ -78,6 +81,7 @@ class Repl:
          self.error_file = tempfile.TemporaryFile("w+")
          self.max_memory_bytes = max_repl_mem * 1024 * 1024
          self.max_repl_uses = max_repl_uses
@@ -122,7 +141,7 @@ index 27e4f98..d0738f1 100644
  
          self._loop: asyncio.AbstractEventLoop | None = None
  
-@@ -94,7 +96,13 @@ class Repl:
+@@ -94,7 +98,13 @@ class Repl:
          self._mem_task: asyncio.Task[None] | None = None
  
      @classmethod
@@ -137,7 +156,7 @@ index 27e4f98..d0738f1 100644
          if db.connected:
              record = await prisma.repl.create(
                  data={
-@@ -109,6 +117,7 @@ class Repl:
+@@ -109,6 +119,7 @@ class Repl:
                  header=record.header,
                  max_repl_uses=record.max_repl_uses,
                  max_repl_mem=record.max_repl_mem,
@@ -145,7 +164,7 @@ index 27e4f98..d0738f1 100644
              )
          return cls(
              uuid=uuid4(),
-@@ -116,6 +125,7 @@ class Repl:
+@@ -116,6 +127,7 @@ class Repl:
              header=header,
              max_repl_uses=max_repl_uses,
              max_repl_mem=max_repl_mem,
@@ -153,7 +172,7 @@ index 27e4f98..d0738f1 100644
          )
  
      @property
-@@ -146,12 +156,15 @@ class Repl:
+@@ -146,12 +158,15 @@ class Repl:
  
              os.setsid()
  
@@ -170,7 +189,7 @@ index 27e4f98..d0738f1 100644
              stdin=asyncio.subprocess.PIPE,
              stdout=asyncio.subprocess.PIPE,
              stderr=self.error_file,
-@@ -211,6 +224,7 @@ class Repl:
+@@ -211,6 +226,7 @@ class Repl:
          timeout: float,
          is_header: bool = False,
          infotree: Infotree | None = None,
@@ -178,7 +197,7 @@ index 27e4f98..d0738f1 100644
      ) -> ReplResponse:
          cmd_response = None
          elapsed_time = (
-@@ -220,7 +234,12 @@ class Repl:
+@@ -220,7 +236,12 @@ class Repl:
  
          try:
              cmd_response, elapsed_time, diagnostics = await asyncio.wait_for(
@@ -192,7 +211,72 @@ index 27e4f98..d0738f1 100644
                  timeout=timeout,
              )
          except (TimeoutError, asyncio.TimeoutError) as e:
-@@ -249,6 +268,7 @@ class Repl:
+@@ -244,11 +265,72 @@ class Repl:
+             diagnostics=diagnostics if len(diagnostics) > 0 else None,
+         )
+ 
++    async def send_control_timeout(
++        self, payload: dict[str, Any], timeout: float
++    ) -> dict[str, Any]:
++        """Send a non-proof REPL control command without changing use accounting."""
++        return await asyncio.wait_for(self.send_control(payload), timeout=timeout)
++
++    async def send_control(self, payload: dict[str, Any]) -> dict[str, Any]:
++        if not self.proc or self.proc.returncode is not None:
++            raise ReplError("REPL process not started or shut down")
++        if self.proc.stdin is None or self.proc.stdout is None:
++            raise ReplError("REPL pipes are not initialized")
++
++        encoded = (json.dumps(payload, ensure_ascii=False) + "\n\n").encode("utf-8")
++        try:
++            self.proc.stdin.write(encoded)
++            await self.proc.stdin.drain()
++        except Exception as exc:
++            raise LeanError("Failed to write REPL control command") from exc
++        raw = await self._read_response()
++
++        self.error_file.seek(0)
++        stderr = self.error_file.read().strip()
++        self.error_file.seek(0)
++        self.error_file.truncate(0)
++        if stderr:
++            unrelated = [
++                line
++                for line in stderr.splitlines()
++                if not line.startswith("SHRED_CPU_BOUNDARY_V1\t")
++                and not line.strip().startswith("warning:")
++                and "has local changes" not in line
++            ]
++            if unrelated:
++                raise LeanError("\n".join(unrelated))
++
++        try:
++            response = json.loads(raw)
++        except json.JSONDecodeError as exc:
++            raise ReplError("JSON decode error in REPL control response") from exc
++        if not isinstance(response, dict):
++            raise ReplError("REPL control response is not an object")
++        message = response.get("message")
++        if isinstance(message, str) and message:
++            raise LeanError(message)
++        return response
++
++    async def pickle_environment_timeout(
++        self, env: int, path: Path, timeout: float
++    ) -> dict[str, Any]:
++        return await self.send_control_timeout(
++            {"pickleTo": str(path), "env": env}, timeout
++        )
++
++    async def pickle_proof_state_timeout(
++        self, proof_state: int, path: Path, timeout: float
++    ) -> dict[str, Any]:
++        return await self.send_control_timeout(
++            {"pickleTo": str(path), "proofState": proof_state}, timeout
++        )
++
+     async def send(
+         self,
          snippet: Snippet,
          is_header: bool = False,
          infotree: Infotree | None = None,
@@ -200,7 +284,7 @@ index 27e4f98..d0738f1 100644
      ) -> tuple[CommandResponse | Error, float, Diagnostics]:
          await log_snippet(self.uuid, snippet.id, snippet.code)
  
-@@ -266,7 +286,12 @@ class Repl:
+@@ -266,7 +348,12 @@ class Repl:
          if self.proc.stdout is None:
              raise ReplError("stdout pipe not initialized")
  
@@ -214,7 +298,7 @@ index 27e4f98..d0738f1 100644
  
          if self.use_count != 0 and not is_header:  # remove is_header
              input["env"] = 0
-@@ -301,6 +326,16 @@ class Repl:
+@@ -301,6 +388,16 @@ class Repl:
          self.error_file.seek(0)
          self.error_file.truncate(0)
  
@@ -231,7 +315,7 @@ index 27e4f98..d0738f1 100644
          # Filter out known warnings that are safe to ignore
          if err:
              lines = err.splitlines()
-@@ -324,6 +359,8 @@ class Repl:
+@@ -324,6 +421,8 @@ class Repl:
              "cpu_max": self._cpu_max,
              "memory_max": self._mem_max,
          }
@@ -274,19 +358,29 @@ index ca5c119..8d48741 100644
          results.append(result)
  
 diff --git a/components/kimina-lean-server/server/routers/check.py b/components/kimina-lean-server/server/routers/check.py
-index 97182ae..8296a17 100644
+index 97182ae..5eff880 100644
 --- a/components/kimina-lean-server/server/routers/check.py
 +++ b/components/kimina-lean-server/server/routers/check.py
-@@ -31,6 +31,8 @@ async def run_checks(
+@@ -1,5 +1,7 @@
+ import asyncio
++import hashlib
+ import json
++from pathlib import Path
+ from typing import cast
+ 
+ from fastapi import APIRouter, Depends, HTTPException, Request
+@@ -31,6 +33,10 @@ async def run_checks(
      manager: Manager,
      reuse: bool,
      infotree: Infotree | None = None,
 +    capture_shred_cpu: bool = False,
 +    capture_shred_group: str | None = None,
++    capture_shred_checkpoint: bool = False,
++    capture_shred_checkpoint_min_attempts: int = 8,
  ) -> list[ReplResponse]:
      def _inject_default_max_heartbeats(header: str, body: str) -> tuple[str, str]:
          """
-@@ -49,13 +51,128 @@ async def run_checks(
+@@ -49,13 +55,278 @@ async def run_checks(
              header = option_line + "\n"
          return header, body
  
@@ -306,6 +400,156 @@ index 97182ae..8296a17 100644
 +        if fallback_reason is not None:
 +            diagnostics["shred_group_fallback_reason"] = fallback_reason
 +        response.diagnostics = diagnostics
++
++    def annotate_checkpoint_fallback(
++        responses: list[ReplResponse], reason: str
++    ) -> None:
++        for response in responses:
++            diagnostics = response.diagnostics or {}
++            diagnostics["shred_checkpoint_status"] = "fallback"
++            diagnostics["shred_checkpoint_fallback_reason"] = reason
++            response.diagnostics = diagnostics
++
++    def file_sha256(path: Path) -> str:
++        digest = hashlib.sha256()
++        with path.open("rb") as stream:
++            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
++                digest.update(chunk)
++        return digest.hexdigest()
++
++    def exact_tactic_edges(
++        body: str, response: ReplResponse
++    ) -> list[tuple[str, bytes, int]] | None:
++        command = "set_option shred.cpuBoundaries true\n" + body
++        command_bytes = command.encode("utf-8")
++        payload = response.response
++        tactics = payload.get("tactics") if isinstance(payload, dict) else None
++        if not isinstance(tactics, list):
++            return None
++        edges: list[tuple[str, bytes, int]] = []
++        for tactic in tactics:
++            if not isinstance(tactic, dict):
++                return None
++            start = tactic.get("startByte")
++            stop = tactic.get("endByte")
++            kind = tactic.get("syntaxKind")
++            proof_state = tactic.get("proofState")
++            if (
++                isinstance(start, bool)
++                or isinstance(stop, bool)
++                or isinstance(proof_state, bool)
++                or not isinstance(start, int)
++                or not isinstance(stop, int)
++                or not isinstance(proof_state, int)
++                or not isinstance(kind, str)
++                or not kind
++                or start < 0
++                or stop <= start
++                or stop > len(command_bytes)
++            ):
++                return None
++            edges.append((kind, command_bytes[start:stop], proof_state))
++        return edges
++
++    async def capture_checkpoint_receipt(
++        repl: Repl,
++        prepared: list[tuple[str, str]],
++        responses: list[ReplResponse],
++    ) -> None:
++        if not capture_shred_checkpoint:
++            annotate_checkpoint_fallback(responses, "checkpoint_capture_not_requested")
++            return
++        if settings.shred_capture_dir is None:
++            annotate_checkpoint_fallback(responses, "checkpoint_capture_dir_unconfigured")
++            return
++        if len(responses) < capture_shred_checkpoint_min_attempts:
++            annotate_checkpoint_fallback(responses, "checkpoint_group_below_minimum")
++            return
++
++        edge_sets = [
++            exact_tactic_edges(body, response)
++            for (_, body), response in zip(prepared, responses)
++        ]
++        if any(edges is None or not edges for edges in edge_sets):
++            annotate_checkpoint_fallback(responses, "checkpoint_native_edges_missing")
++            return
++        exact_sets = cast(list[list[tuple[str, bytes, int]]], edge_sets)
++        max_prefix = min(len(edges) for edges in exact_sets) - 1
++        prefix_length = 0
++        while prefix_length < max_prefix:
++            expected = exact_sets[0][prefix_length][:2]
++            if any(edges[prefix_length][:2] != expected for edges in exact_sets[1:]):
++                break
++            prefix_length += 1
++        if prefix_length == 0:
++            annotate_checkpoint_fallback(responses, "checkpoint_no_shared_native_prefix")
++            return
++
++        canonical_edges = [
++            {
++                "syntax_kind": kind,
++                "source_utf8_hex": source.hex(),
++            }
++            for kind, source, _ in exact_sets[0][:prefix_length]
++        ]
++        prefix_digest = hashlib.sha256(
++            json.dumps(
++                canonical_edges,
++                ensure_ascii=False,
++                sort_keys=True,
++                separators=(",", ":"),
++            ).encode("utf-8")
++        ).hexdigest()
++        root_state = exact_sets[0][0][2]
++        checkpoint_state = exact_sets[0][prefix_length][2]
++        group_digest = hashlib.sha256(
++            (capture_shred_group or "").encode("utf-8")
++        ).hexdigest()
++        artifact_id = f"{group_digest}/{repl.uuid.hex}"
++        artifact_dir = settings.shred_capture_dir / group_digest / repl.uuid.hex
++        try:
++            artifact_dir.mkdir(mode=0o700, parents=True, exist_ok=False)
++            environment_path = artifact_dir / "parent-environment.olean"
++            root_path = artifact_dir / "root-context.olean"
++            checkpoint_path = artifact_dir / "checkpoint.olean"
++            await repl.pickle_environment_timeout(0, environment_path, timeout)
++            await repl.pickle_proof_state_timeout(root_state, root_path, timeout)
++            await repl.pickle_proof_state_timeout(
++                checkpoint_state, checkpoint_path, timeout
++            )
++            for path in (environment_path, root_path, checkpoint_path):
++                path.chmod(0o600)
++            receipts = {
++                "shred_checkpoint_status": "captured",
++                "shred_checkpoint_prefix_length": prefix_length,
++                "shred_prefix_edges_sha256": prefix_digest,
++                "shred_parent_environment_sha256": file_sha256(environment_path),
++                "shred_root_context_sha256": file_sha256(root_path),
++                "shred_checkpoint_artifact_sha256": file_sha256(checkpoint_path),
++                "shred_checkpoint_artifact_id": artifact_id,
++            }
++        except Exception as exc:
++            logger.exception("SHRED checkpoint capture failed: %s", exc)
++            for name in (
++                "parent-environment.olean",
++                "root-context.olean",
++                "checkpoint.olean",
++            ):
++                try:
++                    (artifact_dir / name).unlink(missing_ok=True)
++                except OSError:
++                    pass
++            try:
++                artifact_dir.rmdir()
++            except OSError:
++                pass
++            annotate_checkpoint_fallback(responses, "checkpoint_pickle_failed")
++            return
++
++        for response in responses:
++            diagnostics = response.diagnostics or {}
++            diagnostics.update(receipts)
++            response.diagnostics = diagnostics
 +
 +    async def run_body(
 +        snippet: Snippet,
@@ -416,7 +660,7 @@ index 97182ae..8296a17 100644
              except NoAvailableReplError:
                  logger.exception("No available REPLs")
                  raise HTTPException(429, "No available REPLs") from None
-@@ -97,81 +214,200 @@ async def run_checks(
+@@ -97,81 +368,203 @@ async def run_checks(
                  await manager.destroy_repl(repl)
                  raise HTTPException(500, str(e)) from e
  
@@ -456,6 +700,8 @@ index 97182ae..8296a17 100644
 +            fallback_reason = "group_capture_requires_cpu_capture"
 +        elif size < 2:
 +            fallback_reason = "group_capture_requires_multiple_attempts"
++        elif not prepared[0][0].strip():
++            fallback_reason = "group_capture_requires_nonblank_root_header"
 +        elif len({header for header, _ in prepared}) != 1:
 +            fallback_reason = "group_headers_differ"
 +
@@ -492,7 +738,9 @@ index 97182ae..8296a17 100644
 +            return failed
 +
 +        try:
-+            try:
+             try:
+-                resp = await repl.send_timeout(
+-                    Snippet(id=snippet.id, code=body), timeout, infotree=infotree
 +                repl = await manager.get_repl(
 +                    header,
 +                    capture_shred_group or snippets[0].id,
@@ -503,7 +751,7 @@ index 97182ae..8296a17 100644
 +                logger.exception("No available REPL for SHRED group")
 +                return group_failure(
 +                    "group_repl_unavailable", "No available REPL for SHRED group"
-+                )
+                 )
 +            except Exception as e:
 +                logger.exception("Failed to get SHRED group REPL: %s", e)
 +                return group_failure(
@@ -511,15 +759,13 @@ index 97182ae..8296a17 100644
 +                    f"Failed to get SHRED group REPL: {e}",
 +                )
 +
-             try:
--                resp = await repl.send_timeout(
--                    Snippet(id=snippet.id, code=body), timeout, infotree=infotree
++            try:
 +                prep = await manager.prep(
 +                    repl,
 +                    capture_shred_group or snippets[0].id,
 +                    timeout,
 +                    True,
-                 )
++                )
 +                if prep and prep.error:
 +                    await manager.destroy_repl(repl)
 +                    for index, snippet in enumerate(snippets):
@@ -615,17 +861,17 @@ index 97182ae..8296a17 100644
 +                        id=snippet.id,
 +                        error=f"Lean REPL header execution failed: {e}",
 +                        diagnostics={"repl_uuid": uuid_hex},
-                     )
--                if not debug:
--                    resp.diagnostics = None
--                return resp
++                    )
 +                    annotate_group(
 +                        response,
 +                        index=index,
 +                        size=size,
 +                        status="fallback",
 +                        fallback_reason="group_header_error",
-+                    )
+                     )
+-                if not debug:
+-                    resp.diagnostics = None
+-                return resp
 +                    results.append(response)
 +                return results
 +
@@ -656,6 +902,7 @@ index 97182ae..8296a17 100644
 +                        )
 +                    return results
 +
++            await capture_checkpoint_receipt(repl, prepared, results)
 +            await manager.release_repl(repl)
 +            for index, response in enumerate(results):
 +                annotate_group(
@@ -679,17 +926,81 @@ index 97182ae..8296a17 100644
      return list(results)
  
  
-@@ -200,6 +436,8 @@ async def check(
+@@ -200,6 +593,12 @@ async def check(
              manager,
              request.reuse,
              request.infotree,
 +            capture_shred_cpu=request.capture_shred_cpu,
 +            capture_shred_group=request.capture_shred_group,
++            capture_shred_checkpoint=request.capture_shred_checkpoint,
++            capture_shred_checkpoint_min_attempts=(
++                request.capture_shred_checkpoint_min_attempts
++            ),
          )
      )
  
+diff --git a/components/kimina-lean-server/server/settings.py b/components/kimina-lean-server/server/settings.py
+index 2297ab7..56df678 100644
+--- a/components/kimina-lean-server/server/settings.py
++++ b/components/kimina-lean-server/server/settings.py
+@@ -40,6 +40,10 @@ class Settings(BaseSettings):
+     # 0 means "unlimited" in Lean.
+     default_max_heartbeats: int | None = None
+ 
++    # Server-owned directory for opt-in SHRED proof-state artifacts. When unset,
++    # group verification remains available but checkpoint capture fails closed.
++    shred_capture_dir: Path | None = None
++
+     init_repls: dict[str, int] = {}
+ 
+     database_url: str | None = None
+diff --git a/components/verl/verl/utils/data_collection/save_successful_proofs.py b/components/verl/verl/utils/data_collection/save_successful_proofs.py
+index fe76d4a..8ddc0e3 100644
+--- a/components/verl/verl/utils/data_collection/save_successful_proofs.py
++++ b/components/verl/verl/utils/data_collection/save_successful_proofs.py
+@@ -265,6 +265,7 @@ def save_all_proofs_with_verification(
+             'error_messages': result.get('error_messages', ''),
+             'error_type': result.get('error_type', 'none'),
+             'valid': result.get('valid', True),
++            'shred_cpu_capture': result.get('shred_cpu_capture'),
+             'response_str_length': len(response),
+             'response_token_length': response_token_length,
+         }
+diff --git a/components/verl/verl/utils/reward_manager/refactored_exemplar_reward_manager.py b/components/verl/verl/utils/reward_manager/refactored_exemplar_reward_manager.py
+index 0a02780..83c2a30 100644
+--- a/components/verl/verl/utils/reward_manager/refactored_exemplar_reward_manager.py
++++ b/components/verl/verl/utils/reward_manager/refactored_exemplar_reward_manager.py
+@@ -203,6 +203,7 @@ def compute_rewards_with_refinement(
+         truncated_prompt_ids = []
+         interrupted_flags = []
+         verify_results = []
++        proposal_ids = []
+         
+         # Thread pool for async verification
+         # Use num_chunks workers to allow all chunks to verify in parallel
+@@ -314,6 +315,7 @@ def compute_rewards_with_refinement(
+                 
+                 # 3.3 Submit Verification (Async/Non-blocking)
+                 logger.info(f"  [Chunk {i+1}/{num_chunks}] Submitting {len(chunk_responses)} for verification...")
++                proposal_ids.extend(chunk_sample_ids)
+                 
+                 def verify_task(resps, stmts, s_ids, chunk_idx):
+                     if timing_raw is not None:
+@@ -413,6 +415,7 @@ def compute_rewards_with_refinement(
+                 additional_info = {
+                     'formal_statement': expanded_formal_stmts,
+                     'prompt_index': prompt_indices,
++                    'proposal_id': proposal_ids,
+                 }
+                 
+                 # Import async save functions
+@@ -785,4 +788,3 @@ def compute_rewards_and_collect_failures(
+             failures[prompt_idx]['codes'].append(result['extracted_code'])
+     
+     return rewards, failures
+-
 diff --git a/components/verl/verl/utils/reward_score/lean4_verifier.py b/components/verl/verl/utils/reward_score/lean4_verifier.py
-index 702b123..bed13fd 100644
+index 702b123..be7db76 100644
 --- a/components/verl/verl/utils/reward_score/lean4_verifier.py
 +++ b/components/verl/verl/utils/reward_score/lean4_verifier.py
 @@ -24,6 +24,8 @@ import re
@@ -728,7 +1039,7 @@ index 702b123..bed13fd 100644
          
          if not enable_format_reward:
              self.success_score = 1.0
-@@ -632,6 +640,425 @@ class Lean4Verifier:
+@@ -632,6 +640,510 @@ class Lean4Verifier:
  
          return "none"
  
@@ -782,6 +1093,37 @@ index 702b123..bed13fd 100644
 +                    "repl_uuid": diagnostics.get("repl_uuid"),
 +                }
 +            )
++            checkpoint_status = diagnostics.get("shred_checkpoint_status")
++            checkpoint = {"status": checkpoint_status or "fallback"}
++            if checkpoint_status == "captured":
++                checkpoint.update(
++                    {
++                        "prefix_length": diagnostics.get(
++                            "shred_checkpoint_prefix_length"
++                        ),
++                        "prefix_edges_sha256": diagnostics.get(
++                            "shred_prefix_edges_sha256"
++                        ),
++                        "parent_environment_sha256": diagnostics.get(
++                            "shred_parent_environment_sha256"
++                        ),
++                        "root_context_sha256": diagnostics.get(
++                            "shred_root_context_sha256"
++                        ),
++                        "checkpoint_artifact_sha256": diagnostics.get(
++                            "shred_checkpoint_artifact_sha256"
++                        ),
++                        "checkpoint_artifact_id": diagnostics.get(
++                            "shred_checkpoint_artifact_id"
++                        ),
++                    }
++                )
++            else:
++                checkpoint["fallback_reason"] = diagnostics.get(
++                    "shred_checkpoint_fallback_reason",
++                    "checkpoint_receipt_missing",
++                )
++            capture["checkpoint"] = checkpoint
 +        return capture
 +
 +    def _finalize_extracted_verification(
@@ -880,6 +1222,8 @@ index 702b123..bed13fd 100644
 +            "reuse": True,
 +            "capture_shred_cpu": True,
 +            "capture_shred_group": group_id,
++            "capture_shred_checkpoint": True,
++            "capture_shred_checkpoint_min_attempts": 8,
 +        }
 +        try:
 +            timeout = aiohttp.ClientTimeout(
@@ -1009,6 +1353,58 @@ index 702b123..bed13fd 100644
 +                    or None in repls
 +                ):
 +                    receipt_reason = "group_receipt_mismatch"
++                checkpoint_statuses = {
++                    r.get("shred_checkpoint_status") for r in captured
++                }
++                if len(checkpoint_statuses) != 1 or None in checkpoint_statuses:
++                    receipt_reason = receipt_reason or "checkpoint_receipt_mixed_status"
++                elif checkpoint_statuses == {"captured"}:
++                    checkpoint_fields = (
++                        "shred_checkpoint_prefix_length",
++                        "shred_prefix_edges_sha256",
++                        "shred_parent_environment_sha256",
++                        "shred_root_context_sha256",
++                        "shred_checkpoint_artifact_sha256",
++                        "shred_checkpoint_artifact_id",
++                    )
++                    checkpoint_receipts = {
++                        tuple(r.get(field) for field in checkpoint_fields)
++                        for r in captured
++                    }
++                    prefix_length = captured[0].get(
++                        "shred_checkpoint_prefix_length"
++                    )
++                    checkpoint_values = next(iter(checkpoint_receipts))
++                    digests = checkpoint_values[1:5]
++                    artifact_id = checkpoint_values[5]
++                    if (
++                        len(checkpoint_receipts) != 1
++                        or not isinstance(prefix_length, int)
++                        or isinstance(prefix_length, bool)
++                        or prefix_length < 1
++                        or any(
++                            not isinstance(value, str)
++                            or re.fullmatch(r"[0-9a-f]{64}", value) is None
++                            for value in digests
++                        )
++                        or not isinstance(artifact_id, str)
++                        or not artifact_id
++                        or any(
++                            prefix_length >= len(
++                                (row.get("response") or {}).get("tactics") or []
++                            )
++                            for row in rows_by_id.values()
++                        )
++                    ):
++                        receipt_reason = receipt_reason or "checkpoint_receipt_mismatch"
++                elif checkpoint_statuses == {"fallback"}:
++                    fallback_reasons = {
++                        r.get("shred_checkpoint_fallback_reason") for r in captured
++                    }
++                    if len(fallback_reasons) != 1 or None in fallback_reasons:
++                        receipt_reason = receipt_reason or "checkpoint_fallback_mismatch"
++                else:
++                    receipt_reason = receipt_reason or "checkpoint_receipt_invalid_status"
 +            elif not fallback:
 +                receipt_reason = "group_receipt_missing_status"
 +
@@ -1154,7 +1550,7 @@ index 702b123..bed13fd 100644
      async def send_verification_request_async_with_url(
          self, 
          data_id: str, 
-@@ -645,7 +1072,8 @@ class Lean4Verifier:
+@@ -645,7 +1157,8 @@ class Lean4Verifier:
              "snippets": [{"id": data_id, "code": code}],
              "timeout": self.request_timeout,
              "debug": True,
@@ -1164,7 +1560,7 @@ index 702b123..bed13fd 100644
          }
          
          last_timeout_result = None
-@@ -749,7 +1177,8 @@ class Lean4Verifier:
+@@ -749,7 +1262,8 @@ class Lean4Verifier:
              "snippets": [{"id": data_id, "code": code}],
              "timeout": self.request_timeout,
              "debug": True,
@@ -1174,7 +1570,7 @@ index 702b123..bed13fd 100644
          }
          
          last_timeout_result = None
-@@ -808,7 +1237,8 @@ class Lean4Verifier:
+@@ -808,7 +1322,8 @@ class Lean4Verifier:
              "snippets": [{"id": data_id, "code": code}],
              "timeout": self.request_timeout,
              "debug": True,
@@ -1184,7 +1580,7 @@ index 702b123..bed13fd 100644
          }
          
          last_timeout_result = None
-@@ -1193,6 +1623,9 @@ class Lean4Verifier:
+@@ -1193,6 +1708,9 @@ class Lean4Verifier:
              # Check error type from server response
              error_type = verify_result.get('error_type', 'unknown')
              result["error_type"] = error_type
@@ -1194,7 +1590,7 @@ index 702b123..bed13fd 100644
  
              # keep only error_type (timeout is server-side lean timeout)
              
-@@ -1327,6 +1760,9 @@ class Lean4Verifier:
+@@ -1327,6 +1845,9 @@ class Lean4Verifier:
              # Check error type from server response
              error_type = verify_result.get('error_type', 'unknown')
              result["error_type"] = error_type
@@ -1204,7 +1600,7 @@ index 702b123..bed13fd 100644
  
              # Check if proof is successful
              is_success = self.is_proof_successful(verify_result)
-@@ -1437,6 +1873,9 @@ class Lean4Verifier:
+@@ -1437,6 +1958,9 @@ class Lean4Verifier:
              # Check error type from server response
              error_type = verify_result.get('error_type', 'unknown')
              result["error_type"] = error_type
@@ -1214,7 +1610,7 @@ index 702b123..bed13fd 100644
              
              # Check if proof is successful
              is_success = self.is_proof_successful(verify_result)
-@@ -1526,6 +1965,18 @@ class Lean4Verifier:
+@@ -1526,6 +2050,18 @@ class Lean4Verifier:
          """
          if sample_ids is None:
              sample_ids = [f"batch_{i}" for i in range(len(responses))]
@@ -1235,17 +1631,19 @@ index 702b123..bed13fd 100644
              # Sequential verification for small batches
 diff --git a/components/kimina-lean-server/tests/test_shred_group.py b/components/kimina-lean-server/tests/test_shred_group.py
 new file mode 100644
-index 0000000..4801fb7
+index 0000000..7e55bcb
 --- /dev/null
 +++ b/components/kimina-lean-server/tests/test_shred_group.py
-@@ -0,0 +1,123 @@
+@@ -0,0 +1,225 @@
 +from uuid import UUID
++from pathlib import Path
 +
 +import pytest
 +from kimina_client import CommandResponse, ReplResponse, Snippet
 +
 +from server.errors import NoAvailableReplError
 +from server.routers.check import run_checks
++from server.settings import settings
 +
 +
 +class FakeCaptureRepl:
@@ -1298,8 +1696,11 @@ index 0000000..4801fb7
 +async def test_capture_group_leases_one_repl_for_every_member() -> None:
 +    manager = FakeCaptureManager()
 +    snippets = [
-+        Snippet(id="r1_p7_s0", code="theorem t : True := by trivial"),
-+        Snippet(id="r1_p7_s1", code="theorem t : True := by exact True.intro"),
++        Snippet(id="r1_p7_s0", code="import Mathlib\ntheorem t : True := by trivial"),
++        Snippet(
++            id="r1_p7_s1",
++            code="import Mathlib\ntheorem t : True := by exact True.intro",
++        ),
 +    ]
 +
 +    results = await run_checks(
@@ -1316,7 +1717,10 @@ index 0000000..4801fb7
 +    assert manager.prep_calls == 1
 +    assert manager.release_calls == 1
 +    assert manager.destroy_calls == 0
-+    assert manager.repl.sent == [snippet.code for snippet in snippets]
++    assert manager.repl.sent == [
++        "theorem t : True := by trivial",
++        "theorem t : True := by exact True.intro",
++    ]
 +    assert [result.id for result in results] == [snippet.id for snippet in snippets]
 +    assert {
 +        result.diagnostics["repl_uuid"]  # type: ignore[index]
@@ -1341,8 +1745,11 @@ index 0000000..4801fb7
 +            raise NoAvailableReplError("full")
 +
 +    snippets = [
-+        Snippet(id="r2_p3_s0", code="theorem t : True := by trivial"),
-+        Snippet(id="r2_p3_s1", code="theorem t : True := by exact True.intro"),
++        Snippet(id="r2_p3_s0", code="import Mathlib\ntheorem t : True := by trivial"),
++        Snippet(
++            id="r2_p3_s1",
++            code="import Mathlib\ntheorem t : True := by exact True.intro",
++        ),
 +    ]
 +    results = await run_checks(
 +        snippets,
@@ -1362,12 +1769,103 @@ index 0000000..4801fb7
 +        == "group_repl_unavailable"
 +        for result in results
 +    )
++
++
++@pytest.mark.asyncio
++async def test_capture_group_pickles_one_exact_representative_checkpoint(
++    tmp_path: Path, monkeypatch
++) -> None:
++    class CheckpointRepl(FakeCaptureRepl):
++        def __init__(self) -> None:
++            super().__init__()
++            self.next_state = 0
++            self.pickles = []
++
++        async def send_timeout(self, snippet: Snippet, *args, **kwargs) -> ReplResponse:
++            self.sent.append(snippet.code)
++            command = "set_option shred.cpuBoundaries true\n" + snippet.code
++            first_start = len(command[: command.index("simp")].encode("utf-8"))
++            second_text = "trivial" if "trivial" in snippet.code else "exact True.intro"
++            second_start = len(
++                command[: command.index(second_text)].encode("utf-8")
++            )
++            root_state = self.next_state
++            self.next_state += 2
++            return ReplResponse(
++                id=snippet.id,
++                response={
++                    "env": 0,
++                    "tactics": [
++                        {
++                            "startByte": first_start,
++                            "endByte": first_start + len("simp"),
++                            "syntaxKind": "Lean.Parser.Tactic.simp",
++                            "proofState": root_state,
++                        },
++                        {
++                            "startByte": second_start,
++                            "endByte": second_start + len(second_text),
++                            "syntaxKind": "Lean.Parser.Tactic.tacticSeq1Indented",
++                            "proofState": root_state + 1,
++                        },
++                    ],
++                },
++                diagnostics={
++                    "repl_uuid": str(self.uuid),
++                    "shred_cpu_boundaries": [],
++                },
++            )
++
++        async def pickle_environment_timeout(self, env, path, timeout):
++            path.write_bytes(f"environment:{env}".encode())
++            self.pickles.append(("environment", env, path))
++            return {"env": env}
++
++        async def pickle_proof_state_timeout(self, proof_state, path, timeout):
++            path.write_bytes(f"proof:{proof_state}".encode())
++            self.pickles.append(("proof", proof_state, path))
++            return {"proofState": proof_state}
++
++    manager = FakeCaptureManager()
++    manager.repl = CheckpointRepl()
++    monkeypatch.setattr(settings, "shred_capture_dir", tmp_path)
++    snippets = [
++        Snippet(
++            id=f"r3_p2_s{index}",
++            code=(
++                "import Mathlib\ntheorem t : True := by\n  simp\n  "
++                + ("trivial" if index % 2 else "exact True.intro")
++            ),
++        )
++        for index in range(8)
++    ]
++    results = await run_checks(
++        snippets,
++        timeout=10,
++        debug=True,
++        manager=manager,  # type: ignore[arg-type]
++        reuse=True,
++        capture_shred_cpu=True,
++        capture_shred_group="r3_p2",
++        capture_shred_checkpoint=True,
++        capture_shred_checkpoint_min_attempts=8,
++    )
++
++    assert [(kind, state) for kind, state, _ in manager.repl.pickles] == [
++        ("environment", 0),
++        ("proof", 0),
++        ("proof", 1),
++    ]
++    receipts = [result.diagnostics for result in results]
++    assert all(receipt["shred_checkpoint_status"] == "captured" for receipt in receipts)
++    assert all(receipt["shred_checkpoint_prefix_length"] == 1 for receipt in receipts)
++    assert len({receipt["shred_checkpoint_artifact_sha256"] for receipt in receipts}) == 1
 diff --git a/components/verl/tests/utils/reward_score/test_shred_group_capture.py b/components/verl/tests/utils/reward_score/test_shred_group_capture.py
 new file mode 100644
-index 0000000..a1793c6
+index 0000000..5c14682
 --- /dev/null
 +++ b/components/verl/tests/utils/reward_score/test_shred_group_capture.py
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,80 @@
 +import pytest
 +
 +from verl.utils.reward_score.lean4_verifier import Lean4Verifier
@@ -1399,6 +1897,10 @@ index 0000000..a1793c6
 +                        "shred_group_index": index,
 +                        "shred_group_size": len(snippets),
 +                        "shred_group_status": "captured",
++                        "shred_checkpoint_status": "fallback",
++                        "shred_checkpoint_fallback_reason": (
++                            "checkpoint_capture_dir_unconfigured"
++                        ),
 +                    },
 +                }
 +            )

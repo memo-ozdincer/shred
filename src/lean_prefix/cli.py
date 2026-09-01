@@ -41,6 +41,7 @@ from lean_prefix.state_census import (
 )
 from shred.profiler import ProfileConfig, ShredProfileError, profile_workload
 from shred.manifest import ManifestError, create_manifest
+from shred.oprover_export import OProverExportError, export_saved_attempts
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -93,6 +94,13 @@ def _parser() -> argparse.ArgumentParser:
     trace_seal.add_argument("--workload-metadata", type=Path, required=True)
     trace_seal.add_argument("--partition", type=Path, action="append", required=True)
     trace_seal.add_argument("--output", type=Path, required=True)
+    oprover_export = commands.add_parser(
+        "export-oprover-trace",
+        help="convert saved OProver capture output to digest-only trace records",
+    )
+    oprover_export.add_argument("--input", type=Path, action="append", required=True)
+    oprover_export.add_argument("--output", type=Path, required=True)
+    oprover_export.add_argument("--expected-attempts", type=int, required=True)
     audit = commands.add_parser("audit", help="verify an immutable rollout manifest")
     audit.add_argument("--manifest", type=Path, required=True)
     audit.add_argument("--source-root", type=Path)
@@ -284,6 +292,15 @@ def main(argv: list[str] | None = None) -> int:
                 args.output,
                 workload=workload,
                 partitions=args.partition,
+            )
+            report["command"] = shlex.join(["shred", *raw_argv])
+            sys.stdout.write(json.dumps(report, indent=2, sort_keys=True) + "\n")
+            return 0
+        if args.command == "export-oprover-trace":
+            report = export_saved_attempts(
+                args.input,
+                args.output,
+                args.expected_attempts,
             )
             report["command"] = shlex.join(["shred", *raw_argv])
             sys.stdout.write(json.dumps(report, indent=2, sort_keys=True) + "\n")
@@ -495,6 +512,7 @@ def main(argv: list[str] | None = None) -> int:
         ShredProfileError,
         ManifestError,
         AuthenticTraceError,
+        OProverExportError,
         OSError,
     ) as error:
         print(f"error: {error}", file=sys.stderr)

@@ -311,8 +311,32 @@ missing results, and inconsistent receipts are explicit fallbacks. The client
 never silently retries an uncertain group request. The changed source passes
 static compilation, and the producer patch round-trips exactly against the
 audited OProver commit. The OProver dependency environment was not installed,
-so the new producer tests are checked in but not executed. Representative
-checkpoint and environment/context receipts remain next.
+so the new producer tests are checked in but not executed.
+
+The checkpoint receipt slice is now also implemented statically. Groups with a
+blank root header fail closed because Kimina would otherwise establish
+environment `0` from the first theorem rather than the shared imports. For a
+nonblank common header and at least eight unique attempts, the server compares
+syntax kind plus exact native source bytes, requires a nonempty common prefix
+with remaining suffix work, and pickles one representative parent environment,
+root proof state, and divergent proof state. It returns immutable SHA-256
+receipts to every proposal and stores artifacts only under a server-configured
+private directory. OProver's saved all-proof output now retains original
+rollout IDs and the complete SHRED receipt. Static compilation and exact patch
+round-trip validation pass; the dependency-bound producer tests remain
+unexecuted.
+
+The digest-only export boundary is now implemented and unit-validated. It
+reads OProver's saved JSONL without mutation, hashes submitted code and theorem
+statements, derives full and prefix process CPU only through the fail-closed
+native adapter, translates checkpoint receipts, reconciles an independently
+declared attempt count, and creates its output without overwrite. Existing
+exact-complete-proof deduplication is counted as a zero-cost baseline fallback,
+not SHRED reuse. Missing CPU for any executed proposal aborts the export rather
+than substituting wall time. A direct exporter-to-sealer fixture passes. The
+source pipeline is therefore complete enough for a future normal OProver run;
+runtime producer validation in its actual dependency environment remains the
+next correctness gate, not a dataset or performance run.
 
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator

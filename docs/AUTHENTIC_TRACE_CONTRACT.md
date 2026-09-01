@@ -71,6 +71,16 @@ A textual prefix, pretty-printed goal, tactic-head match, reconstructed state,
 or common agent conversation is not eligible. Such attempts must be exported as
 `fallback` with a reason and retain their complete independent CPU cost.
 
+If the producer's pre-existing verifier already suppresses an exact duplicate
+complete attempt, preserve that input as a fallback with
+`baseline_execution: "cached_exact_duplicate"`,
+`fallback_reason: "existing_exact_duplicate_cache"`, and zero verifier CPU.
+Name the representative proposal. This is existing baseline caching, not SHRED
+prefix reuse, and it contributes no claimed opportunity. Any executed attempt
+whose exact process-CPU envelope is missing makes the producer export invalid;
+it must not be assigned wall time, a sampled CPU percentage, or an inferred
+cost merely to make the trace sealable.
+
 The telemetry declaration is intentionally rigid: process CPU, a warm complete
 independent baseline, prefix CPU measured through the same exact checkpoint,
 and ordinary Lean verdict authority. Missing or differently defined telemetry

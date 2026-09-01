@@ -28,5 +28,19 @@ Validation performed on 2026-09-01:
 The producer tests were not executed because this workspace does not contain
 the OProver Python dependency environment (FastAPI, Pydantic, aiohttp, or
 pytest). No Lean proof, dataset, rollout, model, or benchmark was run for this
-protocol slice. The next implementation gates are representative checkpoint
-capture, immutable environment/context receipts, and sealed trace export.
+protocol slice.
+
+The source implementation now additionally captures a representative
+checkpoint only for groups with at least eight unique attempts, a real shared
+root environment, a nonempty exact native prefix, and remaining suffix work.
+It hashes the parent-environment pickle, root-proof-state pickle, checkpoint
+pickle, and canonical ordered exact source edges. This extension has passed
+static compilation and exact patch round-trip validation, but its producer-side
+test remains unexecuted for the same missing-dependency reason.
+
+The digest-only export is now checked in and covered by repository tests. Its
+fixture proves native full/prefix CPU conversion, exact checkpoint mapping,
+explicit existing-cache accounting, producer source immutability, declared
+count reconciliation, no-overwrite behavior, failure on missing executed CPU,
+and direct acceptance by `seal-authentic-trace`. This completes the static
+producer-to-sealer path; it does not validate the unavailable OProver runtime.
