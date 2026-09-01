@@ -75,6 +75,12 @@ one live Kimina lease from an exact checkpoint identity recurring across
 independent leases. Raw group and process identities do not enter the digest-
 only trace.
 
+Consequently, an ordinary OProver rollout group can qualify for the independent
+process-local exact-trie gate when at least eight unchanged attempts share the
+captured prefix in one fresh lease. It does not need to recur across leases to
+support that local decision, and it cannot support the portable decision unless
+the exact checkpoint identity genuinely spans leases.
+
 Checkpoint artifact capture requires the server operator to configure
 `LEAN_SERVER_SHRED_CAPTURE_DIR`. The directory is never supplied by a client,
 artifact IDs contain only hashed group identity plus a fresh REPL UUID, leaf

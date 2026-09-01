@@ -105,10 +105,14 @@ independent Lean execution scopes from ordinary fan-out inside one live REPL.
 Only incremental saving beyond an ideal process-local prefix executor can pass
 the portable-checkpoint gate. It reports aggregate, per-theorem, median, and
 tail projections; proof text, pretty goals, and agent-message similarity never
-count as executable reuse. Sealing refuses
-overwrite, reconciles the producer-declared attempt count, and creates the
+count as executable reuse. Sealing refuses overwrite, reconciles the
+producer-declared attempt count, and creates the
 manifest only after validation. See
 [`docs/AUTHENTIC_TRACE_CONTRACT.md`](docs/AUTHENTIC_TRACE_CONTRACT.md).
+
+The same trace also has an independent process-local gate. SHRED therefore
+returns one concrete route: build a local exact prefix trie, investigate the
+additional portable mechanism, resolve missing telemetry, or build neither.
 
 The first concrete producer integration target is OProver's multi-round RL
 verifier. Its pinned Lean interface already exposes native proof checkpoints

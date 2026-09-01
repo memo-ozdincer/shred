@@ -69,6 +69,25 @@ def gate_records() -> list[dict]:
     return records
 
 
+def process_local_gate_records() -> list[dict]:
+    records = []
+    for theorem_index in range(10):
+        theorem = f"t{theorem_index}"
+        for group_index in range(10):
+            group = f"{theorem}-{group_index}"
+            for _attempt_index in range(8):
+                index = len(records)
+                records.append(
+                    exact_record(
+                        index,
+                        theorem=theorem,
+                        group=group,
+                        scope=f"one-live-scope-{group}",
+                    )
+                )
+    return records
+
+
 class AuthenticTraceTests(unittest.TestCase):
     def workload_metadata(self, records: list[dict]) -> dict:
         return {
@@ -160,7 +179,68 @@ class AuthenticTraceTests(unittest.TestCase):
             3.0,
         )
         self.assertTrue(report["gate"]["passes"])
+        self.assertFalse(report["process_local_gate"]["passes"])
+        self.assertEqual(
+            report["process_local_gate"]["decision"],
+            "stop_no_qualifying_process_local_groups",
+        )
+        self.assertEqual(
+            report["recommendation"]["decision"],
+            "portable_checkpoint_candidate",
+        )
         self.assertGreater(report["pipeline_cpu"]["projected_speedup"], 1.5)
+
+    def test_process_local_gate_can_pass_without_portable_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), process_local_gate_records())
+            report = screen_authentic_trace(
+                manifest,
+                overhead_budget_cpu_seconds_per_hit=0.1,
+                overhead_budget_source="registered design ceiling",
+            )
+        self.assertTrue(report["process_local_gate"]["passes"])
+        self.assertEqual(
+            report["process_local_gate"]["decision"],
+            "read_only_process_local_value_gate_passed",
+        )
+        self.assertFalse(report["gate"]["passes"])
+        self.assertEqual(
+            report["gate"]["decision"],
+            "stop_no_cross_scope_exact_checkpoint_groups",
+        )
+        self.assertEqual(
+            report["recommendation"]["decision"],
+            "process_local_prefix_reuse_candidate",
+        )
+        self.assertGreater(
+            report["process_local_verifier_cpu"]["projected_speedup"], 3.0
+        )
+        self.assertGreater(
+            report["per_theorem_process_local_speedup_quantiles"]["median"], 3.0
+        )
+
+    def test_process_local_gate_requires_registered_overhead(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), process_local_gate_records())
+            report = screen_authentic_trace(manifest)
+        self.assertEqual(
+            report["process_local_gate"]["decision"],
+            "inconclusive_missing_registered_overhead_budget",
+        )
+        self.assertEqual(report["recommendation"]["decision"], "inconclusive")
+
+    def test_process_local_gate_rejects_excessive_overhead(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), process_local_gate_records())
+            report = screen_authentic_trace(
+                manifest,
+                overhead_budget_cpu_seconds_per_hit=1.0,
+                overhead_budget_source="measured upper bound",
+            )
+        self.assertEqual(
+            report["process_local_gate"]["decision"],
+            "stop_process_local_overhead_budget_exceeds_gate",
+        )
 
     def test_small_group_is_counted_but_cannot_pass(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -228,6 +308,10 @@ class AuthenticTraceTests(unittest.TestCase):
         self.assertEqual(
             report["gate"]["decision"],
             "stop_below_portable_incremental_cpu_gate",
+        )
+        self.assertEqual(
+            report["process_local_gate"]["decision"],
+            "stop_no_qualifying_process_local_groups",
         )
         self.assertFalse(
             report["gate"]["criteria"]["portable_incremental_cpu_fraction"]

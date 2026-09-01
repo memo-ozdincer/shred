@@ -353,6 +353,14 @@ component itself to clear the 60% and 2x thresholds.
 The OProver exporter derives this digest from its rollout-group and fresh REPL
 receipt. This closes a novelty/evidence gap without running Lean or a workload.
 
+The same version-two screen now contains an independent process-local gate.
+It partitions exact checkpoint groups by live scope and applies the same
+eight-attempt, 100-group, 10-theorem, 60%-CPU, 2x-throughput, overhead, and
+pipeline-materiality requirements. A single top-level recommendation prefers a
+passing portable mechanism, otherwise selects a passing local exact trie, and
+otherwise remains inconclusive or stops. This makes normal one-REPL OProver
+rollout groups decision-useful without mislabeling them cross-worker evidence.
+
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator
 then found 17 native CPU boundary records, joined all three REPL tactics by

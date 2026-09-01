@@ -132,6 +132,16 @@ fallback:
 
 ## Projection
 
+The version-two screener makes two decisions from the same immutable trace.
+
+For process-local sharing, it partitions each exact checkpoint identity by
+execution scope. A scope subgroup qualifies only with at least eight complete
+attempts. Its projected cost is the maximum observed prefix CPU once plus every
+unchanged suffix. The process-local gate independently requires at least 100
+qualifying scope groups across 10 theorems, at least 60% of all verifier CPU
+removable before overhead, at least 2x projected verifier throughput, the same
+registered overhead ceiling, and material pipeline verifier CPU.
+
 For each exact group with at least eight attempts spanning at least two live
 Lean execution scopes, let `f_i` be complete warm independent verifier CPU and
 `p_i` be CPU through the shared checkpoint. The zero-overhead projected group
@@ -174,6 +184,12 @@ results, the ideal process-local counterfactual, incremental portable saving,
 median/p10/p90/p95/p99 theorem speedups for both total and incremental portable
 effects, and an end-to-end Amdahl projection from the manifest's total pipeline
 CPU.
+
+The top-level recommendation is deliberately singular: choose portable reuse
+when its incremental gate passes; otherwise choose the process-local exact trie
+when its gate passes; otherwise return inconclusive or stop. A local pass never
+becomes portable evidence, and a portable pass never invents eight co-located
+attempts that the producer did not execute.
 
 This is a **Hypothesis** projection from **Observed** producer telemetry. It is
 not a measured SHRED result. A passing two-times value gate permits proposing

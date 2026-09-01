@@ -53,3 +53,6 @@ reports same-lease fan-out separately and permits only checkpoint identities
 spanning at least two independent leases to enter the portable-reuse gate. It
 then subtracts the ideal saving available from sharing once inside each lease;
 only the remaining incremental cross-lease component can satisfy the gate.
+The same sealed trace independently screens each one-lease subgroup for a local
+exact prefix trie, so useful OProver-local evidence is retained rather than
+discarded when portability is unsupported.

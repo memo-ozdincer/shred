@@ -1519,3 +1519,36 @@ draft manifests must be re-exported or re-sealed from their immutable producer
 data; no authentic measured SHRED trace has been invalidated. This is a
 correctness and novelty-boundary improvement, not a scientific experiment or
 performance result.
+
+## D-051 - Route local and portable prefix reuse with separate gates
+
+Date: 2026-09-01
+
+Status: accepted after static implementation and unit validation
+
+Decision: derive a second, independent process-local value gate from authentic
+trace version two. Partition every exact checkpoint group by
+`execution_scope_sha256`; require at least eight attempts in the same scope,
+then charge the maximum observed prefix CPU once and retain every suffix and
+fallback. Apply the same 100-group, 10-theorem, 60%-CPU, 2x-throughput,
+registered-overhead, and pipeline-materiality requirements used to demand a
+genuinely strong result. Report aggregate, per-theorem, median, and tail values.
+
+Return one routing recommendation. Prefer a passing incremental portable gate;
+otherwise select a passing process-local exact trie; otherwise report missing
+evidence or stop both mechanisms. Do not promote a local pass into portable
+evidence or count attempts from separate scopes toward an eight-sibling local
+group.
+
+Reason: OProver deliberately executes one rollout group in one fresh REPL. Such
+a group can provide exactly the evidence needed for SHRED's broadly useful
+local trie while correctly providing no evidence that checkpoint portability
+adds value. Reporting the opportunity without a decision gate would either
+discard a promising local result or invite an informal favorable selection.
+
+Consequence: a 100-group, 10-theorem unit fixture with eight one-scope attempts
+per group passes the local gate above 3x while the portable gate stops for lack
+of cross-scope evidence. The inverse fixture, with each attempt in its own
+scope, passes portability without fabricating a local group. These are model
+validation fixtures, not workload projections or measured speedups. No Lean,
+dataset, model, rollout, or benchmark was run.

@@ -21,6 +21,7 @@ MINIMUM_QUALIFYING_GROUPS = 100
 MINIMUM_QUALIFYING_THEOREMS = 10
 MINIMUM_GROUP_ATTEMPTS = 8
 MINIMUM_EXECUTION_SCOPES = 2
+MINIMUM_PROCESS_LOCAL_REUSABLE_CPU_FRACTION = 0.60
 MINIMUM_PORTABLE_INCREMENTAL_CPU_FRACTION = 0.60
 MAXIMUM_OVERHEAD_EQUIVALENT_PER_EIGHT_ATTEMPTS = 0.20
 MINIMUM_PIPELINE_VERIFIER_CPU_FRACTION = 0.25
@@ -376,6 +377,123 @@ def screen_authentic_trace(
     if baseline_cpu <= 0:
         raise AuthenticTraceError("trace has no positive verifier CPU")
 
+    local_scope_groups: dict[tuple[str, ...], list[dict[str, Any]]] = defaultdict(
+        list
+    )
+    for group_key, group in groups.items():
+        for attempt in group:
+            local_scope_groups[
+                (*group_key, attempt["execution_scope_sha256"])
+            ].append(attempt)
+
+    local_qualifying_groups = []
+    local_insufficient_attempts = 0
+    local_saved_cpu = 0.0
+    local_cache_hits = 0
+    local_qualifying_baseline_cpu = 0.0
+    local_theorem_costs: dict[str, dict[str, float | int]] = {
+        theorem_name: {
+            "attempts": int(values["attempts"]),
+            "baseline_cpu_seconds": float(values["baseline_cpu_seconds"]),
+            "ideal_projected_cpu_seconds": float(values["baseline_cpu_seconds"]),
+            "projected_cpu_seconds": float(values["baseline_cpu_seconds"]),
+            "qualifying_groups": 0,
+            "cache_hits": 0,
+        }
+        for theorem_name, values in theorem_costs.items()
+    }
+    for key in sorted(local_scope_groups):
+        group = local_scope_groups[key]
+        if len(group) < MINIMUM_GROUP_ATTEMPTS:
+            local_insufficient_attempts += len(group)
+            continue
+        prefix_sum = sum(item["prefix_cpu"] for item in group)
+        shared_prefix_cpu = max(item["prefix_cpu"] for item in group)
+        saved = prefix_sum - shared_prefix_cpu
+        hits = len(group) - 1
+        group_baseline_cpu = sum(item["full_cpu"] for item in group)
+        local_saved_cpu += saved
+        local_cache_hits += hits
+        local_qualifying_baseline_cpu += group_baseline_cpu
+        theorem = local_theorem_costs[group[0]["theorem_name"]]
+        theorem["ideal_projected_cpu_seconds"] -= saved
+        theorem["projected_cpu_seconds"] -= saved
+        theorem["qualifying_groups"] += 1
+        theorem["cache_hits"] += hits
+        local_qualifying_groups.append(
+            {
+                "theorem_name": group[0]["theorem_name"],
+                "checkpoint_artifact_sha256": group[0]["checkpoint_sha256"],
+                "execution_scope_sha256": group[0]["execution_scope_sha256"],
+                "attempts": len(group),
+                "cache_hits": hits,
+                "baseline_cpu_seconds": group_baseline_cpu,
+                "repeated_prefix_cpu_seconds": prefix_sum,
+                "shared_prefix_cpu_seconds": shared_prefix_cpu,
+                "ideal_saved_cpu_seconds": saved,
+            }
+        )
+
+    local_ideal_projected_cpu = baseline_cpu - local_saved_cpu
+    local_ideal_speedup = baseline_cpu / local_ideal_projected_cpu
+    local_overhead_total = None
+    local_projected_cpu = None
+    local_projected_speedup = None
+    if overhead_budget_cpu_seconds_per_hit is not None:
+        local_overhead_total = (
+            overhead_budget_cpu_seconds_per_hit * local_cache_hits
+        )
+        local_projected_cpu = local_ideal_projected_cpu + local_overhead_total
+        local_projected_speedup = baseline_cpu / local_projected_cpu
+        for theorem in local_theorem_costs.values():
+            theorem["projected_cpu_seconds"] += (
+                overhead_budget_cpu_seconds_per_hit * theorem["cache_hits"]
+            )
+
+    local_theorem_rows = []
+    for theorem_name in sorted(local_theorem_costs):
+        values = local_theorem_costs[theorem_name]
+        theorem_baseline = float(values["baseline_cpu_seconds"])
+        ideal_cost = float(values["ideal_projected_cpu_seconds"])
+        projected_cost = (
+            float(values["projected_cpu_seconds"])
+            if overhead_budget_cpu_seconds_per_hit is not None
+            else None
+        )
+        local_theorem_rows.append(
+            {
+                "theorem_name": theorem_name,
+                **values,
+                "ideal_speedup": (
+                    theorem_baseline / ideal_cost
+                    if theorem_baseline > 0 and ideal_cost > 0
+                    else None
+                ),
+                "projected_speedup": (
+                    theorem_baseline / projected_cost
+                    if theorem_baseline > 0
+                    and projected_cost is not None
+                    and projected_cost > 0
+                    else None
+                ),
+            }
+        )
+    local_speedups = sorted(
+        float(row["projected_speedup"])
+        for row in local_theorem_rows
+        if row["projected_speedup"] is not None
+    )
+    local_tails = {
+        name: _quantile(local_speedups, fraction)
+        for name, fraction in (
+            ("p10", 0.10),
+            ("median", 0.50),
+            ("p90", 0.90),
+            ("p95", 0.95),
+            ("p99", 0.99),
+        )
+    }
+
     qualifying_groups = []
     insufficient_attempts = 0
     single_scope_attempts = 0
@@ -570,6 +688,85 @@ def screen_authentic_trace(
         }
         pipeline_verifier_fraction = baseline_cpu / pipeline_cpu
 
+    local_pipeline_projection = None
+    if pipeline_projection is not None:
+        pipeline_cpu = float(pipeline_projection["baseline_cpu_seconds"])
+        local_pipeline_projection = {
+            "baseline_cpu_seconds": pipeline_cpu,
+            "verifier_cpu_fraction": baseline_cpu / pipeline_cpu,
+            "ideal_speedup": pipeline_cpu
+            / (pipeline_cpu - baseline_cpu + local_ideal_projected_cpu),
+            "projected_speedup": (
+                pipeline_cpu
+                / (pipeline_cpu - baseline_cpu + local_projected_cpu)
+                if local_projected_cpu is not None
+                else None
+            ),
+        }
+
+    local_qualifying_theorems = {
+        group["theorem_name"] for group in local_qualifying_groups
+    }
+    local_reusable_cpu_fraction = local_saved_cpu / baseline_cpu
+    local_maximum_registered_overhead = (
+        MAXIMUM_OVERHEAD_EQUIVALENT_PER_EIGHT_ATTEMPTS
+        * local_qualifying_baseline_cpu
+        / 8.0
+    )
+    local_maximum_total_overhead_for_target = max(
+        0.0, baseline_cpu / TARGET_VERIFIER_SPEEDUP - local_ideal_projected_cpu
+    )
+    local_maximum_overhead_per_hit = (
+        local_maximum_total_overhead_for_target / local_cache_hits
+        if local_cache_hits
+        else 0.0
+    )
+    local_criteria = {
+        "has_qualifying_groups": bool(local_qualifying_groups),
+        "group_coverage": (
+            len(local_qualifying_groups) >= MINIMUM_QUALIFYING_GROUPS
+        ),
+        "theorem_coverage": (
+            len(local_qualifying_theorems) >= MINIMUM_QUALIFYING_THEOREMS
+        ),
+        "reusable_cpu_fraction": (
+            local_reusable_cpu_fraction
+            >= MINIMUM_PROCESS_LOCAL_REUSABLE_CPU_FRACTION
+        ),
+        "registered_overhead_present": local_overhead_total is not None,
+        "registered_overhead_within_limit": (
+            local_overhead_total is not None
+            and local_overhead_total <= local_maximum_registered_overhead
+        ),
+        "pipeline_cpu_present": local_pipeline_projection is not None,
+        "pipeline_verifier_cpu_material": (
+            pipeline_verifier_fraction is not None
+            and pipeline_verifier_fraction >= MINIMUM_PIPELINE_VERIFIER_CPU_FRACTION
+        ),
+        "target_verifier_speedup": (
+            local_projected_speedup is not None
+            and local_projected_speedup >= TARGET_VERIFIER_SPEEDUP
+        ),
+    }
+    if not local_criteria["has_qualifying_groups"]:
+        local_decision = "stop_no_qualifying_process_local_groups"
+    elif not local_criteria["group_coverage"] or not local_criteria["theorem_coverage"]:
+        local_decision = "stop_insufficient_process_local_coverage"
+    elif not local_criteria["reusable_cpu_fraction"]:
+        local_decision = "stop_below_process_local_reusable_cpu_gate"
+    elif not local_criteria["registered_overhead_present"]:
+        local_decision = "inconclusive_missing_registered_overhead_budget"
+    elif not local_criteria["registered_overhead_within_limit"]:
+        local_decision = "stop_process_local_overhead_budget_exceeds_gate"
+    elif not local_criteria["pipeline_cpu_present"]:
+        local_decision = "inconclusive_missing_pipeline_cpu"
+    elif not local_criteria["pipeline_verifier_cpu_material"]:
+        local_decision = "stop_verifier_cpu_not_material_to_pipeline"
+    elif not local_criteria["target_verifier_speedup"]:
+        local_decision = "stop_below_target_process_local_speedup"
+    else:
+        local_decision = "read_only_process_local_value_gate_passed"
+
     qualifying_theorems = {group["theorem_name"] for group in qualifying_groups}
     reusable_prefix_cpu_fraction = ideal_saved_cpu / baseline_cpu
     maximum_registered_overhead = (
@@ -618,6 +815,27 @@ def screen_authentic_trace(
     else:
         decision = "read_only_value_gate_passed"
 
+    if decision == "read_only_value_gate_passed":
+        recommendation = "portable_checkpoint_candidate"
+        recommendation_next_step = (
+            "propose one bounded paired portable-checkpoint experiment under D-036"
+        )
+    elif local_decision == "read_only_process_local_value_gate_passed":
+        recommendation = "process_local_prefix_reuse_candidate"
+        recommendation_next_step = (
+            "propose one bounded warm-baseline exact prefix-trie experiment under D-036"
+        )
+    elif decision.startswith("inconclusive_") or local_decision.startswith(
+        "inconclusive_"
+    ):
+        recommendation = "inconclusive"
+        recommendation_next_step = (
+            "resolve missing authentic telemetry or a pre-registered overhead budget"
+        )
+    else:
+        recommendation = "do_not_build_exact_checkpoint_reuse"
+        recommendation_next_step = "do not run a SHRED implementation benchmark"
+
     return {
         "analysis": "authentic-checkpoint-trace-screen-v2",
         "evidence_label": "Observed trace accounting; Hypothesis projection",
@@ -637,6 +855,9 @@ def screen_authentic_trace(
             "minimum_qualifying_theorems": MINIMUM_QUALIFYING_THEOREMS,
             "minimum_portable_incremental_cpu_fraction": (
                 MINIMUM_PORTABLE_INCREMENTAL_CPU_FRACTION
+            ),
+            "minimum_process_local_reusable_cpu_fraction": (
+                MINIMUM_PROCESS_LOCAL_REUSABLE_CPU_FRACTION
             ),
             "maximum_overhead_equivalent_per_eight_attempts": (
                 MAXIMUM_OVERHEAD_EQUIVALENT_PER_EIGHT_ATTEMPTS
@@ -663,6 +884,37 @@ def screen_authentic_trace(
             "qualifying_groups": len(qualifying_groups),
             "qualifying_theorems": len(qualifying_theorems),
             "cache_hits": cache_hits,
+            "process_local_qualifying_attempts": sum(
+                group["attempts"] for group in local_qualifying_groups
+            ),
+            "process_local_insufficient_group_attempts": (
+                local_insufficient_attempts
+            ),
+            "process_local_qualifying_groups": len(local_qualifying_groups),
+            "process_local_qualifying_theorems": len(local_qualifying_theorems),
+            "process_local_cache_hits": local_cache_hits,
+        },
+        "process_local_verifier_cpu": {
+            "baseline_seconds": baseline_cpu,
+            "ideal_projected_seconds": local_ideal_projected_cpu,
+            "ideal_saved_seconds": local_saved_cpu,
+            "reusable_cpu_fraction": local_reusable_cpu_fraction,
+            "ideal_speedup": local_ideal_speedup,
+            "registered_overhead_seconds": local_overhead_total,
+            "projected_seconds": local_projected_cpu,
+            "projected_speedup": local_projected_speedup,
+            "maximum_total_overhead_seconds_for_target": (
+                local_maximum_total_overhead_for_target
+            ),
+            "maximum_overhead_seconds_per_hit_for_target": (
+                local_maximum_overhead_per_hit
+            ),
+            "maximum_registered_overhead_seconds": (
+                local_maximum_registered_overhead
+            ),
+            "claim_boundary": (
+                "Exact prefix sharing inside one live Lean execution scope"
+            ),
         },
         "verifier_cpu": {
             "baseline_seconds": baseline_cpu,
@@ -704,12 +956,32 @@ def screen_authentic_trace(
             ),
         },
         "pipeline_cpu": pipeline_projection,
+        "process_local_pipeline_cpu": local_pipeline_projection,
+        "per_theorem_process_local_speedup_quantiles": local_tails,
+        "per_theorem_process_local": local_theorem_rows,
+        "process_local_qualifying_group_details": local_qualifying_groups,
         "per_theorem_speedup_quantiles": tails,
         "per_theorem_portable_incremental_speedup_quantiles": (
             portable_incremental_tails
         ),
         "per_theorem": theorem_rows,
         "qualifying_group_details": qualifying_groups,
+        "process_local_gate": {
+            "passes": (
+                local_decision == "read_only_process_local_value_gate_passed"
+            ),
+            "decision": local_decision,
+            "criteria": local_criteria,
+            "next_step": (
+                "propose one bounded warm-baseline exact prefix-trie experiment under D-036"
+                if local_decision == "read_only_process_local_value_gate_passed"
+                else "do not run a process-local SHRED implementation benchmark"
+            ),
+        },
+        "recommendation": {
+            "decision": recommendation,
+            "next_step": recommendation_next_step,
+        },
         "gate": {
             "passes": decision == "read_only_value_gate_passed",
             "decision": decision,
