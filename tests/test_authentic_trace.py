@@ -379,6 +379,70 @@ class AuthenticTraceTests(unittest.TestCase):
             two_replicas["per_batch_cpu_service_speedup_quantiles"]["minimum"],
             1.875,
         )
+        self.assertAlmostEqual(
+            two_replicas["per_batch_cpu_throughput_speedup_quantiles"]["p10"],
+            2.5,
+        )
+        self.assertTrue(two_replicas["p10_batch_joint_target_passes"])
+        self.assertGreaterEqual(
+            two_replicas["per_batch_joint_target_margin_quantiles"]["p10"],
+            1.0,
+        )
+
+    def test_favorable_aggregate_cannot_hide_a_bad_batch_tail(self):
+        records = []
+        for batch_index in range(10):
+            for attempt_index in range(8):
+                index = len(records)
+                group = (
+                    f"good-{batch_index}"
+                    if batch_index < 9
+                    else f"bad-{batch_index}-{attempt_index}"
+                )
+                records.append(
+                    exact_record(
+                        index,
+                        theorem=f"t{batch_index}",
+                        group=group,
+                        scope=f"scope-{batch_index}",
+                        batch=f"batch-{batch_index}",
+                    )
+                )
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), records)
+            value = json.loads(manifest.read_text(encoding="utf-8"))
+            value["workload"]["verifier_slots"] = 3
+            manifest.write_text(json.dumps(value), encoding="utf-8")
+            report = screen_authentic_trace(
+                manifest,
+                process_local_overhead_budget_cpu_seconds_per_hit=0.0,
+                process_local_overhead_budget_source="zero-overhead ceiling",
+            )
+        two_replicas = report["process_local_replication_frontier"]["points"][1]
+        self.assertGreater(two_replicas["projected_cpu_speedup"], 2.0)
+        self.assertGreater(
+            two_replicas["projected_cpu_service_makespan_speedup"], 1.5
+        )
+        self.assertEqual(two_replicas["batches_meeting_joint_target"], 9)
+        self.assertAlmostEqual(two_replicas["batch_joint_target_fraction"], 0.9)
+        self.assertAlmostEqual(
+            two_replicas["per_batch_cpu_throughput_speedup_quantiles"]["p10"],
+            1.0,
+        )
+        self.assertAlmostEqual(
+            two_replicas["per_batch_cpu_service_speedup_quantiles"]["p10"],
+            1.0,
+        )
+        self.assertFalse(two_replicas["p10_batch_joint_target_passes"])
+        self.assertLess(
+            two_replicas["per_batch_joint_target_margin_quantiles"]["p10"],
+            1.0,
+        )
+        self.assertFalse(
+            two_replicas[
+                "joint_two_x_cpu_and_one_point_five_x_service_target_passes"
+            ]
+        )
 
     def test_verifier_slots_must_be_a_positive_integer(self):
         with tempfile.TemporaryDirectory() as directory:

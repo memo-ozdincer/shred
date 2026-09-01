@@ -1862,3 +1862,29 @@ closed. A checked-in two-batch topology fixture independently schedules two
 352-attempt batches and aggregates 60 baseline versus 32 two-replica CPU-
 service units, preserving the expected 1.875x ratio. This is model validation,
 not wall-latency evidence.
+
+## D-062 - Require the p10 authentic batch to clear the balanced target
+
+Date: 2026-09-01
+
+Status: accepted evidence gate; synthetic contract validation only
+
+Decision: a replica point passes the balanced authentic screen only when both
+its aggregate and p10 per-batch results retain at least 2x CPU throughput and
+1.5x CPU-service makespan improvement. Report minimum, p10, median, p90, and
+maximum batch results plus the fraction and count of batches clearing both.
+Compute the p10 over each batch's joint margin—the smaller of normalized CPU
+and service target attainment—so separate batches cannot satisfy separate
+marginal tails.
+
+Reason: aggregate CPU and service work can hide topology failure concentrated
+in a minority of batches. A checked-in ten-batch fixture gives nine batches the
+eligible 80% prefix and leaves one batch completely independent. Its aggregate
+still exceeds both headline targets and 90% of batches pass, but p10 is 1.0x
+on both axes. The gate correctly rejects it instead of presenting the favorable
+global average as robust evidence.
+
+Consequence: one slow tail batch among ten prevents a balanced headline; larger
+traces may tolerate fewer than 10% failing batches only when the computed p10
+still clears both targets. This is validation of evidence discipline, not a
+claim about OProver's unknown authentic batch distribution.

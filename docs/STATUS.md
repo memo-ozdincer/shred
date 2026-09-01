@@ -457,6 +457,13 @@ repacking a multi-batch trace into an unrealistically large shared pool. A
 two-batch fixture validates 60 independent versus 32 two-replica CPU-service
 units, retaining 1.875x without cross-batch packing.
 
+The balanced authentic gate now requires p10 batch robustness (D-062), not only
+a favorable aggregate. It reports per-batch CPU and service minimum, p10,
+median, p90, maximum, and joint pass fraction. In a ten-batch contract fixture,
+nine strong batches keep aggregate CPU above 2x and aggregate service above
+1.5x, while one fully independent batch makes p10 equal 1.0x on both axes. The
+headline correctly fails despite 90% of batches passing.
+
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator
 then found 17 native CPU boundary records, joined all three REPL tactics by

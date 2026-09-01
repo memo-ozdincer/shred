@@ -26,6 +26,7 @@ MINIMUM_PORTABLE_INCREMENTAL_CPU_FRACTION = 0.60
 MAXIMUM_OVERHEAD_EQUIVALENT_PER_EIGHT_ATTEMPTS = 0.20
 MINIMUM_PIPELINE_VERIFIER_CPU_FRACTION = 0.25
 TARGET_VERIFIER_SPEEDUP = 2.0
+TARGET_BATCH_SERVICE_SPEEDUP = 1.5
 
 
 class AuthenticTraceError(RuntimeError):
@@ -598,12 +599,13 @@ def screen_authentic_trace(
     local_replication_frontier = []
     independent_service_makespan = None
     independent_service_makespans_by_batch: dict[str, float] = {}
+    baseline_cpu_by_batch: dict[str, float] = defaultdict(float)
     if verifier_slots is not None:
         independent_jobs_by_batch: dict[str, list[float]] = defaultdict(list)
         for attempt in attempts:
-            independent_jobs_by_batch[
-                str(attempt["verification_batch_sha256"])
-            ].append(float(attempt["full_cpu"]))
+            batch = str(attempt["verification_batch_sha256"])
+            independent_jobs_by_batch[batch].append(float(attempt["full_cpu"]))
+            baseline_cpu_by_batch[batch] += float(attempt["full_cpu"])
         independent_service_makespans_by_batch = {
             batch: _lpt_makespan(jobs, verifier_slots)
             for batch, jobs in sorted(independent_jobs_by_batch.items())
@@ -654,6 +656,11 @@ def screen_authentic_trace(
             service_makespan_speedup = None
             service_jobs = None
             service_batch_speedup_quantiles = None
+            cpu_batch_speedup_quantiles = None
+            batches_meeting_joint_target = None
+            batch_joint_target_fraction = None
+            batch_joint_target_margin_quantiles = None
+            p10_joint_target_passes = False
             if verifier_slots is not None:
                 qualifying_ids = {
                     str(attempt["proposal_id"])
@@ -698,11 +705,93 @@ def screen_authentic_trace(
                     name: _quantile(batch_speedups, fraction)
                     for name, fraction in (
                         ("minimum", 0.0),
+                        ("p10", 0.1),
                         ("median", 0.5),
                         ("p90", 0.9),
                         ("maximum", 1.0),
                     )
                 }
+                if process_local_overhead_budget_cpu_seconds_per_hit is not None:
+                    projected_cpu_by_batch = dict(baseline_cpu_by_batch)
+                    for group in local_service_qualifying_attempt_groups:
+                        batch = str(group[0]["verification_batch_sha256"])
+                        group_prefix_sum = sum(
+                            float(attempt["prefix_cpu"]) for attempt in group
+                        )
+                        group_prefix_maximum = max(
+                            float(attempt["prefix_cpu"]) for attempt in group
+                        )
+                        effective_replicas = min(replicas, len(group))
+                        saved = group_prefix_sum - min(
+                            group_prefix_sum,
+                            effective_replicas * group_prefix_maximum,
+                        )
+                        overhead = (
+                            process_local_overhead_budget_cpu_seconds_per_hit
+                            * (len(group) - effective_replicas)
+                        )
+                        projected_cpu_by_batch[batch] += overhead - saved
+                    cpu_speedups_by_batch = {
+                        batch: baseline_cpu_by_batch[batch] / projected
+                        for batch, projected in projected_cpu_by_batch.items()
+                        if projected > 0
+                    }
+                    sorted_cpu_batch_speedups = sorted(
+                        cpu_speedups_by_batch.values()
+                    )
+                    cpu_batch_speedup_quantiles = {
+                        name: _quantile(sorted_cpu_batch_speedups, fraction)
+                        for name, fraction in (
+                            ("minimum", 0.0),
+                            ("p10", 0.1),
+                            ("median", 0.5),
+                            ("p90", 0.9),
+                            ("maximum", 1.0),
+                        )
+                    }
+                    evaluated_batches = [
+                        batch
+                        for batch, makespan in service_makespans_by_batch.items()
+                        if makespan > 0 and batch in cpu_speedups_by_batch
+                    ]
+                    batches_meeting_joint_target = sum(
+                        cpu_speedups_by_batch[batch] >= 2.0
+                        and independent_service_makespans_by_batch[batch]
+                        / service_makespans_by_batch[batch]
+                        >= TARGET_BATCH_SERVICE_SPEEDUP
+                        for batch in evaluated_batches
+                    )
+                    sorted_joint_target_margins = sorted(
+                        min(
+                            cpu_speedups_by_batch[batch] / 2.0,
+                            (
+                                independent_service_makespans_by_batch[batch]
+                                / service_makespans_by_batch[batch]
+                            )
+                            / TARGET_BATCH_SERVICE_SPEEDUP,
+                        )
+                        for batch in evaluated_batches
+                    )
+                    batch_joint_target_margin_quantiles = {
+                        name: _quantile(sorted_joint_target_margins, fraction)
+                        for name, fraction in (
+                            ("minimum", 0.0),
+                            ("p10", 0.1),
+                            ("median", 0.5),
+                            ("p90", 0.9),
+                            ("maximum", 1.0),
+                        )
+                    }
+                    batch_joint_target_fraction = (
+                        batches_meeting_joint_target
+                        / len(evaluated_batches)
+                        if evaluated_batches
+                        else None
+                    )
+                    p10_joint_target_passes = (
+                        batch_joint_target_margin_quantiles["p10"] is not None
+                        and batch_joint_target_margin_quantiles["p10"] >= 1.0
+                    )
             local_replication_frontier.append(
                 {
                     "replicas_per_group": replicas,
@@ -733,11 +822,22 @@ def screen_authentic_trace(
                     "per_batch_cpu_service_speedup_quantiles": (
                         service_batch_speedup_quantiles
                     ),
+                    "per_batch_cpu_throughput_speedup_quantiles": (
+                        cpu_batch_speedup_quantiles
+                    ),
+                    "batches_meeting_joint_target": batches_meeting_joint_target,
+                    "batch_joint_target_fraction": batch_joint_target_fraction,
+                    "per_batch_joint_target_margin_quantiles": (
+                        batch_joint_target_margin_quantiles
+                    ),
+                    "p10_batch_joint_target_passes": p10_joint_target_passes,
                     "joint_two_x_cpu_and_one_point_five_x_service_target_passes": (
                         projected_speedup_for_replicas is not None
                         and projected_speedup_for_replicas >= 2.0
                         and service_makespan_speedup is not None
-                        and service_makespan_speedup >= 1.5
+                        and service_makespan_speedup
+                        >= TARGET_BATCH_SERVICE_SPEEDUP
+                        and p10_joint_target_passes
                     ),
                 }
             )
@@ -1143,6 +1243,7 @@ def screen_authentic_trace(
             "minimum_group_attempts": MINIMUM_GROUP_ATTEMPTS,
             "minimum_execution_scopes_per_group": MINIMUM_EXECUTION_SCOPES,
             "target_verifier_speedup": TARGET_VERIFIER_SPEEDUP,
+            "target_batch_service_speedup": TARGET_BATCH_SERVICE_SPEEDUP,
             "minimum_qualifying_groups": MINIMUM_QUALIFYING_GROUPS,
             "minimum_qualifying_theorems": MINIMUM_QUALIFYING_THEOREMS,
             "minimum_portable_incremental_cpu_fraction": (
@@ -1225,6 +1326,17 @@ def screen_authentic_trace(
             "independent_lpt_cpu_service_makespan_seconds": (
                 independent_service_makespan
             ),
+            "balanced_joint_target": {
+                "aggregate_cpu_speedup": 2.0,
+                "aggregate_cpu_service_makespan_speedup": (
+                    TARGET_BATCH_SERVICE_SPEEDUP
+                ),
+                "required_per_batch_quantile": "p10",
+                "p10_cpu_speedup": 2.0,
+                "p10_cpu_service_makespan_speedup": (
+                    TARGET_BATCH_SERVICE_SPEEDUP
+                ),
+            },
             "prefix_cost_model": (
                 "For k replicas, charge min(sum observed prefix CPU, "
                 "k * maximum observed prefix CPU) per qualifying group; "

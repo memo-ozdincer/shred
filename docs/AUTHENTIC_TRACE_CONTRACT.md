@@ -227,10 +227,14 @@ CPU-service makespan improvement.
 
 The scheduler never merges distinct producer batches to manufacture better
 packing. It independently schedules each batch, sums their service makespans,
-and reports minimum, median, p90, and maximum per-batch speedups at every
-replica point. A qualifying exact group that crosses batch identities remains
-valid for CPU accounting but is conservatively left independent in the service
-projection.
+and reports minimum, p10, median, p90, and maximum per-batch CPU and service
+speedups at every replica point. A balanced point passes only if its aggregate
+CPU and service multipliers clear 2x and 1.5x respectively and its p10 batch
+joint-target margin also clears one. For each batch that margin is the smaller
+of `CPU speedup / 2` and `service speedup / 1.5`, so different favorable batches
+cannot satisfy the two tail requirements separately. A qualifying exact group
+that crosses batch identities remains valid for CPU accounting but is
+conservatively left independent in the service projection.
 
 The top-level recommendation is deliberately singular: choose portable reuse
 when its incremental gate passes; otherwise choose the process-local exact trie
