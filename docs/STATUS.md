@@ -279,3 +279,20 @@ The aggregate is `reports/branch_probe_d033.json`; the interpretation is
 `reports/branch_probe_d033_review.md`; the 48-record raw artifact checksum is
 recorded in both. The aggregate SHA-256 is
 `9f297bdebcb20c6865b7d941f324229e6e61588c9b6c088f0b598dffa4f97e97`.
+
+## Authentic integration target
+
+D-040 and D-041 provide a system-neutral, no-overwrite path for screening
+telemetry from an already-completed run. A pinned source audit now identifies
+OProver as the first credible producer integration. Its normal GRPO pipeline
+creates contiguous best-of-N siblings for each theorem and independently
+verifies complete proof attempts. Its pinned Lean REPL v4.15.0 already exposes
+every native tactic's proof-state ID and can pickle or resume that state.
+
+No Lean or model run was needed for this finding. OProver's server still lacks
+exact process CPU at native tactic boundaries and releases each REPL after one
+request. D-042 therefore authorizes capture-adapter implementation and
+unit/protocol validation, not a benchmark. The public OProofs and ai4math-lean
+datasets add scale and latency context but cannot support speedup claims because
+they omit the required exact lineage and prefix CPU. The source-supported
+adapter map is `reports/oprover_adapter_feasibility.md`.

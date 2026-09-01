@@ -1203,3 +1203,46 @@ small digest-and-cost record per attempt; it need not adopt SHRED's executor,
 copy raw proof text, rerun Lean, or implement manifest logic. Sealing is artifact
 validation, not a scientific experiment, performance result, or authorization
 to weaken D-040's frozen value gate.
+
+## D-042 - Target OProver with a native capture adapter before any benchmark
+
+Date: 2026-09-01
+
+Status: accepted after pinned source and batching audit
+
+Decision: make OProver the first authentic independent-attempt integration
+target, but implement only capture instrumentation before any benchmark. The
+adapter must preserve same-theorem rollout groups, request the pinned REPL's
+existing `allTactics` proof-state output, report exact whole-request process CPU,
+add process-CPU observations at native tactic boundaries, retain one
+representative group checkpoint long enough to pickle it, and export exact
+environment/context/prefix receipts plus every verdict and fallback.
+
+Do not accept OProver's current wall time, sampled maximum CPU percentage, or a
+wall-share allocation of complete-request CPU as prefix process CPU. Do not run
+OProver or Lean solely to produce a SHRED artifact. The first eligible sidecar
+must come from a normal authentic run with an independently valuable RL or
+evaluation purpose, then pass D-040 read-only.
+
+Reason: OProver's pinned Lean REPL v4.15.0 already returns exact native tactic
+ranges and process-local proof-state IDs, retains their `ProofSnapshot` values,
+pickles selected snapshots, and executes later tactics from them. OProver's
+GRPO path already emits contiguous `n_rollouts` siblings with round/prompt/
+rollout IDs and independently verifies their complete proofs from the same warm
+header. This resolves the two largest feasibility uncertainties without a run.
+The server currently releases each REPL after one attempt and exposes only wall
+time plus one-second CPU sampling, leaving a narrow but real instrumentation
+gap.
+
+BFS-Prover-V2 and nanoproof are rejected as first targets because branching
+from one retained live node is already their native algorithm; labeling that
+fanout a new SHRED acceleration would violate the governing intervention.
+OProofs and ai4math-lean are retained as broad structural and latency sources,
+but neither release contains native attempt lineage and prefix process CPU.
+
+Consequence: the project has moved from an unspecified request for private
+telemetry to one concrete, source-supported integration boundary. The next
+implementation work is a group-scoped OProver/Kimina capture protocol and
+native boundary CPU clock, followed by unit and protocol validation only. An
+authentic value screen—not adapter completion—decides whether portable
+execution or a paired performance experiment is ever built.

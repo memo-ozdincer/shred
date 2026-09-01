@@ -84,12 +84,19 @@ strong potential future integration point because attempts are deliberately
 related across rounds rather than accidentally colliding.
 
 However, no completed inference output shards are committed. The public
-OProofs release at revision
-`3bae0c06157639c0a673679635c669d19c99e906` exposes 6,804,694 rows with only
+OProofs release, now pinned under `m-a-p/OProofs` at revision
+`d3bb4410c8715eb449206e6c2fbf8cbb1a8bd7b8`, exposes 6,804,694 rows with only
 `formal_statement`, `formal_proof`, `cot_proof`, and `prompt`. It omits the
 intermediate attempts, round lineage, errors, timings, Lean/Mathlib revision,
 and native tactic boundaries. The verifier service records whole-request wall
 time; its published round record does not contain per-tactic CPU.
+
+A later audit of OProver's exact pinned REPL changes the integration assessment
+without changing that public-artifact result. REPL v4.15.0 already exposes
+native tactic proof-state IDs and snapshot pickling, while OProver's RL verifier
+keeps best-of-N theorem siblings contiguous. The remaining gap is a narrow
+capture adapter with exact native-boundary process CPU; see
+`reports/oprover_adapter_feasibility.md` and D-042.
 
 ### Later repair-trace candidates
 

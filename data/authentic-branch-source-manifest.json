@@ -34,14 +34,24 @@
       "revision": "5d5c49d13dfc0c1d2df43a27c3e56e02ad81b9c3"
     },
     {
+      "name": "Lean REPL v4.15.0 (OProver pin)",
+      "url": "https://github.com/leanprover-community/repl.git",
+      "revision": "21966799da3691a0912b5a15193585bd2dd7165d"
+    },
+    {
       "name": "OProver",
       "url": "https://github.com/multimodal-art-projection/OProver.git",
       "revision": "b0cb2583b702d5040f84783ebba23d86241eac05"
     },
     {
       "name": "OProofs",
-      "url": "https://huggingface.co/datasets/OProver/OProofs",
-      "revision": "3bae0c06157639c0a673679635c669d19c99e906"
+      "url": "https://huggingface.co/datasets/m-a-p/OProofs",
+      "revision": "d3bb4410c8715eb449206e6c2fbf8cbb1a8bd7b8"
+    },
+    {
+      "name": "ai4math-lean",
+      "url": "https://huggingface.co/datasets/charliemeyer2000/ai4math-lean",
+      "revision": "6735c2403f2c57bcd5e9b7aab572872d8265d7d9"
     },
     {
       "name": "FormalMath reasoning_data",

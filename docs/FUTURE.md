@@ -163,6 +163,23 @@ only with an existing full run artifact or after finalization becomes safely
 available; do not create synthetic repetitions to demonstrate already-known
 cross-process loading.
 
+D-042 narrows this from a data-access hope to a concrete producer adapter. The
+exact Lean REPL version pinned by OProver already supplies `allTactics`, native
+proof-state IDs, snapshot pickling, and execution from a snapshot. OProver also
+keeps each prompt's best-of-N rollouts contiguous in a verification chunk. The
+remaining additions are a group-scoped REPL lease, exact full-request and
+native-boundary process CPU, selective checkpoint receipts, and complete
+fallback export. Implementing those capture hooks is more generalizable than a
+new SHRED-only dataset run because it can evaluate normal future RL workloads
+without changing their attempts.
+
+The 3.39-million-row ai4math-lean release is a useful new distributional lead:
+it spans 21 datasets and publishes proof bodies, validity, and Lean 4.21 wall
+latency. It can identify expensive theorem families or seed a future authentic
+multi-attempt producer, but single-row wall latency is not executable prefix
+reuse evidence. OProofs similarly supplies 6.80 million final proof pairs but
+not the intermediate attempt lineage or native CPU needed by D-040.
+
 The agentic trace-level attribution study (`ShhLinF41r`) describes an even
 closer artifact—raw model, tool, compiler, verdict, and timing traces—but does
 not currently expose the JSONL publicly. FormalMath is publicly downloadable

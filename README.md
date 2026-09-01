@@ -107,6 +107,13 @@ reconciles the producer-declared attempt count, and creates the manifest only
 after validation. See
 [`docs/AUTHENTIC_TRACE_CONTRACT.md`](docs/AUTHENTIC_TRACE_CONTRACT.md).
 
+The first concrete producer integration target is OProver's multi-round RL
+verifier. Its pinned Lean interface already exposes native proof checkpoints
+and its rollout batches retain same-theorem best-of-N groups. SHRED is adding
+exact process-CPU and checkpoint-receipt capture before considering any new
+benchmark; current OProofs or wall-latency data are not treated as speedup
+evidence.
+
 ### 2. Act on the diagnosis
 
 The report deliberately produces one of three full-workload decisions:

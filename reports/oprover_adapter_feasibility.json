@@ -1,0 +1,41 @@
+{
+  "analysis": "oprover-authentic-checkpoint-adapter-feasibility-v1",
+  "date": "2026-09-01",
+  "evidence_label": "Observed",
+  "execution": {
+    "bulk_dataset_download": false,
+    "lean_execution": false,
+    "model_inference": false,
+    "source_and_public_metadata_only": true
+  },
+  "sources": {
+    "lean_repl_v4_15_0": "21966799da3691a0912b5a15193585bd2dd7165d",
+    "oprover": "b0cb2583b702d5040f84783ebba23d86241eac05",
+    "oproofs": "d3bb4410c8715eb449206e6c2fbf8cbb1a8bd7b8",
+    "ai4math_lean": "6735c2403f2c57bcd5e9b7aab572872d8265d7d9"
+  },
+  "workload": {
+    "authentic_independent_complete_attempts": true,
+    "same_theorem_siblings_contiguous_in_verification_chunks": true,
+    "sample_identity_format": "r{round}_p{prompt}_s{rollout}",
+    "ordinary_lean_verdicts": true,
+    "native_tree_fanout_already_the_algorithm": false
+  },
+  "available_hooks": {
+    "all_native_tactics": true,
+    "native_proof_state_ids": true,
+    "proof_state_pickle": true,
+    "proof_step_from_state": true,
+    "warm_header_repl_reuse": true,
+    "process_tree_cpu_counter": true
+  },
+  "missing_hooks": {
+    "group_scoped_repl_lease": true,
+    "full_request_process_cpu_delta_in_response": true,
+    "process_cpu_at_native_tactic_boundaries": true,
+    "selected_checkpoint_artifact_receipt": true,
+    "exact_parent_environment_and_root_context_receipts": true
+  },
+  "decision": "implement_capture_adapter_before_any_benchmark",
+  "benchmark_authorized": false
+}
