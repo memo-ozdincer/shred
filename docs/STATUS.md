@@ -439,6 +439,15 @@ first authentic trace decision-useful even if it misses the original 80%
 illustration, while preserving the boundary between a projection and measured
 wall latency.
 
+The topology model now charges incomplete exact-prefix coverage explicitly
+(D-060). At 80% prefix and 2% overhead, the balanced two-replica OProver-8B
+candidate needs 38 of 44 groups (86.36%) to qualify. The remaining six groups
+execute all eight attempts independently; even with those fallbacks, the mixed
+batch projects 2.021x CPU and 1.807x service-span improvement. Zero overhead
+needs 37 groups, while the lower 70%-prefix/2%-overhead boundary needs all 44.
+The next authentic trace therefore cannot turn a high prefix fraction on a few
+groups into a global headline.
+
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator
 then found 17 native CPU boundary records, joined all three REPL tactics by

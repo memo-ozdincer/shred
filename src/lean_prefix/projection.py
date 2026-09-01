@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import heapq
 import hashlib
 import json
 import math
@@ -16,6 +17,15 @@ DEFAULT_OVERHEAD = 0.02
 
 class ProjectionError(RuntimeError):
     """Raised when a projection input does not match the frozen evidence."""
+
+
+def _lpt_makespan(jobs: list[float], slots: int) -> float:
+    loads = [(0.0, index) for index in range(min(slots, max(1, len(jobs))))]
+    heapq.heapify(loads)
+    for cost in sorted(jobs, reverse=True):
+        load, index = heapq.heappop(loads)
+        heapq.heappush(loads, (load + cost, index))
+    return max(load for load, _index in loads)
 
 
 def affinity_schedule_projection(
@@ -155,6 +165,45 @@ def affinity_schedule_projection(
             else None
         )
 
+    replica_sizes = [
+        attempts_per_group // replicas_per_group
+        + (1 if index < attempts_per_group % replicas_per_group else 0)
+        for index in range(replicas_per_group)
+    ]
+    replica_job_costs = [
+        shared_prefix_cpu_fraction
+        + size * (1.0 - shared_prefix_cpu_fraction)
+        + max(0, size - 1) * overhead_cpu_fraction_per_reuse
+        for size in replica_sizes
+    ]
+    minimum_eligible_groups_for_joint_target = None
+    joint_target_at_minimum_coverage_cpu_speedup = None
+    joint_target_at_minimum_coverage_latency_speedup = None
+    saving_per_eligible_group = attempts_per_group - affinity_group_cpu
+    first_possible_cpu_group = groups + 1
+    if saving_per_eligible_group > 0:
+        first_possible_cpu_group = math.ceil(
+            (attempts / 2.0) / saving_per_eligible_group
+        )
+    for eligible_groups in range(first_possible_cpu_group, groups + 1):
+        mixed_cpu = (
+            eligible_groups * affinity_group_cpu
+            + (groups - eligible_groups) * attempts_per_group
+        )
+        mixed_jobs = replica_job_costs * eligible_groups + [1.0] * (
+            (groups - eligible_groups) * attempts_per_group
+        )
+        mixed_makespan = _lpt_makespan(mixed_jobs, verifier_slots)
+        mixed_cpu_speedup = attempts / mixed_cpu
+        mixed_latency_speedup = independent_waves / mixed_makespan
+        if mixed_cpu_speedup >= 2.0 and mixed_latency_speedup >= 1.5:
+            minimum_eligible_groups_for_joint_target = eligible_groups
+            joint_target_at_minimum_coverage_cpu_speedup = mixed_cpu_speedup
+            joint_target_at_minimum_coverage_latency_speedup = (
+                mixed_latency_speedup
+            )
+            break
+
     return {
         "groups": groups,
         "attempts_per_group": attempts_per_group,
@@ -195,6 +244,20 @@ def affinity_schedule_projection(
             if minimum_prefix_for_two_x_cpu is not None
             and minimum_prefix_for_one_point_five_x_latency is not None
             else None
+        ),
+        "minimum_eligible_groups_for_joint_two_x_cpu_and_one_point_five_x_batch_latency": (
+            minimum_eligible_groups_for_joint_target
+        ),
+        "minimum_eligible_group_fraction_for_joint_two_x_cpu_and_one_point_five_x_batch_latency": (
+            minimum_eligible_groups_for_joint_target / groups
+            if minimum_eligible_groups_for_joint_target is not None
+            else None
+        ),
+        "joint_target_at_minimum_coverage_cpu_speedup": (
+            joint_target_at_minimum_coverage_cpu_speedup
+        ),
+        "joint_target_at_minimum_coverage_batch_latency_speedup": (
+            joint_target_at_minimum_coverage_latency_speedup
         ),
     }
 

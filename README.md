@@ -212,14 +212,18 @@ throughput and 1.875× lower idealized equal-cost batch latency**. Both remain a
 least 2× CPU and 1.5× latency until reuse overhead exceeds 13.33% of one
 independent verification per reuse. Equivalently, the joint target needs only a
 66.67% shared prefix at zero overhead or 68.67% at 2% overhead. Even a 70%
-prefix plus 2% overhead projects **2.041× CPU and 1.531× latency**. By
-comparison, the faster 3/3/2 point projects 2.00× CPU and 2.14× latency but has
-zero overhead margin for its 2× CPU figure. These are selectable Pareto points,
-not measured results; every replicated prefix is charged explicitly. The
-authentic-trace screener now recomputes the frontier from observed unequal
-per-attempt costs and declared verifier slots, so the next normal eligible
-trace can falsify the equal-cost headline without a benchmark sweep. Its CPU-
-service schedule remains a projection until paired batch wall time is measured.
+prefix plus 2% overhead projects **2.041× CPU and 1.531× latency** when every
+group qualifies. At the headline 80% prefix and 2% overhead, only 38 of 44
+groups must qualify: six full group fallbacks remain charged while the batch
+still projects **2.021× CPU and 1.807× latency**. The faster 3/3/2 point
+projects 2.00× CPU and 2.14× latency but has zero overhead margin for its 2× CPU
+figure. These are
+selectable Pareto points, not measured results; every replicated prefix and
+fallback is charged explicitly. The authentic-trace screener recomputes the
+frontier from observed unequal per-attempt costs and declared verifier slots,
+so the next normal eligible trace can falsify the equal-cost headline without a
+benchmark sweep. Its CPU-service schedule remains a projection until paired
+batch wall time is measured.
 
 ## Where this can matter most
 

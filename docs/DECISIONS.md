@@ -1813,3 +1813,27 @@ its conservative cost-weighted shared prefix clears the registered `2/3 + h`
 boundary and the unequal-cost scheduler preserves both targets, the balanced
 candidate remains promising; otherwise stop or choose a different explicit
 objective. These are analytical Hypotheses, not measured latency or overhead.
+
+## D-060 - Charge incomplete exact-prefix coverage in the topology headline
+
+Date: 2026-09-01
+
+Status: accepted source-pinned hypothesis; no workload executed
+
+Decision: calculate the minimum number of eligible theorem groups needed for
+the joint 2x CPU and 1.5x batch-service target. Every noneligible group remains
+as eight independent jobs with its full CPU; do not extrapolate an eligible
+group's saving across fallback groups.
+
+Reason: exact prefix depth alone is insufficient if many groups fall back. In
+the pinned 44-group OProver-8B batch, the two-replica 80%-prefix point needs 37
+eligible groups at zero overhead. With 2% overhead it needs 38 groups, or
+86.36% coverage. Six complete group fallbacks are fully charged; at that
+minimum the mixed batch still projects 2.021x CPU and 1.807x service-span
+improvement. At 70% prefix and 2% overhead, all 44 groups must qualify.
+
+Consequence: the attractive 80% point tolerates 13.64% complete group fallback
+but not arbitrary parser or checkpoint failure. The authentic decision must
+clear prefix depth, registered overhead, qualifying-group coverage, and the
+actual unequal-cost schedule together. This is a topology calculation, not
+measured eligibility prevalence or latency.
