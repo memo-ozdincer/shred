@@ -62,6 +62,44 @@ class ProjectionTests(unittest.TestCase):
             2 / 3,
         )
 
+    def test_oprover_8b_replication_uses_spare_slots(self):
+        result = affinity_schedule_projection(
+            groups=44,
+            attempts_per_group=8,
+            verifier_slots=135,
+            shared_prefix_cpu_fraction=0.8,
+            replicas_per_group=3,
+        )
+        self.assertEqual(result["maximum_attempts_per_replica"], 3)
+        self.assertEqual(result["affinity_replica_waves"], 1)
+        self.assertAlmostEqual(result["projected_cpu_throughput_multiplier"], 2.0)
+        self.assertAlmostEqual(
+            result["projected_batch_latency_multiplier"], 15 / 7
+        )
+        self.assertEqual(
+            result[
+                "minimum_shared_prefix_cpu_fraction_for_no_batch_latency_loss"
+            ],
+            0.0,
+        )
+
+    def test_oprover_32b_replication_uses_spare_slots(self):
+        result = affinity_schedule_projection(
+            groups=336,
+            attempts_per_group=4,
+            verifier_slots=800,
+            shared_prefix_cpu_fraction=0.8,
+            replicas_per_group=2,
+        )
+        self.assertEqual(result["maximum_attempts_per_replica"], 2)
+        self.assertEqual(result["affinity_replica_waves"], 1)
+        self.assertAlmostEqual(
+            result["projected_cpu_throughput_multiplier"], 5 / 3
+        )
+        self.assertAlmostEqual(
+            result["projected_batch_latency_multiplier"], 5 / 3
+        )
+
     def test_affinity_projection_rejects_invalid_topology(self):
         for kwargs in (
             {
@@ -81,6 +119,19 @@ class ProjectionTests(unittest.TestCase):
                 "attempts_per_group": 8,
                 "verifier_slots": 135,
                 "shared_prefix_cpu_fraction": 1.1,
+            },
+            {
+                "groups": 44,
+                "attempts_per_group": 8,
+                "verifier_slots": 135,
+                "shared_prefix_cpu_fraction": 0.8,
+                "replicas_per_group": 9,
+            },
+            {
+                "groups": 44,
+                "attempts_per_group": 8,
+                "verifier_slots": 135,
+                "shared_prefix_cpu_fraction": True,
             },
         ):
             with self.subTest(kwargs=kwargs), self.assertRaises(ProjectionError):

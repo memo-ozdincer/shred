@@ -1671,3 +1671,32 @@ before SHRED claims simultaneous CPU and latency improvement. A result between
 those thresholds may still improve saturated CPU throughput but must disclose
 the batch-latency tradeoff. Do not implement portable state loading merely to
 recover reuse that theorem-aware placement can obtain more safely.
+
+## D-055 - Use controlled group replication to expose a CPU-latency frontier
+
+Date: 2026-09-01
+
+Status: accepted as a source-pinned hypothesis
+
+Decision: allow a theorem-affinity scheduler to split one rollout group across
+`k` live local-trie replicas. Execute the exact prefix once in each replica and
+partition the unchanged attempts as evenly as possible. Choose `k` from an
+explicit CPU or batch-latency objective; never call duplicated prefix work a
+cache hit or portable reuse.
+
+Reason: one replica per group maximizes CPU savings but leaves verifier slots
+idle. Under OProver-8B's pinned 44-group, eight-rollout, 135-slot topology,
+three replicas occupy 132 slots and split each group 3/3/2. At the same
+unmeasured 80% exact-prefix hypothesis, this projects 2.00x CPU throughput and
+2.14x lower equal-cost batch latency, versus 3.33x and 1.25x with one replica.
+OProver-32B can use two replicas per four-rollout group, projecting 1.67x on
+both axes instead of the one-replica 2.50x CPU and 1.25x latency point.
+
+Consequence: SHRED now has a mechanism-level Pareto frontier rather than a
+binary choice between fully independent parallelism and fully co-located
+sharing. These remain Hypothesis calculations with uniform costs, whole waves,
+zero scheduling overhead, and no measured OProver prefix share. An authentic
+trace must select its objective and replica policy before execution; searching
+replica counts after a benchmark for the prettiest number is not authorized.
+Portable checkpoints remain reserved for temporally separated reuse that local
+placement and controlled replication cannot recover.

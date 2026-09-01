@@ -24,44 +24,66 @@ def affinity_schedule_projection(
     attempts_per_group: int,
     verifier_slots: int,
     shared_prefix_cpu_fraction: float,
+    replicas_per_group: int = 1,
 ) -> dict[str, float | int]:
     """Project uniform-cost theorem-affinity execution in a saturated batch.
 
     Every independent attempt has normalized CPU cost one.  An affinity worker
-    pays the exact shared prefix once, then every unchanged suffix.  The batch
-    latency model is deliberately discrete: independent attempts and affinity
-    groups each occupy one verifier slot and complete in whole waves.
+    pays the exact shared prefix once, then every unchanged suffix assigned to
+    that replica.  The batch latency model is deliberately discrete:
+    independent attempts and affinity replicas each occupy one verifier slot
+    and complete in whole waves.
     """
     for name, value in (
         ("groups", groups),
         ("attempts_per_group", attempts_per_group),
         ("verifier_slots", verifier_slots),
+        ("replicas_per_group", replicas_per_group),
     ):
         if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
             raise ProjectionError(f"{name} must be a positive integer")
     if attempts_per_group < 2:
         raise ProjectionError("attempts_per_group must be at least two")
-    if not 0.0 <= shared_prefix_cpu_fraction <= 1.0:
+    if replicas_per_group > attempts_per_group:
+        raise ProjectionError("replicas_per_group cannot exceed attempts_per_group")
+    if (
+        isinstance(shared_prefix_cpu_fraction, bool)
+        or not isinstance(shared_prefix_cpu_fraction, (int, float))
+        or not math.isfinite(shared_prefix_cpu_fraction)
+        or not 0.0 <= shared_prefix_cpu_fraction <= 1.0
+    ):
         raise ProjectionError(
             "shared_prefix_cpu_fraction must be between zero and one"
         )
 
     attempts = groups * attempts_per_group
     independent_waves = math.ceil(attempts / verifier_slots)
-    affinity_waves = math.ceil(groups / verifier_slots)
-    affinity_group_cpu = shared_prefix_cpu_fraction + attempts_per_group * (
-        1.0 - shared_prefix_cpu_fraction
+    affinity_waves = math.ceil(groups * replicas_per_group / verifier_slots)
+    maximum_attempts_per_replica = math.ceil(
+        attempts_per_group / replicas_per_group
+    )
+    affinity_replica_time = shared_prefix_cpu_fraction + (
+        maximum_attempts_per_replica * (1.0 - shared_prefix_cpu_fraction)
+    )
+    affinity_group_cpu = replicas_per_group * shared_prefix_cpu_fraction + (
+        attempts_per_group * (1.0 - shared_prefix_cpu_fraction)
     )
     affinity_cpu = groups * affinity_group_cpu
-    affinity_batch_time = affinity_waves * affinity_group_cpu
-    threshold = (
-        attempts_per_group - independent_waves / affinity_waves
-    ) / (attempts_per_group - 1)
+    affinity_batch_time = affinity_waves * affinity_replica_time
+    if maximum_attempts_per_replica == 1:
+        threshold = 0.0
+    else:
+        threshold = (
+            maximum_attempts_per_replica
+            - independent_waves / affinity_waves
+        ) / (maximum_attempts_per_replica - 1)
     threshold = min(1.0, max(0.0, threshold))
 
     return {
         "groups": groups,
         "attempts_per_group": attempts_per_group,
+        "replicas_per_group": replicas_per_group,
+        "maximum_attempts_per_replica": maximum_attempts_per_replica,
         "attempts": attempts,
         "verifier_slots": verifier_slots,
         "shared_prefix_cpu_fraction": shared_prefix_cpu_fraction,
@@ -69,7 +91,9 @@ def affinity_schedule_projection(
         "affinity_cpu": affinity_cpu,
         "projected_cpu_throughput_multiplier": attempts / affinity_cpu,
         "independent_batch_waves": independent_waves,
+        "affinity_replica_waves": affinity_waves,
         "affinity_group_waves": affinity_waves,
+        "affinity_replica_normalized_time": affinity_replica_time,
         "affinity_group_normalized_cpu": affinity_group_cpu,
         "affinity_batch_normalized_time": affinity_batch_time,
         "projected_batch_latency_multiplier": (

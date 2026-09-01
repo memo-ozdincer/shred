@@ -387,6 +387,14 @@ Hypotheses, not measured workload results. They make placement the preferred
 design if an authentic trace clears the thresholds; portability remains only
 for reuse placement cannot recover.
 
+The same pinned topology exposes a better practical CPU-latency frontier
+(D-055). OProver-8B has enough slots for three replicas of each 8-rollout group;
+the 3/3/2 split projects 2.00x CPU throughput and 2.14x lower idealized batch
+latency at the same 80% hypothesis. OProver-32B can use two replicas per group
+and projects 1.67x on both axes. Controlled replication pays the prefix once
+per replica and is fully accounted; it is neither a cache hit nor portable
+reuse. No workload or verifier was executed for these projections.
+
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator
 then found 17 native CPU boundary records, joined all three REPL tactics by

@@ -205,6 +205,13 @@ source-pinned 44 groups × 8 rollouts and 135 verifier slots. Under the stated
 equal-cost batch latency; the exact no-latency-loss threshold is 71.4% shared-
 prefix CPU. No OProver workload has yet measured that prefix share.
 
+The scheduler need not choose only maximum sharing. OProver-8B has enough spare
+verifier slots for three local-trie replicas per theorem group. Splitting eight
+rollouts 3/3/2 at the same 80% hypothesis projects **2.00× CPU throughput and
+2.14× lower idealized equal-cost batch latency**. This is a selectable
+CPU-latency Pareto point, not a measured result; every replicated prefix is
+charged explicitly.
+
 ## Where this can matter most
 
 SHRED's mechanisms are especially promising for workloads that create repeated
