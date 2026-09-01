@@ -1837,3 +1837,28 @@ but not arbitrary parser or checkpoint failure. The authentic decision must
 clear prefix depth, registered overhead, qualifying-group coverage, and the
 actual unequal-cost schedule together. This is a topology calculation, not
 measured eligibility prevalence or latency.
+
+## D-061 - Preserve authentic verification batches in service projections
+
+Date: 2026-09-01
+
+Status: accepted correctness boundary; no workload executed
+
+Decision: require a digest-only batch identity on every attempt whenever an
+authentic manifest declares verifier slots. Schedule each batch independently,
+sum batch makespans, and report per-batch speedup tails. Never merge a trace's
+multiple RL batches into one synthetic scheduling pool.
+
+Reason: the process-local evidence gate needs at least 100 groups, while one
+pinned OProver-8B batch contains 44. A qualifying trace will therefore commonly
+span multiple batches. Repacking all attempts across one 135-slot pool can
+change wave boundaries and manufacture a service-span multiplier unavailable
+to the real run. OProver already saves global step and exact refinement round,
+so its exporter can hash those values without exposing raw identifiers or
+adding runtime instrumentation.
+
+Consequence: `verifier_slots` without complete batch attribution now fails
+closed. A checked-in two-batch topology fixture independently schedules two
+352-attempt batches and aggregates 60 baseline versus 32 two-replica CPU-
+service units, preserving the expected 1.875x ratio. This is model validation,
+not wall-latency evidence.

@@ -61,6 +61,12 @@ class OProverExportTests(unittest.TestCase):
         self.assertEqual(record["prefix_verifier_cpu_seconds"], 4 / 1_000_000_000)
         self.assertEqual(record["checkpoint_artifact_sha256"], DIGEST)
         self.assertEqual(
+            record["verification_batch_sha256"],
+            hashlib.sha256(
+                b"oprover-verification-batch-v1\0" b"7\0" b"1"
+            ).hexdigest(),
+        )
+        self.assertEqual(
             record["execution_scope_sha256"],
             hashlib.sha256(
                 b"oprover-kimina-v1\0r1_p2\0fresh-repl-uuid"
@@ -89,6 +95,10 @@ class OProverExportTests(unittest.TestCase):
             self.assertEqual(source.read_text(encoding="utf-8"), original)
             rows = [json.loads(line) for line in output.read_text().splitlines()]
             self.assertEqual(rows[1]["full_verifier_cpu_seconds"], 0.0)
+            self.assertEqual(
+                rows[1]["verification_batch_sha256"],
+                rows[0]["verification_batch_sha256"],
+            )
             self.assertEqual(rows[1]["eligibility"], "fallback")
             self.assertEqual(rows[1]["fallback_reason"], "existing_exact_duplicate_cache")
 
@@ -114,6 +124,11 @@ class OProverExportTests(unittest.TestCase):
         row = captured_entry()
         row["shred_cpu_capture"]["group_index"] = 8
         with self.assertRaisesRegex(OProverExportError, "group_size"):
+            normalize_saved_attempt(row, "fixture:1")
+
+    def test_proposal_without_round_identity_fails_closed(self):
+        row = captured_entry("unsupported")
+        with self.assertRaisesRegex(OProverExportError, "verification batch"):
             normalize_saved_attempt(row, "fixture:1")
 
     def test_declared_count_mismatch_creates_no_output(self):

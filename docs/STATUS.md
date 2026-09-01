@@ -448,6 +448,15 @@ needs 37 groups, while the lower 70%-prefix/2%-overhead boundary needs all 44.
 The next authentic trace therefore cannot turn a high prefix fraction on a few
 groups into a global headline.
 
+Authentic service projections now preserve producer batch boundaries (D-061).
+When verifier slots are declared, every attempt must carry a digest-only batch
+identity; missing attribution fails closed. OProver derives it from the already
+saved global step and exact refinement round. SHRED schedules batches
+independently, sums their makespans, and reports per-batch tails rather than
+repacking a multi-batch trace into an unrealistically large shared pool. A
+two-batch fixture validates 60 independent versus 32 two-replica CPU-service
+units, retaining 1.875x without cross-batch packing.
+
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator
 then found 17 native CPU boundary records, joined all three REPL tactics by

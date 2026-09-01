@@ -108,6 +108,7 @@ proof text need not be exported:
   "theorem_statement_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
   "verdict": "accepted",
   "full_verifier_cpu_seconds": 1.72,
+  "verification_batch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
   "eligibility": "exact_checkpoint",
   "prefix_verifier_cpu_seconds": 1.31,
   "parent_environment_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -117,6 +118,13 @@ proof text need not be exported:
   "execution_scope_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
 }
 ```
+
+`verification_batch_sha256` is a digest of the producer-owned batch boundary
+within which the declared verifier slots were jointly available. It may be
+omitted when no topology projection is requested. If `verifier_slots` is
+present in workload metadata, every attempt—including fallbacks and existing
+duplicate-cache hits—must carry a batch digest or the screen fails closed. Raw
+step, round, job, or user identifiers need not leave the producer.
 
 If any exact field is unavailable, the attempt remains present and becomes a
 fallback:
@@ -216,6 +224,13 @@ than post-hoc selection of the prettiest multiplier. A frontier point passes
 the balanced screen only when a registered overhead is present and the actual-
 cost projection simultaneously retains at least 2x CPU throughput and 1.5x
 CPU-service makespan improvement.
+
+The scheduler never merges distinct producer batches to manufacture better
+packing. It independently schedules each batch, sums their service makespans,
+and reports minimum, median, p90, and maximum per-batch speedups at every
+replica point. A qualifying exact group that crosses batch identities remains
+valid for CPU accounting but is conservatively left independent in the service
+projection.
 
 The top-level recommendation is deliberately singular: choose portable reuse
 when its incremental gate passes; otherwise choose the process-local exact trie

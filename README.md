@@ -221,9 +221,10 @@ figure. These are
 selectable Pareto points, not measured results; every replicated prefix and
 fallback is charged explicitly. The authentic-trace screener recomputes the
 frontier from observed unequal per-attempt costs and declared verifier slots,
-so the next normal eligible trace can falsify the equal-cost headline without a
-benchmark sweep. Its CPU-service schedule remains a projection until paired
-batch wall time is measured.
+preserving each producer verification batch rather than repacking a whole trace
+into one synthetic pool. The next normal eligible trace can therefore falsify
+the equal-cost headline without a benchmark sweep. Its CPU-service schedule
+remains a projection until paired batch wall time is measured.
 
 ## Where this can matter most
 

@@ -31,7 +31,12 @@ def digest(value: str) -> str:
 
 
 def exact_record(
-    index: int, *, theorem: str = "t", group: str = "g", scope: str | None = None
+    index: int,
+    *,
+    theorem: str = "t",
+    group: str = "g",
+    scope: str | None = None,
+    batch: str = "batch-0",
 ) -> dict:
     return {
         "proposal_id": f"p{index}",
@@ -40,6 +45,7 @@ def exact_record(
         "theorem_statement_sha256": digest(f"statement-{theorem}"),
         "verdict": "accepted" if index % 2 == 0 else "rejected",
         "full_verifier_cpu_seconds": 10.0,
+        "verification_batch_sha256": digest(batch),
         "eligibility": "exact_checkpoint",
         "prefix_verifier_cpu_seconds": 8.0,
         "parent_environment_sha256": DIGESTS["environment"],
@@ -332,6 +338,48 @@ class AuthenticTraceTests(unittest.TestCase):
             three_replicas["projected_cpu_service_makespan_speedup"], 30.0 / 14.0
         )
 
+    def test_service_schedule_preserves_multiple_batch_boundaries(self):
+        records = []
+        for batch_index in range(2):
+            for group_index in range(44):
+                for _attempt_index in range(8):
+                    index = len(records)
+                    records.append(
+                        exact_record(
+                            index,
+                            theorem=f"t{group_index % 10}",
+                            group=f"b{batch_index}-g{group_index}",
+                            scope=f"scope-b{batch_index}-g{group_index}",
+                            batch=f"batch-{batch_index}",
+                        )
+                    )
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), records)
+            value = json.loads(manifest.read_text(encoding="utf-8"))
+            value["workload"]["verifier_slots"] = 135
+            manifest.write_text(json.dumps(value), encoding="utf-8")
+            report = screen_authentic_trace(
+                manifest,
+                process_local_overhead_budget_cpu_seconds_per_hit=0.0,
+                process_local_overhead_budget_source="zero-overhead ceiling",
+            )
+        frontier = report["process_local_replication_frontier"]
+        self.assertEqual(frontier["verification_batches"], 2)
+        self.assertAlmostEqual(
+            frontier["independent_lpt_cpu_service_makespan_seconds"], 60.0
+        )
+        two_replicas = frontier["points"][1]
+        self.assertAlmostEqual(
+            two_replicas["projected_cpu_service_makespan_seconds"], 32.0
+        )
+        self.assertAlmostEqual(
+            two_replicas["projected_cpu_service_makespan_speedup"], 1.875
+        )
+        self.assertAlmostEqual(
+            two_replicas["per_batch_cpu_service_speedup_quantiles"]["minimum"],
+            1.875,
+        )
+
     def test_verifier_slots_must_be_a_positive_integer(self):
         with tempfile.TemporaryDirectory() as directory:
             manifest = self.write_trace(Path(directory), [exact_record(0)])
@@ -339,6 +387,19 @@ class AuthenticTraceTests(unittest.TestCase):
             value["workload"]["verifier_slots"] = True
             manifest.write_text(json.dumps(value), encoding="utf-8")
             with self.assertRaisesRegex(AuthenticTraceError, "verifier_slots"):
+                screen_authentic_trace(manifest)
+
+    def test_verifier_slots_require_batch_identity_on_every_attempt(self):
+        record = exact_record(0)
+        record.pop("verification_batch_sha256")
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = self.write_trace(Path(directory), [record])
+            value = json.loads(manifest.read_text(encoding="utf-8"))
+            value["workload"]["verifier_slots"] = 1
+            manifest.write_text(json.dumps(value), encoding="utf-8")
+            with self.assertRaisesRegex(
+                AuthenticTraceError, "requires verification_batch_sha256"
+            ):
                 screen_authentic_trace(manifest)
 
     def test_portable_budget_does_not_authorize_process_local_gate(self):

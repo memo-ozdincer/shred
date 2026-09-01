@@ -320,6 +320,8 @@ def screen_authentic_trace(
     manifest_path = manifest_path.resolve()
     manifest = _load_manifest(manifest_path)
     expected_attempts, partitions = _validate_manifest(manifest)
+    workload = manifest["workload"]
+    verifier_slots = workload.get("verifier_slots")
     source_root_default = manifest.get("source_root_default", ".")
     if not isinstance(source_root_default, str) or not source_root_default:
         raise AuthenticTraceError("source_root_default must be a non-empty string")
@@ -384,6 +386,11 @@ def screen_authentic_trace(
                 "verdict": verdict,
                 "full_cpu": full_cpu,
                 "eligibility": eligibility,
+                "verification_batch_sha256": (
+                    _digest(record, "verification_batch_sha256", location)
+                    if "verification_batch_sha256" in record
+                    else None
+                ),
             }
             if eligibility == "fallback":
                 normalized["fallback_reason"] = _string(
@@ -458,6 +465,15 @@ def screen_authentic_trace(
         raise AuthenticTraceError(
             f"attempt accounting mismatch: {physical_records} != {expected_attempts}"
         )
+    if verifier_slots is not None:
+        missing_batch_identities = sum(
+            attempt["verification_batch_sha256"] is None for attempt in attempts
+        )
+        if missing_batch_identities:
+            raise AuthenticTraceError(
+                "workload verifier_slots requires verification_batch_sha256 "
+                f"on every attempt ({missing_batch_identities} missing)"
+            )
 
     groups: dict[tuple[str, ...], list[dict[str, Any]]] = defaultdict(list)
     verdicts: Counter[str] = Counter()
@@ -500,7 +516,7 @@ def screen_authentic_trace(
             ].append(attempt)
 
     local_qualifying_groups = []
-    local_qualifying_attempt_groups = []
+    local_service_qualifying_attempt_groups = []
     local_insufficient_attempts = 0
     local_saved_cpu = 0.0
     local_cache_hits = 0
@@ -545,9 +561,22 @@ def screen_authentic_trace(
                 "repeated_prefix_cpu_seconds": prefix_sum,
                 "shared_prefix_cpu_seconds": shared_prefix_cpu,
                 "ideal_saved_cpu_seconds": saved,
+                "verification_batches": len(
+                    {
+                        attempt["verification_batch_sha256"]
+                        for attempt in group
+                        if attempt["verification_batch_sha256"] is not None
+                    }
+                ),
             }
         )
-        local_qualifying_attempt_groups.append(group)
+        group_batches = {
+            attempt["verification_batch_sha256"]
+            for attempt in group
+            if attempt["verification_batch_sha256"] is not None
+        }
+        if len(group_batches) == 1:
+            local_service_qualifying_attempt_groups.append(group)
 
     local_ideal_projected_cpu = baseline_cpu - local_saved_cpu
     local_ideal_speedup = baseline_cpu / local_ideal_projected_cpu
@@ -567,13 +596,20 @@ def screen_authentic_trace(
             )
 
     local_replication_frontier = []
-    workload = manifest["workload"]
-    verifier_slots = workload.get("verifier_slots")
     independent_service_makespan = None
+    independent_service_makespans_by_batch: dict[str, float] = {}
     if verifier_slots is not None:
-        independent_service_makespan = _lpt_makespan(
-            [float(attempt["full_cpu"]) for attempt in attempts],
-            verifier_slots,
+        independent_jobs_by_batch: dict[str, list[float]] = defaultdict(list)
+        for attempt in attempts:
+            independent_jobs_by_batch[
+                str(attempt["verification_batch_sha256"])
+            ].append(float(attempt["full_cpu"]))
+        independent_service_makespans_by_batch = {
+            batch: _lpt_makespan(jobs, verifier_slots)
+            for batch, jobs in sorted(independent_jobs_by_batch.items())
+        }
+        independent_service_makespan = sum(
+            independent_service_makespans_by_batch.values()
         )
     if local_qualifying_groups:
         maximum_replicas = max(
@@ -617,34 +653,56 @@ def screen_authentic_trace(
             service_makespan = None
             service_makespan_speedup = None
             service_jobs = None
+            service_batch_speedup_quantiles = None
             if verifier_slots is not None:
                 qualifying_ids = {
                     str(attempt["proposal_id"])
-                    for group in local_qualifying_attempt_groups
+                    for group in local_service_qualifying_attempt_groups
                     for attempt in group
                 }
                 overhead_per_reuse = (
                     process_local_overhead_budget_cpu_seconds_per_hit or 0.0
                 )
-                jobs = [
-                    float(attempt["full_cpu"])
-                    for attempt in attempts
-                    if str(attempt["proposal_id"]) not in qualifying_ids
-                ]
-                for group in local_qualifying_attempt_groups:
-                    jobs.extend(
+                jobs_by_batch: dict[str, list[float]] = defaultdict(list)
+                for attempt in attempts:
+                    if str(attempt["proposal_id"]) not in qualifying_ids:
+                        jobs_by_batch[
+                            str(attempt["verification_batch_sha256"])
+                        ].append(float(attempt["full_cpu"]))
+                for group in local_service_qualifying_attempt_groups:
+                    jobs_by_batch[
+                        str(group[0]["verification_batch_sha256"])
+                    ].extend(
                         _replica_service_jobs(
                             group,
                             replicas,
                             overhead_per_reuse,
                         )
                     )
-                service_jobs = len(jobs)
-                service_makespan = _lpt_makespan(jobs, verifier_slots)
+                service_jobs = sum(len(jobs) for jobs in jobs_by_batch.values())
+                service_makespans_by_batch = {
+                    batch: _lpt_makespan(jobs, verifier_slots)
+                    for batch, jobs in sorted(jobs_by_batch.items())
+                }
+                service_makespan = sum(service_makespans_by_batch.values())
                 if independent_service_makespan and service_makespan > 0:
                     service_makespan_speedup = (
                         independent_service_makespan / service_makespan
                     )
+                batch_speedups = sorted(
+                    independent_service_makespans_by_batch[batch] / makespan
+                    for batch, makespan in service_makespans_by_batch.items()
+                    if makespan > 0
+                )
+                service_batch_speedup_quantiles = {
+                    name: _quantile(batch_speedups, fraction)
+                    for name, fraction in (
+                        ("minimum", 0.0),
+                        ("median", 0.5),
+                        ("p90", 0.9),
+                        ("maximum", 1.0),
+                    )
+                }
             local_replication_frontier.append(
                 {
                     "replicas_per_group": replicas,
@@ -671,6 +729,9 @@ def screen_authentic_trace(
                     "projected_cpu_service_makespan_seconds": service_makespan,
                     "projected_cpu_service_makespan_speedup": (
                         service_makespan_speedup
+                    ),
+                    "per_batch_cpu_service_speedup_quantiles": (
+                        service_batch_speedup_quantiles
                     ),
                     "joint_two_x_cpu_and_one_point_five_x_service_target_passes": (
                         projected_speedup_for_replicas is not None
@@ -1158,6 +1219,9 @@ def screen_authentic_trace(
         "process_local_replication_frontier": {
             "points": local_replication_frontier,
             "verifier_slots": verifier_slots,
+            "verification_batches": len(
+                independent_service_makespans_by_batch
+            ),
             "independent_lpt_cpu_service_makespan_seconds": (
                 independent_service_makespan
             ),

@@ -8,6 +8,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import tempfile
 from typing import Any, Iterable, Iterator
 
@@ -20,6 +21,11 @@ from .oprover_adapter import (
 
 class OProverExportError(RuntimeError):
     """Raised when producer output cannot support an exact trace record."""
+
+
+OPROVER_PROPOSAL_ID = re.compile(
+    r"^r(?P<round>\d+)_p(?P<prompt>\d+)_s(?P<rollout>\d+)$"
+)
 
 
 def _sha256_text(value: str) -> str:
@@ -46,6 +52,17 @@ def _execution_scope(capture: dict[str, Any], location: str) -> str:
     ):
         raise OProverExportError(f"{location}: invalid group_size")
     return _sha256_text(f"oprover-kimina-v1\0{group_id}\0{repl_uuid}")
+
+
+def _verification_batch(proposal_id: str, global_step: int, location: str) -> str:
+    match = OPROVER_PROPOSAL_ID.fullmatch(proposal_id)
+    if match is None:
+        raise OProverExportError(
+            f"{location}: proposal_id cannot identify an OProver verification batch"
+        )
+    return _sha256_text(
+        f"oprover-verification-batch-v1\0{global_step}\0{match.group('round')}"
+    )
 
 
 def _required_text(row: dict[str, Any], field: str, location: str) -> str:
@@ -91,6 +108,9 @@ def normalize_saved_attempt(row: dict[str, Any], location: str) -> dict[str, Any
         "theorem_name": f"sha256:{statement_digest}",
         "theorem_statement_sha256": statement_digest,
         "verdict": _verdict(row),
+        "verification_batch_sha256": _verification_batch(
+            proposal_id, global_step, location
+        ),
     }
 
     capture = row.get("shred_cpu_capture")

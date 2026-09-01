@@ -75,6 +75,12 @@ one live Kimina lease from an exact checkpoint identity recurring across
 independent leases. Raw group and process identities do not enter the digest-
 only trace.
 
+It also hashes the saved global training step plus exact refinement round into
+`verification_batch_sha256`. These are the boundaries within which OProver
+submits that round's theorem groups to its verifier pool. The digest lets SHRED
+schedule each authentic batch separately without exporting raw step or round
+identifiers or incorrectly repacking several batches into one larger workload.
+
 Consequently, an ordinary OProver rollout group can qualify for the independent
 process-local exact-trie gate when at least eight unchanged attempts share the
 captured prefix in one fresh lease. It does not need to recur across leases to

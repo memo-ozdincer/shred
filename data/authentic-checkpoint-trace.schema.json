@@ -70,6 +70,7 @@
         "theorem_statement_sha256": {"$ref": "#/$defs/sha256"},
         "verdict": {"enum": ["accepted", "rejected", "timed_out", "crashed"]},
         "full_verifier_cpu_seconds": {"type": "number", "minimum": 0},
+        "verification_batch_sha256": {"$ref": "#/$defs/sha256"},
         "eligibility": {"enum": ["exact_checkpoint", "fallback"]},
         "fallback_reason": {"type": "string", "minLength": 1},
         "prefix_verifier_cpu_seconds": {"type": "number", "minimum": 0},
