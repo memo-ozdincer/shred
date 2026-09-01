@@ -26,7 +26,7 @@
       "k replicas split each group's unchanged attempts as evenly as possible",
       "one affinity replica occupies one verifier slot and executes its unchanged suffixes serially",
       "independent attempts and affinity replicas are work-conserving within whole waves",
-      "dispatch, trie, snapshot, and attribution overhead are zero"
+      "dispatch, trie, snapshot, and attribution overhead are zero unless an explicit sensitivity says otherwise"
     ]
   },
   "projections": {
@@ -46,6 +46,21 @@
         "projected_cpu_throughput_multiplier": 3.3333333333333335,
         "projected_batch_latency_multiplier": 1.25
       },
+      "two_replicas_at_shared_prefix_cpu_fraction_0_8": {
+        "replicas_per_group": 2,
+        "attempt_split": [4, 4],
+        "occupied_verifier_slots": 88,
+        "independent_batch_waves": 3,
+        "affinity_batch_normalized_time": 1.6,
+        "projected_cpu_throughput_multiplier": 2.5,
+        "projected_batch_latency_multiplier": 1.875,
+        "maximum_overhead_fraction_per_reuse_for_two_x_cpu": 0.13333333333333333,
+        "maximum_overhead_fraction_per_reuse_for_one_point_five_x_batch_latency": 0.13333333333333333,
+        "two_percent_overhead_sensitivity": {
+          "projected_cpu_throughput_multiplier": 2.4096385542168677,
+          "projected_batch_latency_multiplier": 1.8072289156626506
+        }
+      },
       "three_replicas_at_shared_prefix_cpu_fraction_0_8": {
         "replicas_per_group": 3,
         "attempt_split": [3, 3, 2],
@@ -53,7 +68,8 @@
         "independent_batch_waves": 3,
         "affinity_batch_normalized_time": 1.4,
         "projected_cpu_throughput_multiplier": 2.0,
-        "projected_batch_latency_multiplier": 2.142857142857143
+        "projected_batch_latency_multiplier": 2.142857142857143,
+        "maximum_overhead_fraction_per_reuse_for_two_x_cpu": 0.0
       }
     },
     "oprover_32b_default_eight_nodes": {
@@ -84,11 +100,11 @@
       }
     }
   },
-  "scientific_finding": "For the pinned OProver defaults, independent verification already exceeds available verifier slots. Theorem-affinity local tries can therefore reduce both verifier CPU and idealized batch latency. Replicating each theorem group into otherwise idle verifier slots exposes a selectable CPU-latency Pareto frontier without portable checkpoints.",
-  "decision": "Advance only OProver-8B to the existing-run trace gate. Prefer replication-aware theorem-affinity process-local execution over portable checkpoints if that trace passes. Retain OProver-32B only as unsupported topology sensitivity unless a normal future configuration independently produces at least eight attempts per group.",
+  "scientific_finding": "For the pinned eligible OProver-8B default, independent verification already exceeds available verifier slots. Theorem-affinity local tries can therefore reduce both verifier CPU and idealized batch latency. Two replicas are the strongest balanced point under the 80% shared-prefix hypothesis: 2.50x CPU throughput and 1.875x batch-latency improvement, with 13.33% of one independent verification per reuse in joint 2x-CPU/1.5x-latency overhead headroom. Three replicas improve idealized latency further but their 2.00x CPU figure has zero overhead margin.",
+  "decision": "Advance only OProver-8B to the existing-run trace gate. Use two replicas as the preregistered balanced candidate; retain one replica for a CPU-maximizing objective and three only for an explicitly latency-weighted objective. Prefer replication-aware theorem-affinity process-local execution over portable checkpoints if the authentic trace passes. Retain OProver-32B only as unsupported topology sensitivity unless a normal future configuration independently produces at least eight attempts per group.",
   "reproduction": {
     "implementation": "lean_prefix.projection.affinity_schedule_projection",
-    "tests": "tests.test_projection.ProjectionTests.test_oprover_8b_affinity_projection, test_oprover_8b_replication_uses_spare_slots, test_oprover_32b_affinity_projection, and test_oprover_32b_replication_uses_spare_slots"
+    "tests": "tests.test_projection.ProjectionTests.test_oprover_8b_affinity_projection, test_two_replicas_have_balanced_overhead_headroom, test_oprover_8b_replication_uses_spare_slots, test_oprover_32b_affinity_projection, and test_oprover_32b_replication_uses_spare_slots"
   },
   "not_executed": [
     "Lean",

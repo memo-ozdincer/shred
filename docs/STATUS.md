@@ -420,6 +420,16 @@ model and its connection to D-055, not the workload hypothesis. An authentic
 trace can now reveal long-tail sensitivity directly, while measured batch wall
 latency remains required for any latency headline.
 
+An overhead-headroom analysis changes the preferred balanced point (D-058).
+Two replicas split each eligible OProver-8B group 4/4 and project 2.50x CPU plus
+1.875x idealized batch-latency improvement at 80% shared-prefix CPU. Both stay
+above the preregistered 2x CPU and 1.5x latency targets until overhead exceeds
+13.33% of a complete independent verification per reuse; at an explicit 2%
+sensitivity they remain 2.410x and 1.807x. Three replicas are faster in the
+latency model (2.14x), but their 2.00x CPU figure has zero overhead margin.
+Accordingly, two replicas replace three as the balanced candidate, without
+turning any of these topology calculations into measured workload evidence.
+
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator
 then found 17 native CPU boundary records, joined all three REPL tactics by

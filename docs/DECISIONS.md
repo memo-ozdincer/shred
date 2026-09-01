@@ -1761,3 +1761,30 @@ sweep or SHRED execution. The result remains a Hypothesis CPU-service
 projection, not measured wall latency. No latency headline is authorized until
 an identical-input implementation comparison measures batch wall time and
 verdict agreement.
+
+## D-058 - Prefer the two-replica balanced point because it has joint overhead margin
+
+Date: 2026-09-01
+
+Status: accepted source-pinned hypothesis; no workload executed
+
+Decision: preregister two local-trie replicas per eight-attempt OProver-8B
+group as the balanced candidate. Keep one replica as the CPU-maximizing policy
+and three replicas only as an explicitly latency-weighted policy. Extend the
+topology projection to charge a normalized overhead for every reused attempt
+and report target-specific overhead headroom.
+
+Reason: at an 80% shared-prefix fraction, the 4/4 two-replica split projects
+2.50x CPU throughput and 1.875x lower idealized batch latency. It can charge up
+to 13.33% of a complete independent verification per reuse before either CPU
+throughput falls below 2x or latency improvement falls below 1.5x. At a stated
+2% overhead sensitivity it still projects 2.410x CPU and 1.807x latency. The
+3/3/2 split's 2.14x latency is attractive, but its CPU projection is exactly
+2.00x before overhead and therefore has zero margin for that headline.
+
+Consequence: two replicas are a more falsifiable and implementation-robust
+headline candidate than three. The authentic-cost screener must still confirm
+the prefix fraction and long-tail schedule before execution. The 13.33% value
+is mathematical headroom under the pinned topology, not observed SHRED
+overhead, and the latency numbers remain service-time Hypotheses rather than
+measured wall time.

@@ -205,16 +205,19 @@ source-pinned 44 groups × 8 rollouts and 135 verifier slots. Under the stated
 equal-cost batch latency; the exact no-latency-loss threshold is 71.4% shared-
 prefix CPU. No OProver workload has yet measured that prefix share.
 
-The scheduler need not choose only maximum sharing. OProver-8B has enough spare
-verifier slots for three local-trie replicas per theorem group. Splitting eight
-rollouts 3/3/2 at the same 80% hypothesis projects **2.00× CPU throughput and
-2.14× lower idealized equal-cost batch latency**. This is a selectable
-CPU-latency Pareto point, not a measured result; every replicated prefix is
-charged explicitly. The authentic-trace screener now recomputes this frontier
-from observed unequal per-attempt costs and declared verifier slots, so the
-next normal eligible trace can falsify the equal-cost headline without a
-benchmark sweep. Its CPU-service schedule remains a projection until paired
-batch wall time is measured.
+The scheduler need not choose only maximum sharing. The strongest balanced
+OProver-8B candidate uses two local-trie replicas per theorem group and splits
+eight rollouts 4/4. At the same 80% hypothesis it projects **2.50× CPU
+throughput and 1.875× lower idealized equal-cost batch latency**. Both remain at
+least 2× CPU and 1.5× latency until reuse overhead exceeds 13.33% of one
+independent verification per reuse. By comparison, the faster 3/3/2 point
+projects 2.00× CPU and 2.14× latency but has zero overhead margin for its 2× CPU
+figure. These are selectable Pareto points, not measured results; every
+replicated prefix is charged explicitly. The authentic-trace screener now
+recomputes the frontier from observed unequal per-attempt costs and declared
+verifier slots, so the next normal eligible trace can falsify the equal-cost
+headline without a benchmark sweep. Its CPU-service schedule remains a
+projection until paired batch wall time is measured.
 
 ## Where this can matter most
 

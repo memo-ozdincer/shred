@@ -310,6 +310,14 @@ class AuthenticTraceTests(unittest.TestCase):
         self.assertAlmostEqual(
             one_replica["projected_cpu_service_makespan_speedup"], 1.25
         )
+        two_replicas = frontier["points"][1]
+        self.assertAlmostEqual(two_replicas["projected_cpu_speedup"], 2.5)
+        self.assertAlmostEqual(
+            two_replicas["projected_cpu_service_makespan_seconds"], 16.0
+        )
+        self.assertAlmostEqual(
+            two_replicas["projected_cpu_service_makespan_speedup"], 1.875
+        )
         three_replicas = frontier["points"][2]
         self.assertAlmostEqual(three_replicas["projected_cpu_speedup"], 2.0)
         self.assertAlmostEqual(

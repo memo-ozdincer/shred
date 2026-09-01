@@ -25,12 +25,14 @@ def affinity_schedule_projection(
     verifier_slots: int,
     shared_prefix_cpu_fraction: float,
     replicas_per_group: int = 1,
-) -> dict[str, float | int]:
+    overhead_cpu_fraction_per_reuse: float = 0.0,
+) -> dict[str, float | int | None]:
     """Project uniform-cost theorem-affinity execution in a saturated batch.
 
     Every independent attempt has normalized CPU cost one.  An affinity worker
     pays the exact shared prefix once, then every unchanged suffix assigned to
-    that replica.  The batch latency model is deliberately discrete:
+    that replica and the declared overhead for every reuse after its first
+    attempt.  The batch latency model is deliberately discrete:
     independent attempts and affinity replicas each occupy one verifier slot
     and complete in whole waves.
     """
@@ -55,6 +57,15 @@ def affinity_schedule_projection(
         raise ProjectionError(
             "shared_prefix_cpu_fraction must be between zero and one"
         )
+    if (
+        isinstance(overhead_cpu_fraction_per_reuse, bool)
+        or not isinstance(overhead_cpu_fraction_per_reuse, (int, float))
+        or not math.isfinite(overhead_cpu_fraction_per_reuse)
+        or overhead_cpu_fraction_per_reuse < 0.0
+    ):
+        raise ProjectionError(
+            "overhead_cpu_fraction_per_reuse must be non-negative"
+        )
 
     attempts = groups * attempts_per_group
     independent_waves = math.ceil(attempts / verifier_slots)
@@ -64,20 +75,64 @@ def affinity_schedule_projection(
     )
     affinity_replica_time = shared_prefix_cpu_fraction + (
         maximum_attempts_per_replica * (1.0 - shared_prefix_cpu_fraction)
+    ) + (
+        (maximum_attempts_per_replica - 1)
+        * overhead_cpu_fraction_per_reuse
     )
     affinity_group_cpu = replicas_per_group * shared_prefix_cpu_fraction + (
         attempts_per_group * (1.0 - shared_prefix_cpu_fraction)
+    ) + (
+        (attempts_per_group - replicas_per_group)
+        * overhead_cpu_fraction_per_reuse
     )
     affinity_cpu = groups * affinity_group_cpu
     affinity_batch_time = affinity_waves * affinity_replica_time
     if maximum_attempts_per_replica == 1:
         threshold = 0.0
     else:
-        threshold = (
+        raw_threshold = (
             maximum_attempts_per_replica
+            + (maximum_attempts_per_replica - 1)
+            * overhead_cpu_fraction_per_reuse
             - independent_waves / affinity_waves
         ) / (maximum_attempts_per_replica - 1)
-    threshold = min(1.0, max(0.0, threshold))
+        threshold = None if raw_threshold > 1.0 else max(0.0, raw_threshold)
+
+    reuses_per_group = attempts_per_group - replicas_per_group
+    cpu_headroom = None
+    if reuses_per_group:
+        zero_overhead_group_cpu = (
+            replicas_per_group * shared_prefix_cpu_fraction
+            + attempts_per_group * (1.0 - shared_prefix_cpu_fraction)
+        )
+        raw_cpu_headroom = (
+            (attempts_per_group / 2.0 - zero_overhead_group_cpu)
+            / reuses_per_group
+        )
+        cpu_headroom = (
+            max(0.0, raw_cpu_headroom)
+            if raw_cpu_headroom >= -1e-15
+            else None
+        )
+    reuses_on_slowest_replica = maximum_attempts_per_replica - 1
+    latency_headroom = None
+    if reuses_on_slowest_replica:
+        zero_overhead_replica_time = shared_prefix_cpu_fraction + (
+            maximum_attempts_per_replica
+            * (1.0 - shared_prefix_cpu_fraction)
+        )
+        raw_latency_headroom = (
+            (
+                independent_waves / (1.5 * affinity_waves)
+                - zero_overhead_replica_time
+            )
+            / reuses_on_slowest_replica
+        )
+        latency_headroom = (
+            max(0.0, raw_latency_headroom)
+            if raw_latency_headroom >= -1e-15
+            else None
+        )
 
     return {
         "groups": groups,
@@ -87,6 +142,7 @@ def affinity_schedule_projection(
         "attempts": attempts,
         "verifier_slots": verifier_slots,
         "shared_prefix_cpu_fraction": shared_prefix_cpu_fraction,
+        "overhead_cpu_fraction_per_reuse": overhead_cpu_fraction_per_reuse,
         "independent_cpu": float(attempts),
         "affinity_cpu": affinity_cpu,
         "projected_cpu_throughput_multiplier": attempts / affinity_cpu,
@@ -100,6 +156,10 @@ def affinity_schedule_projection(
             independent_waves / affinity_batch_time
         ),
         "minimum_shared_prefix_cpu_fraction_for_no_batch_latency_loss": threshold,
+        "maximum_overhead_fraction_per_reuse_for_two_x_cpu": cpu_headroom,
+        "maximum_overhead_fraction_per_reuse_for_one_point_five_x_batch_latency": (
+            latency_headroom
+        ),
     }
 
 

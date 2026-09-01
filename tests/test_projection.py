@@ -82,6 +82,66 @@ class ProjectionTests(unittest.TestCase):
             ],
             0.0,
         )
+        self.assertAlmostEqual(
+            result["maximum_overhead_fraction_per_reuse_for_two_x_cpu"], 0.0
+        )
+
+    def test_two_replicas_have_balanced_overhead_headroom(self):
+        result = affinity_schedule_projection(
+            groups=44,
+            attempts_per_group=8,
+            verifier_slots=135,
+            shared_prefix_cpu_fraction=0.8,
+            replicas_per_group=2,
+        )
+        self.assertEqual(result["maximum_attempts_per_replica"], 4)
+        self.assertAlmostEqual(result["projected_cpu_throughput_multiplier"], 2.5)
+        self.assertAlmostEqual(
+            result["projected_batch_latency_multiplier"], 1.875
+        )
+        self.assertAlmostEqual(
+            result["maximum_overhead_fraction_per_reuse_for_two_x_cpu"], 2 / 15
+        )
+        self.assertAlmostEqual(
+            result[
+                "maximum_overhead_fraction_per_reuse_for_one_point_five_x_batch_latency"
+            ],
+            2 / 15,
+        )
+
+        with_two_percent_overhead = affinity_schedule_projection(
+            groups=44,
+            attempts_per_group=8,
+            verifier_slots=135,
+            shared_prefix_cpu_fraction=0.8,
+            replicas_per_group=2,
+            overhead_cpu_fraction_per_reuse=0.02,
+        )
+        self.assertAlmostEqual(
+            with_two_percent_overhead["projected_cpu_throughput_multiplier"],
+            8 / 3.32,
+        )
+        self.assertAlmostEqual(
+            with_two_percent_overhead["projected_batch_latency_multiplier"],
+            3 / 1.66,
+        )
+        impossible_latency = affinity_schedule_projection(
+            groups=44,
+            attempts_per_group=8,
+            verifier_slots=135,
+            shared_prefix_cpu_fraction=0.8,
+            overhead_cpu_fraction_per_reuse=0.5,
+        )
+        self.assertIsNone(
+            impossible_latency[
+                "minimum_shared_prefix_cpu_fraction_for_no_batch_latency_loss"
+            ]
+        )
+        self.assertIsNone(
+            impossible_latency[
+                "maximum_overhead_fraction_per_reuse_for_one_point_five_x_batch_latency"
+            ]
+        )
 
     def test_oprover_32b_replication_uses_spare_slots(self):
         result = affinity_schedule_projection(
@@ -132,6 +192,13 @@ class ProjectionTests(unittest.TestCase):
                 "attempts_per_group": 8,
                 "verifier_slots": 135,
                 "shared_prefix_cpu_fraction": True,
+            },
+            {
+                "groups": 44,
+                "attempts_per_group": 8,
+                "verifier_slots": 135,
+                "shared_prefix_cpu_fraction": 0.8,
+                "overhead_cpu_fraction_per_reuse": True,
             },
         ):
             with self.subTest(kwargs=kwargs), self.assertRaises(ProjectionError):
