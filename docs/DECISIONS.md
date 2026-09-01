@@ -1916,7 +1916,7 @@ not CPU evidence, a speedup, verdict equivalence, or authorization to build.
 
 Date: 2026-09-01
 
-Status: preregistered; analysis not yet executed
+Status: completed; stop tactic-family mining
 
 Hypothesis: at least one naturally defined exact Lean-native final-syntax-kind
 cohort in the completed representative D-030 study has materially stronger and
@@ -1947,3 +1947,18 @@ Decision map:
 - If no eligible cohort reaches 1.5x aggregate speedup, stop tactic-family
   mining on D-030. Do not weaken thresholds, combine kinds, select expensive
   theorems, or repeat measurements for statistical relevance.
+
+Result: the checked-in analysis joined all 4,096 representative proposals and
+128 theorems, enumerating 46 exact final syntax kinds. Nine cohorts met the
+frozen proposal, theorem, and hit thresholds. None reached 1.5x aggregate and
+none was an aggregate-only near miss. The best eligible aggregate was
+`linarith` at 1.094x, with 0.994x median and 0.853x p10 theorem speedup;
+`nlinarith` reached 1.085x aggregate. Every eligible cohort had zero verdict
+disagreements.
+
+Consequence: stop D-030 final-tactic-family mining. The negative result shows
+that correctness was not the limiting factor; naturally occurring hit density
+and cost-weighted savings were. Do not merge syntax kinds, lower coverage or
+tail thresholds, select individual expensive theorems, or rerun pairs to
+manufacture a measured subgroup headline. The frozen result is
+`reports/d030_final_tactic_cohorts.json`.

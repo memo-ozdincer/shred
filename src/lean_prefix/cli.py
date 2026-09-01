@@ -17,6 +17,10 @@ from lean_prefix.certificate_probe import (
     CertificateProbeError,
     summarize_certificate_probe,
 )
+from lean_prefix.certificate_cohort import (
+    CertificateCohortError,
+    analyze_certificate_cohorts,
+)
 from lean_prefix.certificate_prevalence import (
     CertificatePrevalenceError,
     prepare_certificate_prevalence_inputs,
@@ -114,6 +118,14 @@ def _parser() -> argparse.ArgumentParser:
     oprover_export.add_argument("--input", type=Path, action="append", required=True)
     oprover_export.add_argument("--output", type=Path, required=True)
     oprover_export.add_argument("--expected-attempts", type=int, required=True)
+    certificate_cohorts = commands.add_parser(
+        "analyze-certificate-cohorts",
+        help="group frozen D-030 pairs by exact final native syntax kind",
+    )
+    certificate_cohorts.add_argument("--native-inputs", type=Path, required=True)
+    certificate_cohorts.add_argument("--parent-report", type=Path, required=True)
+    certificate_cohorts.add_argument("--artifact-dir", type=Path, required=True)
+    certificate_cohorts.add_argument("--output", type=Path, required=True)
     audit = commands.add_parser("audit", help="verify an immutable rollout manifest")
     audit.add_argument("--manifest", type=Path, required=True)
     audit.add_argument("--source-root", type=Path)
@@ -326,6 +338,18 @@ def main(argv: list[str] | None = None) -> int:
             report["command"] = shlex.join(["shred", *raw_argv])
             sys.stdout.write(json.dumps(report, indent=2, sort_keys=True) + "\n")
             return 0
+        if args.command == "analyze-certificate-cohorts":
+            report = analyze_certificate_cohorts(
+                args.native_inputs,
+                sorted(args.artifact_dir.glob("*.jsonl.gz")),
+                args.parent_report,
+            )
+            report["command"] = shlex.join(["shred", *raw_argv])
+            rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(rendered, encoding="utf-8")
+            sys.stdout.write(rendered)
+            return 0
         if args.command == "audit":
             report = audit_manifest(args.manifest, args.source_root)
             rendered = json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n"
@@ -526,6 +550,7 @@ def main(argv: list[str] | None = None) -> int:
         ProfileSummaryError,
         OpportunitySummaryError,
         CertificateProbeError,
+        CertificateCohortError,
         CertificatePrevalenceError,
         ReplError,
         ReviewSelectionError,

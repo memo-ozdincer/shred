@@ -4,6 +4,25 @@ from lean_prefix.cli import _parser
 
 
 class CliTests(unittest.TestCase):
+    def test_certificate_cohort_analysis_uses_frozen_artifact_directory(self):
+        args = _parser().parse_args(
+            [
+                "analyze-certificate-cohorts",
+                "--native-inputs",
+                "inputs.jsonl.gz",
+                "--parent-report",
+                "parent.json",
+                "--artifact-dir",
+                "artifacts",
+                "--output",
+                "report.json",
+            ]
+        )
+        self.assertEqual(str(args.native_inputs), "inputs.jsonl.gz")
+        self.assertEqual(str(args.parent_report), "parent.json")
+        self.assertEqual(str(args.artifact_dir), "artifacts")
+        self.assertEqual(str(args.output), "report.json")
+
     def test_authentic_trace_parses_distinct_overhead_budgets(self):
         args = _parser().parse_args(
             [

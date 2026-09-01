@@ -471,6 +471,15 @@ least 38 qualifying groups. A 352-record contract fixture with exactly 38 such
 groups passes this availability check. CPU value, service tails, and execution
 authorization remain downstream gates.
 
+The preregistered existing-measurement cohort analysis is complete (D-064).
+Across all 4,096 representative D-030 pairs, 46 exact final native syntax kinds
+were enumerated and nine met the frozen size/theorem/hit thresholds. None
+reached 1.5x aggregate speedup. The best was `linarith` at 1.094x aggregate,
+0.994x median theorem, and 0.853x p10 theorem speedup; `nlinarith` reached
+1.085x aggregate. All eligible cohorts had zero verdict disagreements. This
+closes tactic-family mining as a measured-headline route without executing Lean
+or weakening the preregistered gate.
+
 **Observed validation (2026-09-01):** the pinned patched Lean 4.15.0 toolchain
 and patched REPL both compiled. The checked-in three-tactic protocol validator
 then found 17 native CPU boundary records, joined all three REPL tactics by

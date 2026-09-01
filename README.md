@@ -286,6 +286,13 @@ measured proposals from an arithmetic-heavy RL cohort. It saved 13.9% CPU
 required to justify a 1.5x held-out run. SHRED therefore stopped before spending
 compute on the frozen C1 workload.
 
+A preregistered follow-up grouped all 4,096 representative paired measurements
+by exact Lean-native final syntax kind. Nine natural cohorts had at least 128
+proposals, 10 theorems, and 32 cache hits, but none reached 1.5x aggregate. The
+best, `linarith`, measured 1.094x aggregate with 0.994x median and 0.853x p10
+per-theorem speedup. This closes tactic-family subgroup mining rather than
+turning a few expensive hits into a favorable measured headline.
+
 ## Development and bundled evidence
 
 ```bash
@@ -323,6 +330,8 @@ both repository hashes and original uncompressed-source hashes.
   - automatic certificate prevalence and paired CPU measurements
 - [`reports/c0_certificate_prevalence_review.md`](reports/c0_certificate_prevalence_review.md)
   - hand audit of representative and expensive-tail cases
+- [`reports/d030_final_tactic_cohorts.json`](reports/d030_final_tactic_cohorts.json)
+  - preregistered exact-final-syntax cohort analysis over existing paired measurements
 - [`docs/RL_BENCHMARK.md`](docs/RL_BENCHMARK.md)
   - exact held-out GRPO workload, prior-iteration admission rule, control, and
     no-compute feasibility gate
