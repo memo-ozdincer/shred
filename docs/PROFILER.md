@@ -41,6 +41,17 @@ The default 256-proposal run is a screening tool. Use `--full` only for a
 representative immutable corpus. `--native-artifact` skips extraction when a
 compatible audited artifact already exists.
 
+## Screen an existing RL or prover trace
+
+If the producer already recorded exact Lean-native checkpoint lineage and
+process CPU, use `shred screen-authentic-trace` instead of rerunning Lean. The
+neutral JSONL contract, conservative cost equation, complete accounting rules,
+and claim boundary are documented in `docs/AUTHENTIC_TRACE_CONTRACT.md`.
+
+This path never creates performance evidence by itself. Its output is an
+Observed-input/Hypothesis projection that can stop a workload or justify
+proposing one bounded paired implementation test.
+
 ## Decide, then integrate
 
 A full profile recommends exact prefix work only when the conservative CPU

@@ -1,6 +1,10 @@
 """Public Python API for SHRED workload profiling."""
 
 from lean_prefix import __version__
+from lean_prefix.authentic_trace import (
+    AuthenticTraceError,
+    screen_authentic_trace,
+)
 from shred.manifest import ManifestError, create_manifest
 from shred.profiler import (
     ProfileConfig,
@@ -15,8 +19,10 @@ __all__ = [
     "ProfileResult",
     "ShredProfileError",
     "ManifestError",
+    "AuthenticTraceError",
     "__version__",
     "profile_workload",
     "recommend_profile",
     "create_manifest",
+    "screen_authentic_trace",
 ]

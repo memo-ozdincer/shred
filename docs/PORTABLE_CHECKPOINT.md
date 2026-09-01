@@ -121,6 +121,11 @@ establishes all of the following:
 - enough groups for aggregate, median, tail, and per-theorem reporting; and
 - verifier CPU is a material fraction of the end-to-end workload.
 
+The implemented, system-neutral input and cost model for this gate are frozen
+in `docs/AUTHENTIC_TRACE_CONTRACT.md`. `shred screen-authentic-trace` validates
+and screens an already-generated artifact without loading a checkpoint or
+executing Lean.
+
 Decision map:
 
 - If authentic reuse or verifier share misses the gate, stop the workload.

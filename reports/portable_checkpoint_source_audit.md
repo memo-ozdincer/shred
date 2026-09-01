@@ -101,6 +101,12 @@ and author pages expose only the paper and no trace artifact. Details and the
 pre-registered outcome map are in
 `reports/authentic_repair_trace_gate_review.md`.
 
+A subsequent broader search found authentic GRPO, replay-buffer, and full
+compiler-feedback agent traces. Leanstral 1.5 is the richest available archive,
+but its per-attempt metadata and streams omit process CPU and native checkpoint
+identity. D-040 therefore adds a neutral existing-run export contract rather
+than downloading or replaying these corpora.
+
 ### Previously audited sources
 
 - Lean-Prover's code writes timestamped local session JSONL, but no user session
@@ -124,6 +130,8 @@ boundaries, every verdict, and per-attempt verifier CPU.
 proof-materialization/kernel-finalization design is resolved statically in
 `docs/KERNEL_FINALIZATION.md`; implementation still requires an existing
 read-only trace artifact satisfying the gate in `docs/PORTABLE_CHECKPOINT.md`.
+Any producer can now supply such evidence through
+`docs/AUTHENTIC_TRACE_CONTRACT.md` without rerunning Lean.
 
 This outcome is informative rather than a request for more statistical power:
 it identifies two new qualitative blockers—trusted unsafe deserialization and

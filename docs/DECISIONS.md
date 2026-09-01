@@ -1145,3 +1145,35 @@ If its already-generated trace is released, first freeze the revision and
 inspect its schema. Only exact lineage, exact environment identity, complete
 verdict accounting, and verifier CPU can authorize a read-only corpus screen;
 only a screen projecting >=2x can authorize implementation under D-037.
+
+## D-040 - Standardize the existing-run value gate across prover systems
+
+Date: 2026-08-31
+
+Status: accepted after broader public release metadata inspection
+
+Decision: add a system-neutral, fail-closed trace contract and
+`shred screen-authentic-trace` command. It accepts only immutable telemetry from
+an already-completed run with exact Lean-native checkpoint lineage, complete
+environment/context identity, warm independent process CPU, ordinary-Lean
+verdict authority, every attempt, and explicit fallbacks. It performs no Lean
+execution.
+
+Reason: five newly found releases retain substantially richer authentic
+trajectories than the initial audit. In particular, Math Lean Hackable Rollouts
+contains multi-turn GRPO data, and Leanstral 1.5 preserves full agent streams,
+generated files, compiler logs, SafeVerify logs, and multi-attempt cohorts.
+However, none of the inspected schemas combines native checkpoint identity and
+prefix/full verifier CPU. Every system currently needs a bespoke audit before
+the same missing-field conclusion can be reached.
+
+Consequence: existing RL, search, and repair systems can now evaluate portable
+SHRED without adopting its executor or rerunning Lean. The screener uses one
+maximum observed prefix cost per qualifying eight-attempt group, retains every
+suffix/fallback/verdict, adds a registered per-hit overhead budget, and reports
+aggregate, per-theorem, median, and tails. A result without an overhead budget
+is explicitly inconclusive. The frozen gate also requires 100 groups across 10
+theorems, 60% removable verifier CPU, overhead no greater than 0.2 mean complete
+verifications per eight attempts, and verifier CPU at least 25% of pipeline
+CPU. Even a passing >=2x report is a Hypothesis value gate, not a measured
+headline; it only permits proposing one bounded paired experiment under D-036.

@@ -169,3 +169,11 @@ not currently expose the JSONL publicly. FormalMath is publicly downloadable
 and repair-oriented, but its schema omits executable lineage, environment
 identity, and verifier CPU. D-039 therefore stops both without a bulk download
 or reproduction run.
+
+A later search found several public multi-turn corpora, including authentic
+GRPO rollouts and Leanstral's complete compiler-feedback archives. They improve
+structural availability but still omit either Lean-native checkpoint identity
+or verifier CPU. D-040 turns that repeated integration gap into a public trace
+contract and read-only screener. The fastest route to an implementation decision
+is now for any producer with existing internal telemetry to normalize it to
+that contract; no SHRED rerun is required.

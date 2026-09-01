@@ -30,6 +30,12 @@ and explicit padding accounting; it never modifies the source files.
 No sibling checkout or extraction is required. `--source-root` remains
 available for auditing a relocated copy.
 
+`authentic-checkpoint-trace.schema.json` defines a system-neutral manifest and
+JSONL record contract for checkpoint telemetry from an already-completed RL,
+search, or repair run. `shred screen-authentic-trace` hashes and screens those
+partitions without executing Lean or modifying the producer's data. See
+`docs/AUTHENTIC_TRACE_CONTRACT.md`.
+
 `external-repair.manifest.json` pins the compute-free APRIL and LeanPolish
 structural screen. Raw archives and converted Goedel proof sources live under
 ignored `external-data/`; only aggregate results and checksums are committed.

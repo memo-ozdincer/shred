@@ -52,6 +52,31 @@
       "name": "What Helps Agentic Lean Provers?",
       "url": "https://openreview.net/forum?id=ShhLinF41r",
       "revision": "OpenReview-ShhLinF41r"
+    },
+    {
+      "name": "NuminaMath-LEAN trajectories 850k",
+      "url": "https://huggingface.co/datasets/ricdomolm/numinamath-LEAN-trajs-850k",
+      "revision": "bd43ddbc1908124f127b490664d552145da603c6"
+    },
+    {
+      "name": "Math Lean Hackable Rollouts",
+      "url": "https://huggingface.co/datasets/AlignmentResearch/math-lean-hackable-rollouts",
+      "revision": "4678ef23874cf3c621f7d7e8596601e7ae419219"
+    },
+    {
+      "name": "NuminaMath-LEAN SATP replay buffer",
+      "url": "https://huggingface.co/datasets/ChristianZ97/NuminaMath-LEAN-satp-buffer",
+      "revision": "d1aa7cbec267edfa80280bdb9449e1befb163775"
+    },
+    {
+      "name": "RRMA Lean 4 agent traces",
+      "url": "https://huggingface.co/datasets/vincentoh/rrma-lean4-agent-traces",
+      "revision": "d91b6e45486332cd53eb1ba072852e4b00219566"
+    },
+    {
+      "name": "Leanstral 1.5 theorem-proving results",
+      "url": "https://huggingface.co/datasets/yidannwang/Leanstral-1-5-results",
+      "revision": "f2d4b411a7d298bb5ac8f5b189a79a704f1f95ff"
     }
   ],
   "raw_data_policy": "Source repositories and public metadata/schema surfaces were inspected read-only. No rollout or session data was copied into Git."

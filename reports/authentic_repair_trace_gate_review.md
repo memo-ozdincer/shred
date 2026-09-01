@@ -65,3 +65,28 @@ Neither candidate reopens implementation. FormalMath is available but missing
 decision-critical fields; the attribution study describes the right class of
 trace but does not expose it. The next meaningful input is an already-existing
 artifact, not more SHRED seeds or a newly generated benchmark.
+
+## Later public release search
+
+A broader Hugging Face metadata search found five additional relevant releases.
+Exact revisions are frozen in `data/authentic-branch-source-manifest.json`.
+
+| Release | Authentic information retained | Gate-critical omission |
+| --- | --- | --- |
+| NuminaMath-LEAN trajectories 850k | 852,430 named generated responses with correctness and token counts | Despite the name, the schema is one complete response per row: no repair lineage, native checkpoint, environment identity, or verifier CPU. |
+| Math Lean Hackable Rollouts | 2,241 labeled multi-turn rollouts from a GRPO run, with run/group/step IDs, messages, rewards, and turn counts | No Lean/Mathlib identity, native prefix lineage, or attempt/prefix verifier CPU. |
+| SATP replay buffer | 32,058 authentic goal/action preference rows with goal IDs and good/bad Aesop configurations | The goal is pretty text rather than a retained executable state; no environment digest or verifier CPU. |
+| RRMA Lean 4 agent traces | 416 complete agent sessions with tool conversations, oracle-run counts, models, problems, and final rewards | Whole conversations can expose successive edits, but the release has no native checkpoint identity or verifier timing. |
+| Leanstral 1.5 results | Full interactive compiler-feedback archives across five benchmarks: generated Lean files, trajectory streams, per-attempt metadata, compilation/SafeVerify logs, and Pass@1/4/8 cohorts | The inspected attempt metadata and streams contain no timestamps or process CPU, and compilation is whole-file rather than checkpoint-attributed. |
+
+**Observed:** authentic trajectory availability is better than the initial
+search established. Leanstral is now the strongest *available* structural lead,
+and the hackable-rollout release is directly tied to RL. Neither can currently
+support a verifier-speed projection without inventing timing or treating text
+as native lineage.
+
+**Decision:** do not bulk-download or replay these releases. Publish the
+system-neutral existing-run contract in
+`docs/AUTHENTIC_TRACE_CONTRACT.md` so producers can export the missing exact
+identity and CPU from runs they already possess. This is an interoperability
+capability, not a new experiment or speed claim.

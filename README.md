@@ -82,6 +82,23 @@ The default examines at most 256 proposals and always labels its recommendation
 immutable workload with `--full`. SHRED counts unsupported syntax, timeouts,
 errors, and fallbacks instead of silently dropping them.
 
+Already have Lean-native checkpoint and process-CPU telemetry from an RL,
+search, or repair run? Screen that immutable artifact without running Lean:
+
+```bash
+shred screen-authentic-trace \
+  --manifest existing-run.manifest.json \
+  --overhead-budget-cpu-seconds-per-hit 0.01 \
+  --overhead-budget-source "registered deployment design ceiling" \
+  --output checkpoint-screen.json
+```
+
+The system-neutral contract counts every verdict and fallback, requires exact
+environment/context/checkpoint identity, and reports aggregate, per-theorem,
+median, and tail projections. It will not treat proof text, pretty goals, or
+agent-message similarity as executable reuse. See
+[`docs/AUTHENTIC_TRACE_CONTRACT.md`](docs/AUTHENTIC_TRACE_CONTRACT.md).
+
 ### 2. Act on the diagnosis
 
 The report deliberately produces one of three full-workload decisions:

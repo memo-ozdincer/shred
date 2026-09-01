@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/memo-ozdincer/shred/data/authentic-checkpoint-trace.schema.json",
+  "title": "SHRED authentic existing-run checkpoint trace",
+  "type": "object",
+  "required": ["schema_version", "trace_kind", "workload", "telemetry", "partitions"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "trace_kind": {"const": "shred-authentic-checkpoint-trace-v1"},
+    "source_root_default": {"type": "string"},
+    "workload": {
+      "type": "object",
+      "required": ["name", "dataset_revision", "producer_git_commit", "producer_git_dirty", "producer_command", "resolved_configuration_sha256", "lean_revision", "mathlib_revision", "hardware", "concurrency", "timeout_seconds", "memory_limit_bytes", "expected_attempts"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "dataset_revision": {"type": "string", "minLength": 1},
+        "producer_git_commit": {"type": "string", "minLength": 1},
+        "producer_git_dirty": {"type": "boolean"},
+        "producer_command": {"type": "string", "minLength": 1},
+        "resolved_configuration_sha256": {"$ref": "#/$defs/sha256"},
+        "lean_revision": {"type": "string", "minLength": 1},
+        "mathlib_revision": {"type": "string", "minLength": 1},
+        "hardware": {"type": "string", "minLength": 1},
+        "concurrency": {"type": "integer", "minimum": 1},
+        "timeout_seconds": {"type": "number", "minimum": 0},
+        "memory_limit_bytes": {"type": "integer", "minimum": 1},
+        "expected_attempts": {"type": "integer", "minimum": 1},
+        "pipeline_total_cpu_seconds": {"type": "number", "minimum": 0}
+      },
+      "additionalProperties": true
+    },
+    "telemetry": {
+      "type": "object",
+      "required": ["lineage_kind", "cpu_clock", "full_cpu_semantics", "prefix_cpu_semantics", "verdict_authority"],
+      "additionalProperties": false,
+      "properties": {
+        "lineage_kind": {"const": "lean_native_exact_prefix"},
+        "cpu_clock": {"const": "process_cpu"},
+        "full_cpu_semantics": {"const": "warm_independent_complete_attempt"},
+        "prefix_cpu_semantics": {"const": "same_attempt_through_exact_checkpoint"},
+        "verdict_authority": {"const": "ordinary_lean"}
+      }
+    },
+    "partitions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256", "records"],
+        "additionalProperties": false,
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "sha256": {"$ref": "#/$defs/sha256"},
+          "records": {"type": "integer", "minimum": 0}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "trace_record": {
+      "type": "object",
+      "required": ["proposal_id", "proposal_sha256", "theorem_name", "theorem_statement_sha256", "verdict", "full_verifier_cpu_seconds", "eligibility"],
+      "properties": {
+        "proposal_id": {"type": "string", "minLength": 1},
+        "proposal_sha256": {"$ref": "#/$defs/sha256"},
+        "theorem_name": {"type": "string", "minLength": 1},
+        "theorem_statement_sha256": {"$ref": "#/$defs/sha256"},
+        "verdict": {"enum": ["accepted", "rejected", "timed_out", "crashed"]},
+        "full_verifier_cpu_seconds": {"type": "number", "minimum": 0},
+        "eligibility": {"enum": ["exact_checkpoint", "fallback"]},
+        "fallback_reason": {"type": "string", "minLength": 1},
+        "prefix_verifier_cpu_seconds": {"type": "number", "minimum": 0},
+        "parent_environment_sha256": {"$ref": "#/$defs/sha256"},
+        "root_context_sha256": {"$ref": "#/$defs/sha256"},
+        "prefix_edges_sha256": {"$ref": "#/$defs/sha256"},
+        "checkpoint_artifact_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"eligibility": {"const": "exact_checkpoint"}}},
+          "then": {"required": ["prefix_verifier_cpu_seconds", "parent_environment_sha256", "root_context_sha256", "prefix_edges_sha256", "checkpoint_artifact_sha256"]},
+          "else": {"required": ["fallback_reason"]}
+        }
+      ],
+      "additionalProperties": true
+    }
+  }
+}

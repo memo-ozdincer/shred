@@ -8,6 +8,7 @@ import sys
 
 from lean_prefix.audit import AuditError, audit_manifest
 from lean_prefix.analysis import analyze_exact
+from lean_prefix.authentic_trace import AuthenticTraceError, screen_authentic_trace
 from lean_prefix.certificate_probe import (
     CertificateProbeError,
     summarize_certificate_probe,
@@ -72,6 +73,15 @@ def _parser() -> argparse.ArgumentParser:
     profile.add_argument("--bootstrap-samples", type=int, default=10_000)
     profile.add_argument("--bootstrap-seed", type=int, default=42)
     profile.add_argument("--force", action="store_true")
+    trace_screen = commands.add_parser(
+        "screen-authentic-trace",
+        help="screen an immutable existing-run checkpoint trace without running Lean",
+    )
+    trace_screen.add_argument("--manifest", type=Path, required=True)
+    trace_screen.add_argument("--source-root", type=Path)
+    trace_screen.add_argument("--output", type=Path, required=True)
+    trace_screen.add_argument("--overhead-budget-cpu-seconds-per-hit", type=float)
+    trace_screen.add_argument("--overhead-budget-source")
     audit = commands.add_parser("audit", help="verify an immutable rollout manifest")
     audit.add_argument("--manifest", type=Path, required=True)
     audit.add_argument("--source-root", type=Path)
@@ -234,6 +244,21 @@ def main(argv: list[str] | None = None) -> int:
                 force=args.force,
             ))
             sys.stdout.write(json.dumps(result.report, indent=2, sort_keys=True) + "\n")
+            return 0
+        if args.command == "screen-authentic-trace":
+            report = screen_authentic_trace(
+                args.manifest,
+                source_root=args.source_root,
+                overhead_budget_cpu_seconds_per_hit=(
+                    args.overhead_budget_cpu_seconds_per_hit
+                ),
+                overhead_budget_source=args.overhead_budget_source,
+            )
+            report["command"] = shlex.join(["shred", *raw_argv])
+            rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(rendered, encoding="utf-8")
+            sys.stdout.write(rendered)
             return 0
         if args.command == "audit":
             report = audit_manifest(args.manifest, args.source_root)
@@ -441,6 +466,7 @@ def main(argv: list[str] | None = None) -> int:
         StateCensusError,
         ShredProfileError,
         ManifestError,
+        AuthenticTraceError,
         OSError,
     ) as error:
         print(f"error: {error}", file=sys.stderr)
